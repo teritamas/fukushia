@@ -16,3 +16,54 @@ __pycache__/
 # Operating System files
 .DS_Store
 Thumbs.db
+# その他のPython関連ファイル
+*.py[cod]
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.manifest
+*.spec
+*.log
+*.pot
+*.cover
+*.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.tox/
+.env/
+.venv/
+ENV/
+env/
+*.sqlite3
+*.db
+*.mssql
+*.bak
+*.swp
+*.swo
+*.orig
+*.lock
+
+# pipenv, poetry, uv
+Pipfile.lock
+poetry.lock
+uv.lock
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# coverage
+htmlcov/
+
+# 一時ファイル
+*.tmp
+*.temp
+
+.env

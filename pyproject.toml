@@ -1,0 +1,18 @@
+[project]
+name = "assessment_assistant"
+version = "0.1.0"
+description = "Memo & task management and assessment support app for social workers."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "streamlit>=1.28.0",
+  "firebase-admin>=6.2.0",
+  "google-generativeai>=0.3.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.12"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+include = ["app.py"]
