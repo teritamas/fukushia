@@ -17,15 +17,15 @@
     cd assessment_assistant
     ```
 
-2. **Python仮想環境の作成・有効化**
+2. **Python仮想環境の作成・有効化 (uv)**
     ```sh
-    python -m venv venv
-    venv\Scripts\activate
+    uv venv
+    source .venv/bin/activate  # Windows は `.venv\Scripts\activate`
     ```
 
 3. **依存パッケージのインストール**
     ```sh
-    pip install streamlit firebase-admin google-generativeai
+    uv sync  # pyproject.tomlに基づき依存関係を解決・インストール
     ```
 
 4. **FirebaseサービスアカウントキーとGemini APIキーの設定**
@@ -64,3 +64,4 @@ assessment_assistant/
 ---
 
 ご質問・不具合はIssueまたはPull Requestでご連絡ください。
+
