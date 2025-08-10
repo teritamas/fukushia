@@ -1,46 +1,26 @@
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore
-# from google.cloud.firestore_v1 import Timestamp
-# from google.cloud.firestore import Timestamp # <<<<<< ここを修正: google.cloud.firestore から Timestamp を直接インポートします
-from datetime import datetime, timedelta
-import google.generativeai as genai
 import os
-import json # JSONデータの扱いに必要
+from agent.firestore import init_firestore
+from agent.gemini import GeminiAgent
+from datetime import datetime, timedelta
+from firebase_admin import firestore
 
-# --- 1. Firebase Admin SDK の初期化 ---
-# Timestamp は google.cloud.firestore モジュールから直接インポートします。
-# コード内の Timestamp の利用箇所は変更なしでOKです（Timestamp となっている箇所）
+# --- 1. 初期化 ---
+APP_ID = os.getenv("APP_ID", "default-app-id")
 
-firebase_service_account_data = {}
 try:
-    firebase_config_json = st.secrets["FIREBASE_SERVICE_ACCOUNT"]
-    firebase_service_account_data = json.loads(firebase_config_json)
-    cred = credentials.Certificate(firebase_service_account_data)
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred)
-except KeyError:
-    st.error("Firebaseの認証情報が見つかりません。`.streamlit/secrets.toml`を確認してください。")
-    st.stop()
-except ValueError as e:
-    st.error(f"Firebase認証情報のJSONパースエラー: {e}。`.streamlit/secrets.toml`の`FIREBASE_SERVICE_ACCOUNT`が正しいJSON形式か確認してください。")
+    firebase_service_account = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+    db, client_email = init_firestore(firebase_service_account)
+except Exception as e:
+    st.error(f"Firestore初期化エラー: {e}")
     st.stop()
 
-db = firestore.client()
-APP_ID = st.secrets.get("APP_ID", "default-app-id")
-
-# --- 2. Gemini API の設定 ---
 try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-except KeyError:
-    st.error("Gemini APIキーが見つかりません。`.streamlit/secrets.toml`を確認してください。")
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    gemini_agent = GeminiAgent(GEMINI_API_KEY)
+except Exception as e:
+    st.error(f"GeminiAgent初期化エラー: {e}")
     st.stop()
-
-# --- Helper Functions ---
-def get_today_date_string():
-    """今日のUTC日付をYYYY-MM-DD形式で取得するヘルパー関数"""
-    today = datetime.utcnow()
-    return today.strftime('%Y-%m-%d')
 
 # --- 3. データ取得関数 ---
 @st.cache_data(ttl=300) # 5分間キャッシュ
@@ -88,41 +68,7 @@ def get_notes_for_client(user_id: str, client_name: str = None, days_ago: int = 
     return notes_data
 
 # --- 4. LLMによるテキスト分析関数 ---
-@st.cache_data(ttl=3600) # 1時間キャッシュ
-def analyze_content_with_gemini(text_content: str, assessment_item_name: str, user_assessment_items: dict):
-    """
-    Gemini APIを使ってメモ内容を特定のアセスメント項目に関連付けて分析します。
-    """
-    model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
-    
-    assessment_structure_info = ""
-    for category, sub_items in user_assessment_items.items():
-        assessment_structure_info += f"- {category}: {', '.join(sub_items)}\n"
-
-    prompt = f"""
-    あなたは社会福祉士のアセスメントシート作成を支援するAIアシスタントです。
-    以下のアセスメントシートの項目「{assessment_item_name}」について、提供された日々のメモの内容から関連する情報を抽出出し、箇条書きで簡潔に要約してください。
-    客観的な事実に基づいて記述し、推測や評価は含めないでください。
-    関連情報がない場合は、「（関連情報なし）」と回答してください。
-
-    ---アセスメントシートの項目構造---
-    {assessment_structure_info}
-    ---日々のメモ内容---
-    {text_content}
-    -------------------
-
-    「{assessment_item_name}」項目に関連する要約情報:
-    """
-    
-    try:
-        response = model.generate_content(prompt)
-        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-            return response.candidates[0].content.parts[0].text.strip()
-        else:
-            return "（応答がありませんでした。）"
-    except Exception as e:
-        st.error(f"Gemini API呼び出しエラー: {e}")
-        return "（分析中にエラーが発生しました。）"
+# analyze_content_with_geminiはagent/gemini.pyからimport
 
 # --- Streamlit アプリのメイン部分 ---
 st.set_page_config(page_title="社会福祉士向けアシスタント", layout="wide")
@@ -132,7 +78,7 @@ st.markdown("日々のメモやTODO、そしてアセスメント更新をサポ
 
 # ユーザーIDの取得
 if 'user_id' not in st.session_state:
-    st.session_state['user_id'] = firebase_service_account_data["client_email"]
+    st.session_state['user_id'] = client_email
 
 user_id_display = st.session_state.user_id
 st.info(f"現在のユーザーID: **{user_id_display}**\n\n**重要:** このユーザーIDは、Reactアプリで使用している`userId`と同じである必要があります。異なる場合はFirestoreのデータにアクセスできません。")
@@ -460,7 +406,7 @@ with tab2:
                         for item_name in sub_items:
                             st.markdown(f"### {item_name}")
                             
-                            suggestion = analyze_content_with_gemini(all_notes_text, item_name, ASSESSMENT_ITEMS)
+                            suggestion = gemini_agent.analyze(all_notes_text, item_name, ASSESSMENT_ITEMS)
                             st.text_area(f"提案 ({item_name})", value=suggestion, height=150, key=f"{selected_client}_assessment_{main_category}_{item_name}")
                             st.markdown("---")
     else:
