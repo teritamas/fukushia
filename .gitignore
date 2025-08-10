@@ -1,0 +1,18 @@
+# Python virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Streamlit secrets file (IMPORTANT: DO NOT COMMIT SENSITIVE DATA)
+.streamlit/secrets.toml
+
+# IDE-specific files (e.g., VS Code)
+.vscode/
+
+# Operating System files
+.DS_Store
+Thumbs.db
