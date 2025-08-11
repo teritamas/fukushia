@@ -1,11 +1,19 @@
 import { useState } from "react";
 
+type Memo = {
+  content: string;
+  timestamp?: { toDate?: () => Date };
+  tags?: string[];
+};
 interface ReportGeneratorProps {
   selectedClient: string;
-  memos: any[];
+  memos: Memo[];
 }
 
-export default function ReportGenerator({ selectedClient, memos }: ReportGeneratorProps) {
+export default function ReportGenerator({
+  selectedClient,
+  memos,
+}: ReportGeneratorProps) {
   const [report, setReport] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,22 +24,30 @@ export default function ReportGenerator({ selectedClient, memos }: ReportGenerat
     setReport("");
     try {
       // メモをAPI用に整形
-      const formattedMemos = memos.map(m => ({
+      const formattedMemos = memos.map((m) => ({
         case_name: selectedClient,
         content: m.content,
-        created_at: m.timestamp?.toDate ? m.timestamp.toDate().getTime() / 1000 : undefined,
-        updated_at: m.timestamp?.toDate ? m.timestamp.toDate().getTime() / 1000 : undefined,
+        created_at: m.timestamp?.toDate
+          ? m.timestamp.toDate().getTime() / 1000
+          : undefined,
+        updated_at: m.timestamp?.toDate
+          ? m.timestamp.toDate().getTime() / 1000
+          : undefined,
         tags: m.tags || [],
       }));
       const res = await fetch("http://localhost:8000/reports/activity/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ case_name: selectedClient, memos: formattedMemos, tasks: [] }),
+        body: JSON.stringify({
+          case_name: selectedClient,
+          memos: formattedMemos,
+          tasks: [],
+        }),
       });
       let data = null;
       try {
         data = await res.json();
-      } catch (e) {
+      } catch {
         setError("サーバーから不正な応答が返されました");
         return;
       }
@@ -40,8 +56,8 @@ export default function ReportGenerator({ selectedClient, memos }: ReportGenerat
       } else {
         setError((data && (data.detail || data.error)) || "APIエラー");
       }
-    } catch (e: any) {
-      setError("報告書生成に失敗しました: " + (e?.message || ""));
+    } catch {
+      setError("報告書生成に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -59,7 +75,9 @@ export default function ReportGenerator({ selectedClient, memos }: ReportGenerat
       {loading && <p>生成中...</p>}
       {error && <p className="text-red-500">{error}</p>}
       {report && (
-        <div className="bg-gray-100 rounded p-4 whitespace-pre-wrap mt-2">{report}</div>
+        <div className="bg-gray-100 rounded p-4 whitespace-pre-wrap mt-2">
+          {report}
+        </div>
       )}
     </div>
   );
