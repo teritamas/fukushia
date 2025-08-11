@@ -1,4 +1,4 @@
-name: Build Frontend and Backend
+name: Build
 
 on:
   push:
@@ -31,5 +31,4 @@ jobs:
         with:
           python-version: "3.13"
       - run: curl -Ls https://astral.sh/uv/install.sh | sh
-      - run: uv pip install -r requirements.txt || uv pip install .
-      - run: python -m pytest
+      - run: uv sync
