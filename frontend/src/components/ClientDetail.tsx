@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+
 import ClientList from "./ClientList";
+import ReportGenerator from "./ReportGenerator";
 
 export default function ClientDetail() {
   const [clients, setClients] = useState<string[]>([]);
@@ -80,81 +82,90 @@ export default function ClientDetail() {
   }, [selectedClient]);
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h2 className="text-xl font-bold mb-4">支援者ごとの情報</h2>
-      <ClientList
-        selectedClient={selectedClient}
-        setSelectedClient={setSelectedClient}
-        clients={clients}
-        setClients={setClients}
-      />
-
-      {/* アセスメント自動提案機能 */}
-      <div className="mb-6">
-        <button className="bg-green-500 text-white px-4 py-2 rounded mb-2" onClick={handleAssessment} disabled={assessmentLoading || !selectedClient}>AIに提案してもらう</button>
-        {assessmentLoading && <p>AI提案を生成中...</p>}
-        {assessmentError && <p className="text-red-500">{assessmentError}</p>}
-        {assessmentResult && (
-          <div className="bg-gray-100 rounded p-4 whitespace-pre-wrap mt-2">{assessmentResult}</div>
+  <div className="flex flex-col md:flex-row gap-6 w-full p-4">
+      {/* 左カラム: メモ入力・一覧 */}
+      <div className="flex-1 bg-white rounded-xl shadow-lg p-6 min-w-[320px]">
+        <h2 className="text-xl font-bold mb-4 text-blue-900">日々の活動メモ入力</h2>
+        <ClientList
+          selectedClient={selectedClient}
+          setSelectedClient={setSelectedClient}
+          clients={clients}
+          setClients={setClients}
+        />
+        {loading && <p>読み込み中...</p>}
+        {selectedClient && !loading && (
+          <div>
+            <h3 className="text-lg font-semibold mb-2">{selectedClient} さんのメモ一覧</h3>
+            {notes.length === 0 ? (
+              <p>メモがありません。</p>
+            ) : (
+              <div className="grid gap-4">
+                {notes.map((note, idx) => {
+                  let dateStr = "";
+                  if (note.timestamp && typeof note.timestamp === "object" && note.timestamp.seconds) {
+                    dateStr = new Date(note.timestamp.seconds * 1000).toLocaleString();
+                  }
+                  return (
+                    <div key={idx} className="bg-gray-50 rounded-lg shadow p-4 border border-gray-200">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-500">{dateStr}</span>
+                        <span className="text-xs bg-blue-100 text-blue-700 rounded px-2 py-1">発言者: {note.speaker || "-"}</span>
+                      </div>
+                      <div className="mb-2">
+                        <span className="font-bold">内容:</span>
+                        <div className="ml-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded whitespace-pre-line text-gray-800 font-medium">
+                          {note.content || <span className="text-gray-400">(内容なし)</span>}
+                        </div>
+                      </div>
+                      {note.todoItems && note.todoItems.length > 0 && (
+                        <div className="mt-2">
+                          <span className="font-bold">やることリスト:</span>
+                          <ul className="pl-0 mt-1">
+                            {note.todoItems.map((item: any, i: number) => {
+                              let dueDateStr = "";
+                              if (item.dueDate && typeof item.dueDate === "object" && item.dueDate.seconds) {
+                                dueDateStr = new Date(item.dueDate.seconds * 1000).toLocaleDateString();
+                              } else if (typeof item.dueDate === "string") {
+                                dueDateStr = item.dueDate;
+                              }
+                              const isCompleted = item.isCompleted;
+                              return (
+                                <li key={i} className={`flex items-center gap-2 py-1 border-b last:border-b-0 ${isCompleted ? 'bg-green-50' : 'bg-yellow-50'}`}>
+                                  <span className={`inline-block w-5 ${isCompleted ? 'text-green-500' : 'text-yellow-500'}`}>{isCompleted ? '✔️' : '⏳'}</span>
+                                  <span className={`flex-1 ${isCompleted ? 'line-through text-gray-400' : 'text-gray-900'}`}>{item.text}</span>
+                                  {dueDateStr && <span className="text-xs text-gray-500">(期限: {dueDateStr})</span>}
+                                  <span className={`text-xs ml-2 px-2 py-0.5 rounded ${isCompleted ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}`}>{isCompleted ? '完了' : '未完了'}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
       </div>
-
-      {loading && <p>読み込み中...</p>}
-      {selectedClient && !loading && (
-        <div>
-          <h3 className="text-lg font-semibold mb-4">{selectedClient} さんのメモ一覧</h3>
-          {notes.length === 0 ? (
-            <p>メモがありません。</p>
-          ) : (
-            <div className="grid gap-4">
-              {notes.map((note, idx) => {
-                let dateStr = "";
-                if (note.timestamp && typeof note.timestamp === "object" && note.timestamp.seconds) {
-                  dateStr = new Date(note.timestamp.seconds * 1000).toLocaleString();
-                }
-                return (
-                  <div key={idx} className="bg-white rounded shadow p-4 border border-gray-200">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-gray-500">{dateStr}</span>
-                      <span className="text-xs bg-blue-100 text-blue-700 rounded px-2 py-1">発言者: {note.speaker || "-"}</span>
-                    </div>
-                    <div className="mb-2">
-                      <span className="font-bold">内容:</span>
-                      <div className="ml-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded whitespace-pre-line text-gray-800 font-medium">
-                        {note.content || <span className="text-gray-400">(内容なし)</span>}
-                      </div>
-                    </div>
-                    {note.todoItems && note.todoItems.length > 0 && (
-                      <div className="mt-2">
-                        <span className="font-bold">やることリスト:</span>
-                        <ul className="pl-0 mt-1">
-                          {note.todoItems.map((item: any, i: number) => {
-                            let dueDateStr = "";
-                            if (item.dueDate && typeof item.dueDate === "object" && item.dueDate.seconds) {
-                              dueDateStr = new Date(item.dueDate.seconds * 1000).toLocaleDateString();
-                            } else if (typeof item.dueDate === "string") {
-                              dueDateStr = item.dueDate;
-                            }
-                            const isCompleted = item.isCompleted;
-                            return (
-                              <li key={i} className={`flex items-center gap-2 py-1 border-b last:border-b-0 ${isCompleted ? 'bg-green-50' : 'bg-yellow-50'}`}>
-                                <span className={`inline-block w-5 ${isCompleted ? 'text-green-500' : 'text-yellow-500'}`}>{isCompleted ? '✔️' : '⏳'}</span>
-                                <span className={`flex-1 ${isCompleted ? 'line-through text-gray-400' : 'text-gray-900'}`}>{item.text}</span>
-                                {dueDateStr && <span className="text-xs text-gray-500">(期限: {dueDateStr})</span>}
-                                <span className={`text-xs ml-2 px-2 py-0.5 rounded ${isCompleted ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}`}>{isCompleted ? '完了' : '未完了'}</span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+      {/* 右カラム: AI提案・情報整理 */}
+      <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
+        <div className="bg-green-50 border-l-4 border-green-400 rounded-xl shadow p-4">
+          <h3 className="font-bold text-green-700 mb-2">AIによる提案と情報整理</h3>
+          <button className="bg-green-500 text-white px-4 py-2 rounded mb-2" onClick={handleAssessment} disabled={assessmentLoading || !selectedClient}>AIに提案してもらう</button>
+          {assessmentLoading && <p>AI提案を生成中...</p>}
+          {assessmentError && <p className="text-red-500">{assessmentError}</p>}
+          {assessmentResult && (
+            <div className="bg-white rounded p-4 whitespace-pre-wrap mt-2 border border-green-200">{assessmentResult}</div>
           )}
         </div>
-      )}
+        <div className="bg-purple-50 border-l-4 border-purple-400 rounded-xl shadow p-4">
+          <h3 className="font-bold text-purple-700 mb-2">活動報告書・支払い報告書生成</h3>
+          <p className="text-sm text-gray-700 mb-2">選択中の支援対象者のメモに基づき、報告書を生成します。</p>
+          <ReportGenerator selectedClient={selectedClient} memos={notes} />
+        </div>
+      </div>
     </div>
   );
 }
