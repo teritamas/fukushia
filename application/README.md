@@ -55,11 +55,11 @@ npm run dev
 ### バックエンドの起動
 
 ```sh
-uvicorn backend_fastapi:app --reload
+uvicorn main:app --reload
 
 or
 
-uv run uvicorn backend_fastapi:app --reload
+uv run uvicorn main:app --reload
 ```
 
 ### 古い手順

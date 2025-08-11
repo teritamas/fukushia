@@ -1,6 +1,7 @@
 import re
 from datetime import timedelta, datetime
 
+
 def relative_date_tool(text, base_ts):
     """相対的な日付表記を絶対表記に変更するためのヘルパー関数"""
     base_date = datetime.fromtimestamp(base_ts)
@@ -30,7 +31,7 @@ def relative_date_tool(text, base_ts):
             return f"{target.strftime('%Y/%m/%d(%a)')}"
         text = re.sub(pat, repl, text)
     return text
-from datetime import datetime
+
 
 def get_today_date_string():
     """今日のUTC日付をYYYY-MM-DD形式で取得するヘルパー関数"""
