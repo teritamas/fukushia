@@ -1,5 +1,6 @@
 import google.generativeai as genai
-from agent.utils import relative_date_tool, get_today_date_string
+from services.utils import relative_date_tool
+
 
 class GeminiAgent:
     def __init__(self, api_key: str, model_name: str = 'gemini-2.5-flash-preview-05-20', relative_date_tool_arg=None):

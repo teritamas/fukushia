@@ -1,14 +1,14 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+import os
+from infra.firestore import get_firestore_client
+from models.pydantic_models import ActivityReportRequest, Memo, Task
+from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from agent.gemini import GeminiAgent
-from agent.firestore import get_firestore_client
-from dotenv import load_dotenv
-from pydantic import BaseModel
-from typing import List, Dict, Optional
-import os
 import time
 
 load_dotenv()
+
 app = FastAPI()
 
 # CORS設定（React/Next.jsからのリクエストを許可）
@@ -26,25 +26,6 @@ gemini_agent = GeminiAgent(GEMINI_API_KEY)
 # Firestoreクライアントの初期化
 db = get_firestore_client()
 
-# Pydantic models
-class Memo(BaseModel):
-    case_name: str
-    content: str
-    created_at: Optional[float] = None
-    updated_at: Optional[float] = None
-    tags: Optional[List[str]] = []
-
-class Task(BaseModel):
-    case_name: str
-    description: str
-    status: Optional[str] = "pending"
-    created_at: Optional[float] = None
-    updated_at: Optional[float] = None
-
-class ActivityReportRequest(BaseModel):
-    case_name: str
-    memos: List[Memo]
-    tasks: List[Task]
 
 def exponential_backoff(func, *args, retries=3, **kwargs):
     delay = 1
@@ -57,6 +38,7 @@ def exponential_backoff(func, *args, retries=3, **kwargs):
             time.sleep(delay)
             delay *= 2
 
+
 @app.post("/api/gemini")
 async def gemini_api(request: Request):
     data = await request.json()
@@ -65,6 +47,7 @@ async def gemini_api(request: Request):
     user_assessment_items = data.get("user_assessment_items", {})
     result = gemini_agent.analyze(text, assessment_item_name, user_assessment_items)
     return {"result": result}
+
 
 # --- メモ保存エンドポイント ---
 @app.post("/memos/")
@@ -76,6 +59,7 @@ async def create_memo(memo: Memo):
     doc_ref = db.collection("memos").document()
     doc_ref.set(memo_dict)
     return {"id": doc_ref.id, **memo_dict}
+
 
 # --- メモ取得エンドポイント（ケース名で絞り込み） ---
 @app.get("/memos/{case_name}")
@@ -96,6 +80,7 @@ async def create_task(task: Task):
     doc_ref.set(task_dict)
     return {"id": doc_ref.id, **task_dict}
 
+
 # --- タスク取得エンドポイント（ケース名で絞り込み） ---
 @app.get("/tasks/{case_name}")
 async def get_tasks(case_name: str):
@@ -103,6 +88,7 @@ async def get_tasks(case_name: str):
     docs = tasks_ref.stream()
     tasks = [{"id": doc.id, **doc.to_dict()} for doc in docs]
     return {"tasks": tasks}
+
 
 # --- 活動報告書生成エンドポイント ---
 @app.post("/reports/activity/")

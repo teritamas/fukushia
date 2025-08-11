@@ -33,42 +33,45 @@
 
 4. **Firebase サービスアカウントキーと Gemini API キーの設定**
 
-   - `.streamlit/secrets.toml` に以下のように記述してください:
+- `application/`フォルダー内に `.env` ファイルを作成し、以下の内容を記述してください:
 
-   ```toml
-   FIREBASE_SERVICE_ACCOUNT = '''
-   { ...FirebaseサービスアカウントのJSON... }
-   '''
-   GEMINI_API_KEY = "あなたのGemini APIキー"
-   APP_ID = "default-app-id"
-   ```
+```
+# Firebase サービスアカウントキー
+FIREBASE_SERVICE_ACCOUNT = サービスアカウントのキーを 1 行で書く
+
+# Gemini API キー
+GEMINI_API_KEY="あなたの Gemini API キー"
+```
+
+- `frontend/`フォルダー内に `.env` ファイルを作成し、以下の内容を記述してください
+
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
+NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL=
+```
 
 ## 起動方法
 
+### フロントエンドの起動
+
 ```sh
-streamlit run app.py
+cd frontend/
+npm run dev
+```
+
+### バックエンドの起動
+
+```sh
+cd application/
+uvicorn main:app --reload
 
 or
 
-uv run streamlit run app.py
+uv run uvicorn main:app --reload
 ```
-
-ブラウザで `http://localhost:8501` を開いて利用できます。
-
-## ディレクトリ構成
-
-```
-assessment_assistant/
-├── app.py
-└── .streamlit/
-    └── secrets.toml
-```
-
-## 注意事項
-
-- `.streamlit/secrets.toml` には機密情報が含まれるため、**絶対に Git 等で公開しないでください**。
-- Firestore のデータ構造やユーザー ID は React アプリと一致させてください。
-
----
-
-ご質問・不具合は Issue または Pull Request でご連絡ください。
