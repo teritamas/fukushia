@@ -8,6 +8,8 @@ dependencies = [
   "streamlit>=1.28.0",
   "firebase-admin>=6.2.0",
   "google-generativeai>=0.3.0",
+  "uvicorn[standard]>=0.35.0",
+  "fastapi>=0.116.1",
 ]
 
 [build-system]

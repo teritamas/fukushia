@@ -45,6 +45,27 @@
 
 ## 起動方法
 
+### フロントエンドの起動
+
+```sh
+cd frontend/
+npm run dev
+```
+
+### バックエンドの起動
+
+```sh
+uvicorn backend_fastapi:app --reload
+
+or
+
+uv run uvicorn backend_fastapi:app --reload
+```
+
+### 古い手順
+
+stremlit のアプリケーションの起動方法
+
 ```sh
 streamlit run app.py
 
@@ -72,3 +93,7 @@ assessment_assistant/
 ---
 
 ご質問・不具合は Issue または Pull Request でご連絡ください。
+
+```
+
+```
