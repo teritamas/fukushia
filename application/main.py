@@ -127,8 +127,6 @@ async def map_assessment(req: AssessmentMappingRequest):
     """
     try:
         mapped_data = gemini_agent.map_to_assessment_items(req.text_content, req.assessment_items)
-        if "error" in mapped_data:
-            raise HTTPException(status_code=500, detail=mapped_data["error"])
         return mapped_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"アセスメントマッピング中にエラーが発生しました: {str(e)}")
@@ -141,9 +139,7 @@ async def generate_support_plan(req: SupportPlanRequest):
     アセスメント情報を基に支援計画を生成するエンドポイント。
     """
     try:
-        plan = gemini_agent.generate_support_plan(req.assessment_data)
-        if "エラー" in plan or "失敗" in plan:
-             raise HTTPException(status_code=500, detail=plan)
+        plan = gemini_agent.generate_support_plan_with_agent(req.assessment_data)
         return {"plan": plan}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"支援計画の生成中にエラーが発生しました: {str(e)}")
