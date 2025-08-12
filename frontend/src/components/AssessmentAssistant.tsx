@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where, addDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp } from "firebase/firestore";
 import { assessmentItems } from "../lib/assessmentItems";
 
 export default function AssessmentAssistant() {
-  const [assessmentResult, setAssessmentResult] = useState("");
-  const [assessmentLoading, setAssessmentLoading] = useState(false);
-  const [assessmentError, setAssessmentError] = useState<string | null>(null);
+  const [assessmentResult] = useState("");
+  const [assessmentLoading] = useState(false);
+  const [assessmentError] = useState<string | null>(null);
   const [clients, setClients] = useState<string[]>([]);
   const [selectedClient, setSelectedClient] = useState("");
   type MappedResult = Record<string, Record<string, string | Record<string, string>>>;

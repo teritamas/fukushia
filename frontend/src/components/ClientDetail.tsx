@@ -361,12 +361,12 @@ export default function ClientDetail() {
                             <h5 className="text-md font-bold text-gray-700 border-b pb-1 mb-2">{form}</h5>
                             <div className="space-y-2 pl-4">
                               {categories && typeof categories === 'object' ? (
-                                Object.entries(categories as any).map(([category, value]) => (
+                                Object.entries(categories as unknown as AssessmentCategory).map(([category, value]) => (
                                   <div key={category}>
                                     <p className="font-semibold text-gray-600">{category}</p>
                                     {value && typeof value === 'object' ? (
                                       <ul className="list-disc pl-6 text-gray-500">
-                                        {Object.entries(value as any).map(([item, details]: [string, any]) => (
+                                        {Object.entries(value as AssessmentItemDetail).map(([item, details]: [string, any]) => (
                                           <li key={item}>
                                             <strong>{item}:</strong> {details || 'N/A'} 
                                           </li>
