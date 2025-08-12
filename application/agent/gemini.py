@@ -91,3 +91,35 @@ class GeminiAgent:
                 return {"error": "Geminiからの応答がありませんでした。"}
         except Exception as e:
             return {"error": f"Gemini API呼び出しエラー: {e}"}
+
+    def generate_support_plan(self, assessment_data: dict) -> str:
+        """
+        アセスメント情報に基づいて支援計画のたたき台を生成する。
+        """
+        assessment_text = json.dumps(assessment_data, indent=2, ensure_ascii=False)
+
+        prompt = f"""
+        あなたは経験豊富なソーシャルワーカーです。
+        以下のクライアントのアセスメント情報に基づいて、包括的で具体的な支援計画のたたき台を作成してください。
+
+        支援計画には、以下の要素を含めてください。
+        1.  **長期目標**: クライアントが最終的に目指す状態。
+        2.  **短期目標**: 長期目標を達成するための、具体的で測定可能な小さなステップ。複数設定してください。
+        3.  **具体的な支援内容**: 各短期目標を達成するために、支援者が行う具体的なアクションや提供するサービス。
+        4.  **留意事項**: 支援を進める上での注意点や、クライアントの強み（ストレングス）を活かす視点。
+
+        --- クライアントのアセスメント情報 ---
+        {assessment_text}
+        ------------------------------------
+
+        上記の情報を基に、プロフェッショナルな視点から、クライアントの自己決定を尊重し、
+        ストレングスを最大限に活用するような支援計画を作成してください。
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+                return response.candidates[0].content.parts[0].text.strip()
+            else:
+                return "（支援計画の生成に失敗しました。）"
+        except Exception as e:
+            return f"Gemini API呼び出しエラー: {e}"

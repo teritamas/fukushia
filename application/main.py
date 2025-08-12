@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request
 import os
 from infra.firestore import get_firestore_client
-from models.pydantic_models import ActivityReportRequest, Memo, Task, AssessmentMappingRequest
+from models.pydantic_models import ActivityReportRequest, Memo, Task, AssessmentMappingRequest, SupportPlanRequest
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from agent.gemini import GeminiAgent
@@ -131,4 +131,19 @@ async def map_assessment(req: AssessmentMappingRequest):
             raise HTTPException(status_code=500, detail=mapped_data["error"])
         return mapped_data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"アセスメントマッピング中にエラーが発生しましたよ: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"アセスメントマッピング中にエラーが発生しました: {str(e)}")
+
+
+# --- 支援計画生成エンドポイント ---
+@app.post("/support-plan/generate/")
+async def generate_support_plan(req: SupportPlanRequest):
+    """
+    アセスメント情報を基に支援計画を生成するエンドポイント。
+    """
+    try:
+        plan = gemini_agent.generate_support_plan(req.assessment_data)
+        if "エラー" in plan or "失敗" in plan:
+             raise HTTPException(status_code=500, detail=plan)
+        return {"plan": plan}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"支援計画の生成中にエラーが発生しました: {str(e)}")

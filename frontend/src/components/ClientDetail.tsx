@@ -34,6 +34,12 @@ export default function ClientDetail() {
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
   const [assessmentsError, setAssessmentsError] = useState<string | null>(null);
 
+  // 支援計画用
+  const [supportPlan, setSupportPlan] = useState<string>("");
+  const [planLoading, setPlanLoading] = useState<boolean>(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [targetAssessmentId, setTargetAssessmentId] = useState<string | null>(null);
+
   // 編集中のアセスメントIDを管理
   const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
   const [editableAssessment, setEditableAssessment] = useState<any>(null);
@@ -63,6 +69,31 @@ export default function ClientDetail() {
     } catch (error) {
       console.error("Error updating assessment: ", error);
       alert("アセスメントの更新に失敗しました。");
+    }
+  };
+
+  // 支援計画生成ハンドラ
+  const handleGenerateSupportPlan = async (assessmentData: any, assessmentId: string) => {
+    setTargetAssessmentId(assessmentId);
+    setPlanLoading(true);
+    setPlanError(null);
+    setSupportPlan("");
+    try {
+      const res = await fetch("http://localhost:8000/support-plan/generate/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assessment_data: assessmentData }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSupportPlan(data.plan);
+      } else {
+        setPlanError(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+      }
+    } catch (err) {
+      setPlanError("支援計画の生成中にクライアント側でエラーが発生しました。");
+    } finally {
+      setPlanLoading(false);
     }
   };
 
@@ -304,7 +335,26 @@ export default function ClientDetail() {
                             <p className="text-sm font-semibold text-gray-600">
                               作成日時: {new Date(assessmentDoc.createdAt.seconds * 1000).toLocaleString()}
                             </p>
+                            <button
+                              onClick={() => handleGenerateSupportPlan(assessmentDoc.assessmentData, assessmentDoc.id)}
+                              className="bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600"
+                              disabled={planLoading && targetAssessmentId === assessmentDoc.id}
+                            >
+                              {planLoading && targetAssessmentId === assessmentDoc.id ? '生成中...' : 'この内容で支援計画を生成'}
+                            </button>
                           </div>
+                          {targetAssessmentId === assessmentDoc.id && (
+                            <div className="mt-4">
+                              {planLoading && <p>支援計画を生成しています...</p>}
+                              {planError && <p className="text-red-500">{planError}</p>}
+                              {supportPlan && (
+                                <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                                  <h5 className="font-bold text-indigo-800 mb-2">生成された支援計画案</h5>
+                                  <div className="whitespace-pre-wrap text-sm text-gray-800">{supportPlan}</div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <div className="mt-2 space-y-3 text-sm">
                             {assessmentDoc.assessmentData && typeof assessmentDoc.assessmentData === 'object' ? (
                               Object.entries(assessmentDoc.assessmentData).map(([form, categories]) => (

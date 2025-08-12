@@ -52,3 +52,7 @@ class ActivityReportResponse(BaseModel):
 class AssessmentMappingRequest(BaseModel):
     text_content: str
     assessment_items: Dict[str, Any]
+
+
+class SupportPlanRequest(BaseModel):
+    assessment_data: Dict[str, Any]
