@@ -366,7 +366,7 @@ export default function ClientDetail() {
                                     <p className="font-semibold text-gray-600">{category}</p>
                                     {value && typeof value === 'object' ? (
                                       <ul className="list-disc pl-6 text-gray-500">
-                                        {Object.entries(value as AssessmentItemDetail).map(([item, details]: [string, any]) => (
+                                        {Object.entries(value as AssessmentItemDetail).map(([item, details]: [string, string]) => (
                                           <li key={item}>
                                             <strong>{item}:</strong> {details || 'N/A'} 
                                           </li>
