@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs, query, where, addDoc, Timestamp } from "firebase/firestore";
+import { assessmentItems } from "../lib/assessmentItems";
 
 export default function AssessmentAssistant() {
   const [assessmentResult, setAssessmentResult] = useState("");
@@ -34,6 +35,7 @@ export default function AssessmentAssistant() {
 社会福祉士: 承知いたしました。本日はたくさんお話しいただきありがとうございました。本日お伺いした内容を元に、まずは生活を安定させるための支援と、田中さんの得意なことを活かせる就労支援について、一緒に計画を立てていきましょう。`);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [mappingError, setMappingError] = useState<string | null>(null);
+  
   // Firestoreから支援者一覧を取得
   useEffect(() => {
     const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
@@ -115,60 +117,24 @@ export default function AssessmentAssistant() {
     setMappingError(null);
     setMappedResult(null);
 
-    // アセスメントシートの構造を定義
-    const assessmentStructure = {
-      "様式1：インテークシート": {
-        "基本情報": {
-          "氏名": "",
-          "性別": "",
-          "生年月日": "",
-          "現住所": "",
-          "電話番号": "",
-          "住居形態": "",
-          "同居状況": ""
-        },
-        "相談内容": {
-          "相談の概要": "",
-          "キーパーソン": "",
-          "これまで相談したことのある支援機関": ""
-        },
-        "初回面接所見": {
-          "生活歴・職歴": "",
-          "心身・判断能力": "",
-          "暮らしの基盤": "",
-          "緊急対応の必要性": ""
-        }
-      },
-      "様式2：基礎シート": {
-        "生活歴・職歴": "",
-        "心身・判断能力": "既往歴、健康状態、精神疾患（うつ等）、対人関係など",
-        "暮らしの基盤": "各種制度の加入状況（生活保護、失業給付など）、毎月の収入、公共料金等の支払い状況",
-        "人との関係・生活動線": "家族関係、近所づきあいなど",
-        "本人の目指す暮らし": "本人の思い、今後の生活の希望、支援を依頼したいこと",
-        "面接者の判断・支援方針": {
-          "本人の強み・長所": "",
-          "支援方針": ""
-        }
-      }
-    };
-
     try {
-      const res = await fetch("http://localhost:8000/assessment/map/", {
+      // 取得した項目とスクリプトでマッピングを実行
+      const mapRes = await fetch("http://localhost:8000/assessment/map/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text_content: script,
-          assessment_items: assessmentStructure,
+          assessment_items: assessmentItems,
         }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setMappedResult(data);
+      const mapData = await mapRes.json();
+      if (mapRes.ok) {
+        setMappedResult(mapData);
       } else {
-        setMappingError(data.detail || "マッピングに失敗しました。");
+        setMappingError(mapData.detail || "マッピングに失敗しました。");
       }
-    } catch (error) {
-      setMappingError("APIへの接続中にエラーが発生しました。");
+    } catch (error: any) {
+      setMappingError(error.message || "APIへの接続中にエラーが発生しました。");
     } finally {
       setMappingLoading(false);
     }

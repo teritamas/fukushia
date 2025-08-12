@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { assessmentItems } from "../lib/assessmentItems";
 
 import ClientList from "./ClientList";
 import ReportGenerator from "./ReportGenerator";
@@ -26,6 +27,9 @@ export default function ClientDetail() {
   const [assessmentResult, setAssessmentResult] = useState("");
   const [assessmentLoading, setAssessmentLoading] = useState(false);
   const [assessmentError, setAssessmentError] = useState<string | null>(null);
+  const [assessmentItems, setAssessmentItems] = useState<any>(null);
+  const [assessmentItemsLoading, setAssessmentItemsLoading] = useState(false);
+  const [assessmentItemsError, setAssessmentItemsError] = useState<string | null>(null);
 
   // アセスメント自動提案ハンドラ
   const handleAssessment = async () => {
@@ -101,11 +105,15 @@ export default function ClientDetail() {
 
   // 支援者選択時にその人のメモを取得
   useEffect(() => {
-    if (!selectedClient) return;
+    if (!selectedClient) {
+      setNotes([]);
+      return;
+    }
     setLoading(true);
     const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
     const USER_ID =
       process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+    
     const fetchNotes = async () => {
       const notesRef = collection(
         db,
@@ -116,7 +124,9 @@ export default function ClientDetail() {
       setNotes(snap.docs.map((doc) => doc.data()));
       setLoading(false);
     };
+
     fetchNotes();
+    setAssessmentItems(assessmentItems);
   }, [selectedClient]);
 
   return (
@@ -285,6 +295,37 @@ export default function ClientDetail() {
                   : undefined,
             }))}
           />
+        </div>
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
+          <h3 className="font-bold text-yellow-700 mb-2">
+            アセスメント項目一覧
+          </h3>
+          {assessmentItemsLoading && <p>項目を読み込み中...</p>}
+          {assessmentItemsError && <p className="text-red-500">{assessmentItemsError}</p>}
+          {assessmentItems && !assessmentItemsLoading && (
+             <div className="space-y-4 text-sm">
+             {Object.entries(assessmentItems).map(([form, categories]) => (
+               <div key={form}>
+                 <h4 className="text-md font-bold text-gray-700 border-b pb-1 mb-2">{form}</h4>
+                 <div className="space-y-2 pl-4">
+                   {Object.entries(categories as any).map(([category, value]) => (
+                     <div key={category}>
+                       <p className="font-semibold text-gray-600">{category}</p>
+                       {typeof value !== 'string' && (
+                         <ul className="list-disc pl-6 text-gray-500">
+                           {Object.keys(value as any).map((item) => (
+                             <li key={item}>{item}</li>
+                           ))}
+                         </ul>
+                       )}
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             ))}
+           </div>
+          )}
+          {!selectedClient && <p className="text-sm text-gray-500">支援者を選択すると、アセスメント項目が表示されます。</p>}
         </div>
       </div>
     </div>

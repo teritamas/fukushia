@@ -49,9 +49,12 @@ class GeminiAgent:
         """
         # 1. NLPによる情報抽出
         nlp_results = self.nlp_processor.analyze_text(text_content)
+        print(f"NLP分析結果: {nlp_results}")
         entities = nlp_results["entities"]
-        # sentiment = nlp_results["sentiment"]
-
+        sentiment = nlp_results["sentiment"]
+        print(f"抽出されたエンティティ: {[entity.name for entity in entities]}")
+        print(f"抽出されたセンチメント: {sentiment}")
+        
         # 2. Geminiによる文脈解釈とマッピング
         prompt = f"""
         あなたは社会福祉士のアセスメント業務を支援するAIアシスタントです。
