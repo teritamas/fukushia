@@ -22,47 +22,87 @@ export default function ClientDetail() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 保存済みアセスメント用
-  type SavedAssessment = {
-    assessmentData: boolean;
+  // アセスメントと支援計画の状態
+  type AssessmentItemDetail = {
+    summary: string;
+    sentiment: string;
+  };
+
+  type AssessmentCategory = {
+    [item: string]: AssessmentItemDetail;
+  };
+
+  type AssessmentForm = {
+    [category: string]: AssessmentCategory;
+  };
+
+  type AssessmentPlan = {
     id: string;
     createdAt: { seconds: number };
-    assessment: any; // The nested assessment object
+    assessment: {
+      [form: string]: AssessmentForm;
+    };
+    supportPlan?: string;
     clientName: string;
   };
-  const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>([]);
+  const [assessmentPlan, setAssessmentPlan] = useState<AssessmentPlan | null>(null);
+  const [editableSupportPlan, setEditableSupportPlan] = useState<string>("");
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
   const [assessmentsError, setAssessmentsError] = useState<string | null>(null);
 
-  // 編集中のアセスメントIDを管理
-  const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
-  const [editableAssessment, setEditableAssessment] = useState<any>(null);
+  // 支援計画生成用
+  const [planLoading, setPlanLoading] = useState<boolean>(false);
+  const [planError, setPlanError] = useState<string | null>(null);
 
-  // 保存ハンドラ
-  const handleSaveAssessment = async () => {
-    if (!editingAssessmentId || !editableAssessment) return;
+  // 支援計画の保存ハンドラ
+  const handleSaveSupportPlan = async () => {
+    if (!assessmentPlan) {
+      alert("保存対象のアセスメントがありません。");
+      return;
+    }
 
     const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
     const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-    const assessmentRef = doc(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`, editingAssessmentId);
+    const assessmentRef = doc(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`, assessmentPlan.id);
 
     try {
       await updateDoc(assessmentRef, {
-        assessment: editableAssessment,
+        supportPlan: editableSupportPlan,
         updatedAt: serverTimestamp()
       });
-      // 保存後にローカルのstateを更新
-      setSavedAssessments(prev => 
-        prev.map(asm => 
-          asm.id === editingAssessmentId ? { ...asm, assessment: editableAssessment } : asm
-        )
-      );
-      setEditingAssessmentId(null);
-      setEditableAssessment(null);
-      alert("アセスメントを更新しました。");
+      setAssessmentPlan(prev => prev ? { ...prev, supportPlan: editableSupportPlan } : null);
+      alert("支援計画を保存しました。");
     } catch (error) {
-      console.error("Error updating assessment: ", error);
-      alert("アセスメントの更新に失敗しました。");
+      console.error("Error saving support plan: ", error);
+      alert("支援計画の保存に失敗しました。");
+    }
+  };
+
+  // 支援計画生成ハンドラ
+  const handleGenerateSupportPlan = async () => {
+    if (!assessmentPlan) return;
+    setPlanLoading(true);
+    setPlanError(null);
+    try {
+      const res = await fetch("http://localhost:8000/support-plan/generate/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assessment_data: assessmentPlan }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEditableSupportPlan(data.plan);
+      } else {
+        setPlanError(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setPlanError(error.message || "支援計画の生成中にクライアント側でエラーが発生しました。");
+      } else {
+        setPlanError("支援計画の生成中にクライアント側でエラーが発生しました。");
+      }
+    } finally {
+      setPlanLoading(false);
     }
   };
 
@@ -82,11 +122,12 @@ export default function ClientDetail() {
     fetchClients();
   }, []);
 
-  // 支援者選択時にその人のメモとアセスメントを取得
+  // 支援者選択時にその人のメモと最新のアセスメントを取得
   useEffect(() => {
     if (!selectedClient) {
       setNotes([]);
-      setSavedAssessments([]);
+      setAssessmentPlan(null);
+      setEditableSupportPlan("");
       return;
     }
     setLoading(true);
@@ -108,7 +149,9 @@ export default function ClientDetail() {
       setLoading(false);
     };
 
-    const fetchAssessments = async () => {
+    const fetchLatestAssessment = async () => {
+      setAssessmentPlan(null);
+      setEditableSupportPlan("");
       try {
         const assessmentsRef = collection(
           db,
@@ -122,11 +165,15 @@ export default function ClientDetail() {
         const assessments = snap.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-        })) as SavedAssessment[];
-        // 日付の降順でソート
-        assessments.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
-        console.log(assessments);
-        setSavedAssessments(assessments);
+        })) as AssessmentPlan[];
+        
+        if (assessments.length > 0) {
+          // 日付でソートして最新のものを取得
+          assessments.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+          const latestAssessment = assessments[0];
+          setAssessmentPlan(latestAssessment);
+          setEditableSupportPlan(latestAssessment.supportPlan || "");
+        }
       } catch (error) {
         console.error("Error fetching assessments: ", error);
         setAssessmentsError("アセスメント情報の取得に失敗しました。");
@@ -136,7 +183,7 @@ export default function ClientDetail() {
     };
 
     fetchNotes();
-    fetchAssessments();
+    fetchLatestAssessment();
   }, [selectedClient]);
 
   return (
@@ -289,60 +336,86 @@ export default function ClientDetail() {
         </div>
         <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-yellow-700 mb-2">
-            保存されたアセスメント
+            アセスメントと支援計画
           </h3>
-          {assessmentsLoading && <p>アセスメントを読み込み中...</p>}
+          {assessmentsLoading && <p>読み込み中...</p>}
           {assessmentsError && <p className="text-red-500">{assessmentsError}</p>}
           {!assessmentsLoading && !assessmentsError && (
             <>
-              {savedAssessments.length > 0 ? (
-                <div className="space-y-4">
-                  {savedAssessments.map((assessmentDoc) => (
-                    <div key={assessmentDoc.id} className="bg-white p-4 rounded-lg shadow-md">
-                        <div>
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm font-semibold text-gray-600">
-                              作成日時: {new Date(assessmentDoc.createdAt.seconds * 1000).toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="mt-2 space-y-3 text-sm">
-                            {assessmentDoc.assessmentData && typeof assessmentDoc.assessmentData === 'object' ? (
-                              Object.entries(assessmentDoc.assessmentData).map(([form, categories]) => (
-                                <div key={form}>
-                                  <h4 className="text-md font-bold text-gray-700 border-b pb-1 mb-2">{form}</h4>
-                                  <div className="space-y-2 pl-4">
-                                    {categories && typeof categories === 'object' ? (
-                                      Object.entries(categories as any).map(([category, value]) => (
-                                        <div key={category}>
-                                          <p className="font-semibold text-gray-600">{category}</p>
-                                          {value && typeof value === 'object' ? (
-                                            <ul className="list-disc pl-6 text-gray-500">
-                                              {Object.entries(value as any).map(([item, details]: [string, any]) => (
-                                                <li key={item}>
-                                                  <span className="font-semibold text-gray-600">{item}:</span> {details || 'N/A'} 
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          ) : null}
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <p className="text-sm text-gray-500">カテゴリ情報がありません。</p>
-                                    )}
+              {assessmentPlan ? (
+                <div className="bg-white p-4 rounded-lg shadow-md">
+                  <div className="border-b pb-2 mb-3">
+                    <p className="text-sm font-semibold text-gray-600">
+                      最終更新日時: {new Date(assessmentPlan.createdAt.seconds * 1000).toLocaleString()}
+                    </p>
+                  </div>
+                  
+
+                  {/* アセスメント内容表示 */}
+                  <details className="mb-4">
+                    <summary className="font-bold text-gray-800 cursor-pointer">アセスメント内容を表示</summary>
+                    <div className="mt-2 space-y-3 text-sm p-3 bg-gray-50 rounded-md max-h-60 overflow-y-auto">
+                      {assessmentPlan.assessment && typeof assessmentPlan.assessment === 'object' ? (
+                        Object.entries(assessmentPlan.assessment).map(([form, categories]) => (
+                          <div key={form}>
+                            <h5 className="text-md font-bold text-gray-700 border-b pb-1 mb-2">{form}</h5>
+                            <div className="space-y-2 pl-4">
+                              {categories && typeof categories === 'object' ? (
+                                Object.entries(categories as unknown as AssessmentCategory).map(([category, value]) => (
+                                  <div key={category}>
+                                    <p className="font-semibold text-gray-600">{category}</p>
+                                    {value && typeof value === 'object' ? (
+                                      <ul className="list-disc pl-6 text-gray-500">
+                                        {Object.entries(value as AssessmentItemDetail).map(([item, details]: [string, string]) => (
+                                          <li key={item}>
+                                            <strong>{item}:</strong> {details || 'N/A'} 
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : null}
                                   </div>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-sm text-gray-500">アセスメントデータがありません。</p>
-                            )}
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">カテゴリ情報がありません。</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        ))
+                      ) : <p className="text-sm text-gray-500">アセスメントデータがありません。</p>}
                     </div>
-                  ))}
+                  </details>
+
+                  {/* 支援計画 */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-md font-bold text-gray-800">支援計画</h4>
+                      <button
+                        onClick={handleGenerateSupportPlan}
+                        className="bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600"
+                        disabled={planLoading}
+                      >
+                        {planLoading ? 'AIで生成中...' : 'AIで計画案を生成'}
+                      </button>
+                    </div>
+                    {planError && <p className="text-red-500 text-sm mb-2">{planError}</p>}
+                    <textarea
+                      value={editableSupportPlan}
+                      onChange={(e) => setEditableSupportPlan(e.target.value)}
+                      className="w-full border p-2 rounded mt-1 text-sm"
+                      rows={15}
+                      placeholder="ここに支援計画を入力・編集してください。"
+                    />
+                    <button
+                      onClick={handleSaveSupportPlan}
+                      className="w-full mt-2 bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600"
+                    >
+                      この計画を保存
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">
-                  {selectedClient ? "保存されたアセスメントはありません。" : "支援者を選択すると、保存されたアセスメントが表示されます。"}
+                  {selectedClient ? "保存されたアセスメントはありません。" : "支援者を選択してください。"}
                 </p>
               )}
             </>

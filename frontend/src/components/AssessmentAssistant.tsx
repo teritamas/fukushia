@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where, addDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp } from "firebase/firestore";
 import { assessmentItems } from "../lib/assessmentItems";
 
 export default function AssessmentAssistant() {
-  const [assessmentResult, setAssessmentResult] = useState("");
-  const [assessmentLoading, setAssessmentLoading] = useState(false);
-  const [assessmentError, setAssessmentError] = useState<string | null>(null);
+  const [assessmentResult] = useState("");
+  const [assessmentLoading] = useState(false);
+  const [assessmentError] = useState<string | null>(null);
   const [clients, setClients] = useState<string[]>([]);
   const [selectedClient, setSelectedClient] = useState("");
-  const [mappedResult, setMappedResult] = useState<any>(null);
+  type MappedResult = Record<string, Record<string, string | Record<string, string>>>;
+  const [mappedResult, setMappedResult] = useState<MappedResult | null>(null);
   const [script, setScript] = useState(`支援者（田中 健一、45歳）: 相談に来て、少し緊張しています。よろしくお願いします。
 
 社会福祉士: 田中さん、本日はお越しいただきありがとうございます。どうぞ、楽にお話しください。本日はどのようなことでお困りでしょうか？
@@ -52,62 +53,6 @@ export default function AssessmentAssistant() {
     fetchClients();
   }, []);
 
-  // Gemini API連携（Pythonバックエンド呼び出し）
-  const handleAssessment = async () => {
-    if (!selectedClient) {
-      setAssessmentError("支援者を選択してください");
-      return;
-    }
-    setAssessmentLoading(true);
-    setAssessmentError(null);
-    setAssessmentResult("");
-    try {
-      const APP_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-      const USER_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-      const notesRef = collection(
-        db,
-        `artifacts/${APP_ID}/users/${USER_ID}/notes`
-      );
-      const q = query(notesRef, where("clientName", "==", selectedClient));
-      const snap = await getDocs(q);
-      const notes = snap.docs.map((doc) => doc.data());
-      const text = notes
-        .map((n) =>
-          [
-            n.speaker,
-            n.content,
-            ...(n.todoItems?.map((t: { text: string }) => t.text) || []),
-          ]
-            .filter(Boolean)
-            .join("\n")
-        )
-        .join("\n---\n");
-      const assessment_item_name = "項目名"; // 必要に応じて
-      const user_assessment_items = {}; // 必要に応じて
-      const res = await fetch("http://localhost:8000/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          assessment_item_name,
-          user_assessment_items,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAssessmentResult(data.result);
-      } else {
-        setAssessmentError(data.error || "APIエラー");
-      }
-    } catch {
-      setAssessmentError("AI提案の取得に失敗しました");
-    } finally {
-      setAssessmentLoading(false);
-    }
-  };
-
   const handleMapAssessment = async () => {
     if (!script.trim()) {
       setMappingError("スクリプトを入力してください。");
@@ -133,18 +78,24 @@ export default function AssessmentAssistant() {
       } else {
         setMappingError(mapData.detail || "マッピングに失敗しました。");
       }
-    } catch (error: any) {
-      setMappingError(error.message || "APIへの接続中にエラーが発生しました。");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setMappingError(error.message || "APIへの接続中にエラーが発生しました。");
+      } else {
+        setMappingError("APIへの接続中にエラーが発生しました。");
+      }
     } finally {
       setMappingLoading(false);
     }
   };
 
   const handleResultChange = (form: string, category: string, subCategory: string | null, value: string) => {
-    setMappedResult((prev: any) => {
+    setMappedResult((prev: MappedResult | null) => {
       const newResult = { ...prev };
       if (subCategory) {
-        newResult[form][category][subCategory] = value;
+        if (typeof newResult[form][category] === "object" && newResult[form][category] !== null) {
+          (newResult[form][category] as Record<string, string>)[subCategory] = value;
+        }
       } else {
         newResult[form][category] = value;
       }
@@ -167,7 +118,7 @@ export default function AssessmentAssistant() {
       const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       const docRef = await addDoc(collection(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`), {
         clientName: selectedClient,
-        assessmentData: mappedResult,
+        assessment: mappedResult,
         originalScript: script,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -255,7 +206,7 @@ export default function AssessmentAssistant() {
                   <div key={form}>
                     <h4 className="text-md font-bold text-gray-700 border-b-2 border-gray-200 pb-1 mb-2">{form}</h4>
                     <div className="space-y-4">
-                      {Object.entries(categories as any).map(([category, value]) => (
+                      {Object.entries(categories as Record<string, string | Record<string, string>>).map(([category, value]) => (
                         <div key={category}>
                           <label className="text-sm font-semibold text-gray-600">{category}</label>
                           {typeof value === 'string' ? (
@@ -267,7 +218,7 @@ export default function AssessmentAssistant() {
                             />
                           ) : (
                             <div className="pl-4 mt-1 space-y-2 border-l-2">
-                              {Object.entries(value as any).map(([subCategory, subValue]) => (
+                              {Object.entries(value as Record<string, string>).map(([subCategory, subValue]) => (
                                 <div key={subCategory}>
                                   <label className="text-sm font-semibold text-gray-500">{subCategory}</label>
                                   <textarea
