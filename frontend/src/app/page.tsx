@@ -47,7 +47,7 @@ export default function Page() {
         </button>
       </div>
 
-      <div className="bg-white rounded shadow p-6 max-w-3xl mx-auto">
+      <div className="bg-white rounded shadow p-6 mx-auto">
         {selectedTab === "clients" && <ClientDetail />}
         {selectedTab === "notes" && <MemoTaskManager />}
         {selectedTab === "assessment" && <AssessmentAssistant />}

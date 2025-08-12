@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { assessmentItems } from "../lib/assessmentItems";
+import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 import ClientList from "./ClientList";
 import ReportGenerator from "./ReportGenerator";
@@ -23,67 +22,47 @@ export default function ClientDetail() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // アセスメント自動提案用
-  const [assessmentResult, setAssessmentResult] = useState("");
-  const [assessmentLoading, setAssessmentLoading] = useState(false);
-  const [assessmentError, setAssessmentError] = useState<string | null>(null);
-  const [assessmentItems, setAssessmentItems] = useState<any>(null);
-  const [assessmentItemsLoading, setAssessmentItemsLoading] = useState(false);
-  const [assessmentItemsError, setAssessmentItemsError] = useState<string | null>(null);
+  // 保存済みアセスメント用
+  type SavedAssessment = {
+    assessmentData: boolean;
+    id: string;
+    createdAt: { seconds: number };
+    assessment: any; // The nested assessment object
+    clientName: string;
+  };
+  const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>([]);
+  const [assessmentsLoading, setAssessmentsLoading] = useState(false);
+  const [assessmentsError, setAssessmentsError] = useState<string | null>(null);
 
-  // アセスメント自動提案ハンドラ
-  const handleAssessment = async () => {
-    if (!selectedClient) {
-      setAssessmentError("支援者を選択してください");
-      return;
-    }
-    setAssessmentLoading(true);
-    setAssessmentError(null);
-    setAssessmentResult("");
+  // 編集中のアセスメントIDを管理
+  const [editingAssessmentId, setEditingAssessmentId] = useState<string | null>(null);
+  const [editableAssessment, setEditableAssessment] = useState<any>(null);
+
+  // 保存ハンドラ
+  const handleSaveAssessment = async () => {
+    if (!editingAssessmentId || !editableAssessment) return;
+
+    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+    const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+    const assessmentRef = doc(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`, editingAssessmentId);
+
     try {
-      const APP_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-      const USER_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-      const notesRef = collection(
-        db,
-        `artifacts/${APP_ID}/users/${USER_ID}/notes`
-      );
-      const q = query(notesRef, where("clientName", "==", selectedClient));
-      const snap = await getDocs(q);
-      const notes = snap.docs.map((doc) => doc.data());
-      const text = notes
-        .map((n) =>
-          [
-            n.speaker,
-            n.content,
-            ...(n.todoItems?.map((t: TodoItem) => t.text) || []),
-          ]
-            .filter(Boolean)
-            .join("\n")
-        )
-        .join("\n---\n");
-      const assessment_item_name = "項目名";
-      const user_assessment_items = {};
-      const res = await fetch("http://localhost:8000/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          assessment_item_name,
-          user_assessment_items,
-        }),
+      await updateDoc(assessmentRef, {
+        assessment: editableAssessment,
+        updatedAt: serverTimestamp()
       });
-      const data = await res.json();
-      if (res.ok) {
-        setAssessmentResult(data.result);
-      } else {
-        setAssessmentError(data.error || "APIエラー");
-      }
-    } catch {
-      setAssessmentError("AI提案の取得に失敗しました");
-    } finally {
-      setAssessmentLoading(false);
+      // 保存後にローカルのstateを更新
+      setSavedAssessments(prev => 
+        prev.map(asm => 
+          asm.id === editingAssessmentId ? { ...asm, assessment: editableAssessment } : asm
+        )
+      );
+      setEditingAssessmentId(null);
+      setEditableAssessment(null);
+      alert("アセスメントを更新しました。");
+    } catch (error) {
+      console.error("Error updating assessment: ", error);
+      alert("アセスメントの更新に失敗しました。");
     }
   };
 
@@ -103,13 +82,17 @@ export default function ClientDetail() {
     fetchClients();
   }, []);
 
-  // 支援者選択時にその人のメモを取得
+  // 支援者選択時にその人のメモとアセスメントを取得
   useEffect(() => {
     if (!selectedClient) {
       setNotes([]);
+      setSavedAssessments([]);
       return;
     }
     setLoading(true);
+    setAssessmentsLoading(true);
+    setAssessmentsError(null);
+
     const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
     const USER_ID =
       process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
@@ -121,12 +104,39 @@ export default function ClientDetail() {
       );
       const q = query(notesRef, where("clientName", "==", selectedClient));
       const snap = await getDocs(q);
-      setNotes(snap.docs.map((doc) => doc.data()));
+      setNotes(snap.docs.map((doc) => doc.data() as Note));
       setLoading(false);
     };
 
+    const fetchAssessments = async () => {
+      try {
+        const assessmentsRef = collection(
+          db,
+          `artifacts/${APP_ID}/users/${USER_ID}/assessments`
+        );
+        const q = query(
+          assessmentsRef,
+          where("clientName", "==", selectedClient)
+        );
+        const snap = await getDocs(q);
+        const assessments = snap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as SavedAssessment[];
+        // 日付の降順でソート
+        assessments.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+        console.log(assessments);
+        setSavedAssessments(assessments);
+      } catch (error) {
+        console.error("Error fetching assessments: ", error);
+        setAssessmentsError("アセスメント情報の取得に失敗しました。");
+      } finally {
+        setAssessmentsLoading(false);
+      }
+    };
+
     fetchNotes();
-    setAssessmentItems(assessmentItems);
+    fetchAssessments();
   }, [selectedClient]);
 
   return (
@@ -255,25 +265,6 @@ export default function ClientDetail() {
       </div>
       {/* 右カラム: AI提案・情報整理 */}
       <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
-        <div className="bg-green-50 border-l-4 border-green-400 rounded-xl shadow p-4">
-          <h3 className="font-bold text-green-700 mb-2">
-            AIによる提案と情報整理
-          </h3>
-          <button
-            className="bg-green-500 text-white px-4 py-2 rounded mb-2"
-            onClick={handleAssessment}
-            disabled={assessmentLoading || !selectedClient}
-          >
-            AIに提案してもらう
-          </button>
-          {assessmentLoading && <p>AI提案を生成中...</p>}
-          {assessmentError && <p className="text-red-500">{assessmentError}</p>}
-          {assessmentResult && (
-            <div className="bg-white rounded p-4 whitespace-pre-wrap mt-2 border border-green-200">
-              {assessmentResult}
-            </div>
-          )}
-        </div>
         <div className="bg-purple-50 border-l-4 border-purple-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-purple-700 mb-2">
             活動報告書・支払い報告書生成
@@ -298,34 +289,64 @@ export default function ClientDetail() {
         </div>
         <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-yellow-700 mb-2">
-            アセスメント項目一覧
+            保存されたアセスメント
           </h3>
-          {assessmentItemsLoading && <p>項目を読み込み中...</p>}
-          {assessmentItemsError && <p className="text-red-500">{assessmentItemsError}</p>}
-          {assessmentItems && !assessmentItemsLoading && (
-             <div className="space-y-4 text-sm">
-             {Object.entries(assessmentItems).map(([form, categories]) => (
-               <div key={form}>
-                 <h4 className="text-md font-bold text-gray-700 border-b pb-1 mb-2">{form}</h4>
-                 <div className="space-y-2 pl-4">
-                   {Object.entries(categories as any).map(([category, value]) => (
-                     <div key={category}>
-                       <p className="font-semibold text-gray-600">{category}</p>
-                       {typeof value !== 'string' && (
-                         <ul className="list-disc pl-6 text-gray-500">
-                           {Object.keys(value as any).map((item) => (
-                             <li key={item}>{item}</li>
-                           ))}
-                         </ul>
-                       )}
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             ))}
-           </div>
+          {assessmentsLoading && <p>アセスメントを読み込み中...</p>}
+          {assessmentsError && <p className="text-red-500">{assessmentsError}</p>}
+          {!assessmentsLoading && !assessmentsError && (
+            <>
+              {savedAssessments.length > 0 ? (
+                <div className="space-y-4">
+                  {savedAssessments.map((assessmentDoc) => (
+                    <div key={assessmentDoc.id} className="bg-white p-4 rounded-lg shadow-md">
+                        <div>
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm font-semibold text-gray-600">
+                              作成日時: {new Date(assessmentDoc.createdAt.seconds * 1000).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="mt-2 space-y-3 text-sm">
+                            {assessmentDoc.assessmentData && typeof assessmentDoc.assessmentData === 'object' ? (
+                              Object.entries(assessmentDoc.assessmentData).map(([form, categories]) => (
+                                <div key={form}>
+                                  <h4 className="text-md font-bold text-gray-700 border-b pb-1 mb-2">{form}</h4>
+                                  <div className="space-y-2 pl-4">
+                                    {categories && typeof categories === 'object' ? (
+                                      Object.entries(categories as any).map(([category, value]) => (
+                                        <div key={category}>
+                                          <p className="font-semibold text-gray-600">{category}</p>
+                                          {value && typeof value === 'object' ? (
+                                            <ul className="list-disc pl-6 text-gray-500">
+                                              {Object.entries(value as any).map(([item, details]: [string, any]) => (
+                                                <li key={item}>
+                                                  <span className="font-semibold text-gray-600">{item}:</span> {details || 'N/A'} 
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          ) : null}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-sm text-gray-500">カテゴリ情報がありません。</p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-500">アセスメントデータがありません。</p>
+                            )}
+                          </div>
+                        </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  {selectedClient ? "保存されたアセスメントはありません。" : "支援者を選択すると、保存されたアセスメントが表示されます。"}
+                </p>
+              )}
+            </>
           )}
-          {!selectedClient && <p className="text-sm text-gray-500">支援者を選択すると、アセスメント項目が表示されます。</p>}
         </div>
       </div>
     </div>
