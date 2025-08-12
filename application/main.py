@@ -21,7 +21,8 @@ app.add_middleware(
 
 # GeminiAgentの初期化
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-gemini_agent = GeminiAgent(GEMINI_API_KEY)
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
+gemini_agent = GeminiAgent(api_key=GEMINI_API_KEY, google_cse_id=GOOGLE_CSE_ID)
 
 # Firestoreクライアントの初期化
 db = get_firestore_client()
