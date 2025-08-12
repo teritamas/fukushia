@@ -215,8 +215,8 @@ export default function AssessmentAssistant() {
 
   return (
     <div>
-      <p>{JSON.stringify(mappedResult, null, 2)}</p>
-      <h2 className="text-xl font-semibold mb-4">アセスメント自動提案</h2>
+      <h2 className="text-xl font-semibold mb-4">面談記録からアセスメント項目を自動入力
+</h2>
       <div className="mb-4">
         <label className="font-bold mr-2">支援者を選択：</label>
         <select
@@ -232,13 +232,6 @@ export default function AssessmentAssistant() {
           ))}
         </select>
       </div>
-      <button
-        className="bg-green-500 text-white px-4 py-2 rounded mb-4"
-        onClick={handleAssessment}
-        disabled={assessmentLoading || !selectedClient}
-      >
-        AIに提案してもらう
-      </button>
       {assessmentLoading && <p>AI提案を生成中...</p>}
       {assessmentError && <p className="text-red-500">{assessmentError}</p>}
       {assessmentResult && (
@@ -246,11 +239,7 @@ export default function AssessmentAssistant() {
           {assessmentResult}
         </div>
       )}
-      <hr className="my-8" />
       <div>
-        <h2 className="text-xl font-semibold mb-4">
-          面談記録からアセスメント項目を自動入力
-        </h2>
         <div className="mb-4">
           <label htmlFor="script-textarea" className="font-bold mb-2 block">
             面談記録（スクリプト）
