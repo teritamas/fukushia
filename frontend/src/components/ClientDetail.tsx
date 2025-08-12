@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, addDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 
 import ClientList from "./ClientList";
 import ReportGenerator from "./ReportGenerator";
@@ -23,10 +23,25 @@ export default function ClientDetail() {
   const [loading, setLoading] = useState(false);
 
   // アセスメントと支援計画の状態
+  type AssessmentItemDetail = {
+    summary: string;
+    sentiment: string;
+  };
+
+  type AssessmentCategory = {
+    [item: string]: AssessmentItemDetail;
+  };
+
+  type AssessmentForm = {
+    [category: string]: AssessmentCategory;
+  };
+
   type AssessmentPlan = {
     id: string;
     createdAt: { seconds: number };
-    assessment: any;
+    assessment: {
+      [form: string]: AssessmentForm;
+    };
     supportPlan?: string;
     clientName: string;
   };
@@ -80,8 +95,12 @@ export default function ClientDetail() {
       } else {
         setPlanError(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
       }
-    } catch (err) {
-      setPlanError("支援計画の生成中にクライアント側でエラーが発生しました。");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setPlanError(error.message || "支援計画の生成中にクライアント側でエラーが発生しました。");
+      } else {
+        setPlanError("支援計画の生成中にクライアント側でエラーが発生しました。");
+      }
     } finally {
       setPlanLoading(false);
     }
