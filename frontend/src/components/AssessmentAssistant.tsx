@@ -167,7 +167,7 @@ export default function AssessmentAssistant() {
       const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       const docRef = await addDoc(collection(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`), {
         clientName: selectedClient,
-        assessmentData: mappedResult,
+        assessment: mappedResult,
         originalScript: script,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
