@@ -2,6 +2,7 @@
 import { useState } from "react";
 import MemoTaskManager from "../components/MemoTaskManager";
 import ClientDetail from "../components/ClientDetail";
+import AssessmentAssistant from "../components/AssessmentAssistant";
 
 // .env.localからAPP_ID, USER_IDを取得
 
@@ -34,11 +35,22 @@ export default function Page() {
         >
           メモ・TODO管理
         </button>
+        <button
+          className={`px-4 py-2 rounded ${
+            selectedTab === "assessment"
+              ? "bg-blue-500 text-white"
+              : "bg-white border"
+          }`}
+          onClick={() => setSelectedTab("assessment")}
+        >
+          アセスメント管理
+        </button>
       </div>
 
       <div className="bg-white rounded shadow p-6 max-w-3xl mx-auto">
         {selectedTab === "clients" && <ClientDetail />}
         {selectedTab === "notes" && <MemoTaskManager />}
+        {selectedTab === "assessment" && <AssessmentAssistant />}
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 import google.generativeai as genai
 from services.utils import relative_date_tool
+from agent.natural_language_processor import NaturalLanguageProcessor
+import json
 
 
 class GeminiAgent:
@@ -11,6 +13,7 @@ class GeminiAgent:
             self.relative_date_tool = relative_date_tool_arg
         else:
             self.relative_date_tool = relative_date_tool
+        self.nlp_processor = NaturalLanguageProcessor()
 
     def analyze(self, text_content: str, assessment_item_name: str, user_assessment_items: dict) -> str:
         assessment_structure_info = ""
@@ -87,3 +90,49 @@ class GeminiAgent:
                 return "（応答がありませんでした。）"
         except Exception as e:
             return f"Gemini API呼び出しエラー: {e}"
+
+    def map_to_assessment_items(self, text_content: str, assessment_items: dict) -> dict:
+        """
+        NLPで抽出した情報とGeminiの解釈をアセスメント項目にマッピングする。
+        """
+        # 1. NLPによる情報抽出
+        nlp_results = self.nlp_processor.analyze_text(text_content)
+        entities = nlp_results["entities"]
+        sentiment = nlp_results["sentiment"]
+
+        # 2. Geminiによる文脈解釈とマッピング
+        prompt = f"""
+        あなたは社会福祉士のアセスメント業務を支援するAIアシスタントです。
+        以下の「面談記録」と「抽出されたエンティティ情報」を分析し、
+        指定された「アセスメントシートの項目」に沿って、関連する情報を整理・要約してください。
+
+        出力は、各アセスメント項目に対応する情報を記述したJSON形式でなければなりません。
+        客観的な事実に基づいて記述し、情報がない項目は「該当なし」としてください。
+
+        --- 面談記録 ---
+        {text_content}
+        ----------------
+
+        --- 抽出されたエンティティ情報 ---
+        {', '.join([entity.name for entity in entities])}
+        ----------------
+
+        --- アセスメントシートの項目 ---
+        {json.dumps(assessment_items, indent=2, ensure_ascii=False)}
+        ----------------
+
+        以下のJSON形式で、アセスメント項目に対応する情報を記述してください:
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+                # Geminiからの応答（JSON文字列を想定）をパースする
+                response_text = response.candidates[0].content.parts[0].text.strip()
+                # マークダウンの```json ... ```を削除
+                if response_text.startswith("```json"):
+                    response_text = response_text[7:-3].strip()
+                return json.loads(response_text)
+            else:
+                return {"error": "Geminiからの応答がありませんでした。"}
+        except Exception as e:
+            return {"error": f"Gemini API呼び出しエラー: {e}"}

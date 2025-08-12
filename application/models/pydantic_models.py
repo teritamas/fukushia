@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 
@@ -47,3 +47,8 @@ class ActivityReportRequest(BaseModel):
 
 class ActivityReportResponse(BaseModel):
     report_content: str
+
+
+class AssessmentMappingRequest(BaseModel):
+    text_content: str
+    assessment_items: Dict[str, Any]

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request
 import os
 from infra.firestore import get_firestore_client
-from models.pydantic_models import ActivityReportRequest, Memo, Task
+from models.pydantic_models import ActivityReportRequest, Memo, Task, AssessmentMappingRequest
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from agent.gemini import GeminiAgent
@@ -101,3 +101,18 @@ async def generate_activity_report(req: ActivityReportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
     return {"report": report}
+
+
+# --- アセスメントマッピングエンドポイント ---
+@app.post("/assessment/map/")
+async def map_assessment(req: AssessmentMappingRequest):
+    """
+    面談記録を解析し、アセスメント項目にマッピングするエンドポイント。
+    """
+    try:
+        mapped_data = gemini_agent.map_to_assessment_items(req.text_content, req.assessment_items)
+        if "error" in mapped_data:
+            raise HTTPException(status_code=500, detail=mapped_data["error"])
+        return mapped_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"アセスメントマッピング中にエラーが発生しました: {str(e)}")
