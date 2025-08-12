@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, addDoc, Timestamp } from "firebase/firestore";
 
 export default function AssessmentAssistant() {
   const [assessmentResult, setAssessmentResult] = useState("");
@@ -107,31 +107,115 @@ export default function AssessmentAssistant() {
   };
 
   const handleMapAssessment = async () => {
+    if (!script.trim()) {
+      setMappingError("スクリプトを入力してください。");
+      return;
+    }
     setMappingLoading(true);
     setMappingError(null);
     setMappedResult(null);
-    try {
-      const items = { /* アセスメント項目 */ }; // 実際には定義済みの構造を使用
 
+    // アセスメントシートの構造を定義
+    const assessmentStructure = {
+      "様式1：インテークシート": {
+        "基本情報": {
+          "氏名": "",
+          "性別": "",
+          "生年月日": "",
+          "現住所": "",
+          "電話番号": "",
+          "住居形態": "",
+          "同居状況": ""
+        },
+        "相談内容": {
+          "相談の概要": "",
+          "キーパーソン": "",
+          "これまで相談したことのある支援機関": ""
+        },
+        "初回面接所見": {
+          "生活歴・職歴": "",
+          "心身・判断能力": "",
+          "暮らしの基盤": "",
+          "緊急対応の必要性": ""
+        }
+      },
+      "様式2：基礎シート": {
+        "生活歴・職歴": "",
+        "心身・判断能力": "既往歴、健康状態、精神疾患（うつ等）、対人関係など",
+        "暮らしの基盤": "各種制度の加入状況（生活保護、失業給付など）、毎月の収入、公共料金等の支払い状況",
+        "人との関係・生活動線": "家族関係、近所づきあいなど",
+        "本人の目指す暮らし": "本人の思い、今後の生活の希望、支援を依頼したいこと",
+        "面接者の判断・支援方針": {
+          "本人の強み・長所": "",
+          "支援方針": ""
+        }
+      }
+    };
+
+    try {
       const res = await fetch("http://localhost:8000/assessment/map/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text_content: script,
-          assessment_items: items,
+          assessment_items: assessmentStructure,
         }),
       });
       const data = await res.json();
-      setMappedResult(data);
-    } catch {
-      setMappingError("マッピング処理に失敗しました");
+      if (res.ok) {
+        setMappedResult(data);
+      } else {
+        setMappingError(data.detail || "マッピングに失敗しました。");
+      }
+    } catch (error) {
+      setMappingError("APIへの接続中にエラーが発生しました。");
     } finally {
       setMappingLoading(false);
     }
   };
 
+  const handleResultChange = (form: string, category: string, subCategory: string | null, value: string) => {
+    setMappedResult((prev: any) => {
+      const newResult = { ...prev };
+      if (subCategory) {
+        newResult[form][category][subCategory] = value;
+      } else {
+        newResult[form][category] = value;
+      }
+      return newResult;
+    });
+  };
+
+  const handleSaveAssessment = async () => {
+    if (!selectedClient) {
+      setMappingError("結果を保存する支援者を選択してください。");
+      return;
+    }
+    if (!mappedResult) {
+      setMappingError("保存するデータがありません。");
+      return;
+    }
+    // Firestoreに保存
+    try {
+      const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+      const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+      const docRef = await addDoc(collection(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`), {
+        clientName: selectedClient,
+        assessmentData: mappedResult,
+        originalScript: script,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      alert(`アセスメント結果が保存されました。 (ID: ${docRef.id})`);
+    } catch (error) {
+      console.error("Error saving assessment: ", error);
+      setMappingError("アセスメント結果の保存に失敗しました。");
+    }
+  };
+
   return (
     <div>
+      <p>{JSON.stringify(mappedResult, null, 2)}</p>
       <h2 className="text-xl font-semibold mb-4">アセスメント自動提案</h2>
       <div className="mb-4">
         <label className="font-bold mr-2">支援者を選択：</label>
@@ -187,13 +271,74 @@ export default function AssessmentAssistant() {
         >
           {mappingLoading ? "マッピング中..." : "アセスメント項目にマッピング"}
         </button>
-        {mappingError && <p className="text-red-500">{mappingError}</p>}
-        {mappedResult && (
+        {mappingError && <p className="text-red-500 mb-4">{mappingError}</p>}
+
+        {mappedResult ? (
+          // 結果表示・編集UI
+          <div className="grid grid-cols-2 gap-8 mt-4">
+            {/* 左側：元のスクリプト */}
+            <div>
+              <h3 className="text-lg font-bold mb-2">元の面談記録</h3>
+              <div className="bg-gray-50 rounded p-4 h-full overflow-auto text-sm">
+                <pre className="whitespace-pre-wrap">{script}</pre>
+              </div>
+            </div>
+
+            {/* 右側：編集可能なアセスメント項目 */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-bold">AIによるアセスメント（編集可能）</h3>
+                <button
+                  onClick={handleSaveAssessment}
+                  className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600"
+                >
+                  この内容で保存
+                </button>
+              </div>
+              <div className="space-y-6">
+                {Object.entries(mappedResult).map(([form, categories]) => (
+                  <div key={form}>
+                    <h4 className="text-md font-bold text-gray-700 border-b-2 border-gray-200 pb-1 mb-2">{form}</h4>
+                    <div className="space-y-4">
+                      {Object.entries(categories as any).map(([category, value]) => (
+                        <div key={category}>
+                          <label className="text-sm font-semibold text-gray-600">{category}</label>
+                          {typeof value === 'string' ? (
+                            <textarea
+                              value={value}
+                              onChange={(e) => handleResultChange(form, category, null, e.target.value)}
+                              className="w-full border p-2 rounded mt-1 text-sm"
+                              rows={3}
+                            />
+                          ) : (
+                            <div className="pl-4 mt-1 space-y-2 border-l-2">
+                              {Object.entries(value as any).map(([subCategory, subValue]) => (
+                                <div key={subCategory}>
+                                  <label className="text-sm font-semibold text-gray-500">{subCategory}</label>
+                                  <textarea
+                                    value={subValue as string}
+                                    onChange={(e) => handleResultChange(form, category, subCategory, e.target.value)}
+                                    className="w-full border p-2 rounded mt-1 text-sm"
+                                    rows={2}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          // 初期表示（マッピング前）
           <div className="bg-gray-100 rounded p-4 mt-4">
-            <h3 className="text-lg font-bold mb-2">マッピング結果</h3>
-            <pre className="whitespace-pre-wrap text-sm">
-              {JSON.stringify(mappedResult, null, 2)}
-            </pre>
+            <p className="text-center text-gray-500">
+              上記に面談記録を入力し、「アセスメント項目にマッピング」ボタンを押してください。
+            </p>
           </div>
         )}
       </div>
