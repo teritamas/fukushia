@@ -41,6 +41,7 @@ FIREBASE_SERVICE_ACCOUNT = サービスアカウントのキーを 1 行で書�
 
 # Gemini API キー
 GEMINI_API_KEY="あなたの Gemini API キー"
+GOOGLE_CSE_ID="あなたのGoogle CSE ID"
 ```
 
 - `frontend/`フォルダー内に `.env` ファイルを作成し、以下の内容を記述してください

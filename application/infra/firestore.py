@@ -1,4 +1,3 @@
-
 import os
 import firebase_admin
 from dotenv import load_dotenv

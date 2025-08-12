@@ -2,7 +2,6 @@ import google.generativeai as genai
 from services.utils import relative_date_tool
 from agent.natural_language_processor import NaturalLanguageProcessor
 import json
-import os
 import logging
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import Tool, initialize_agent, AgentType
@@ -23,7 +22,13 @@ class SupporterInfo(BaseModel):
 
 
 class GeminiAgent:
-    def __init__(self, api_key: str, model_name: str = 'gemini-1.5-flash', google_cse_id: str = None, relative_date_tool_arg=None):
+    def __init__(
+        self,
+        api_key: str,
+        model_name: str = "gemini-1.5-flash",
+        google_cse_id: str = None,
+        relative_date_tool_arg=None,
+    ):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)
         if relative_date_tool_arg is not None:
@@ -47,7 +52,7 @@ class GeminiAgent:
             Tool(
                 name="Google Search",
                 func=search.run,
-                description="useful for when you need to answer questions about current events or find up-to-date information on services, resources, or specific topics related to social work and client support."
+                description="useful for when you need to answer questions about current events or find up-to-date information on services, resources, or specific topics related to social work and client support.",
             )
         ]
         self.support_plan_creation_agent = initialize_agent(
@@ -175,7 +180,12 @@ class GeminiAgent:
             logging.error(f"Support plan generation failed: {e}")
             return f"支援計画の生成中にエラーが発生しました: {e}"
 
-    def analyze(self, text_content: str, assessment_item_name: str, user_assessment_items: dict) -> str:
+    def analyze(
+        self,
+        text_content: str,
+        assessment_item_name: str,
+        user_assessment_items: dict,
+    ) -> str:
         assessment_structure_info = ""
         for category, sub_items in user_assessment_items.items():
             assessment_structure_info += f"- {category}: {', '.join(sub_items)}\n"
@@ -226,7 +236,7 @@ class GeminiAgent:
         ----------------
 
         --- 抽出されたエンティティ情報 ---
-        {', '.join([entity.name for entity in entities])}
+        {", ".join([entity.name for entity in entities])}
         ----------------
 
         --- アセスメントシートの項目 ---
