@@ -9,7 +9,13 @@ from langchain_community.utilities import GoogleSearchAPIWrapper
 
 
 class GeminiAgent:
-    def __init__(self, api_key: str, model_name: str = 'gemini-1.5-flash', google_cse_id: str = None, relative_date_tool_arg=None):
+    def __init__(
+        self,
+        api_key: str,
+        model_name: str = "gemini-1.5-flash",
+        google_cse_id: str = None,
+        relative_date_tool_arg=None,
+    ):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)
         # 相対日付→絶対日付変換toolを注入
@@ -20,8 +26,7 @@ class GeminiAgent:
         self.nlp_processor = NaturalLanguageProcessor()
 
         # LangChainエージェントの初期化
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash", google_api_key=api_key)
+        self.llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
         # Google Custom Search Engineの設定
         if google_cse_id:
@@ -29,18 +34,27 @@ class GeminiAgent:
             os.environ["GOOGLE_API_KEY"] = api_key
 
         # ツールの設定
-        search = GoogleSearchAPIWrapper()
+        search = GoogleSearchAPIWrapper(google_api_key=api_key, google_cse_id=google_cse_id)
         self.tools = [
             Tool(
                 name="Google Search",
                 func=search.run,
-                description="useful for when you need to answer questions about current events or find up-to-date information on services, resources, or specific topics related to social work and client support."
+                description="useful for when you need to answer questions about current events or find up-to-date information on services, resources, or specific topics related to social work and client support.",
             )
         ]
         self.agent = initialize_agent(
-            self.tools, self.llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+            self.tools,
+            self.llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True,
+        )
 
-    def analyze(self, text_content: str, assessment_item_name: str, user_assessment_items: dict) -> str:
+    def analyze(
+        self,
+        text_content: str,
+        assessment_item_name: str,
+        user_assessment_items: dict,
+    ) -> str:
         assessment_structure_info = ""
         for category, sub_items in user_assessment_items.items():
             assessment_structure_info += f"- {category}: {', '.join(sub_items)}\n"
@@ -91,7 +105,7 @@ class GeminiAgent:
         ----------------
 
         --- 抽出されたエンティティ情報 ---
-        {', '.join([entity.name for entity in entities])}
+        {", ".join([entity.name for entity in entities])}
         ----------------
 
         --- アセスメントシートの項目 ---
@@ -118,8 +132,7 @@ class GeminiAgent:
         """
         LangChainエージェントを使用して、アセスメント情報と外部情報に基づいて支援計画を生成する。
         """
-        assessment_text = json.dumps(
-            assessment_data, indent=2, ensure_ascii=False)
+        assessment_text = json.dumps(assessment_data, indent=2, ensure_ascii=False)
 
         prompt = f"""
         あなたは非常に優秀で経験豊富なソーシャルワーカーです。特に金銭の管理を担当しています。
@@ -156,39 +169,6 @@ class GeminiAgent:
             response = self.agent.invoke({"input": prompt}, return_intermediate_steps=True)
             print("--- Agent Intermediate Steps ---")
             print(response)
-            return response['output']
+            return response["output"]
         except Exception as e:
             return f"LangChain Agent実行エラー: {e}"
-
-    def generate_support_plan(self, assessment_data: dict) -> str:
-        """
-        アセスメント情報に基づいて支援計画のたたき台を生成する。
-        """
-        assessment_text = json.dumps(assessment_data, indent=2, ensure_ascii=False)
-
-        prompt = f"""
-        あなたは経験豊富なソーシャルワーカーです。
-        以下のクライアントのアセスメント情報に基づいて、包括的で具体的な支援計画のたたき台を作成してください。
-
-        支援計画には、以下の要素を含めてください。
-        1.  **長期目標**: クライアントが最終的に目指す状態を一言で表現してください。
-        2.  **短期目標**: 長期目標を達成するための、具体的で測定可能な小さなステップ。複数設定してください。
-        3.  **具体的な支援内容**: 各短期目標を達成するために、支援者が行う具体的なアクションや提供するサービス。
-        4.  **留意事項**: 支援を進める上での注意点や、クライアントの強み（ストレングス）を活かす視点。
-
-        --- クライアントのアセスメント情報 ---
-        {assessment_text}
-        ------------------------------------
-
-        上記の情報を基に、プロフェッショナルな視点から、クライアントの自己決定を尊重し、
-        ストレングスを最大限に活用するような支援計画を作成してください。
-        """
-        try:
-            response = self.model.generate_content(prompt)
-            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-                print(f"Gemini Response: {response.candidates[0].content.parts[0].text.strip()}")
-                return response.candidates[0].content.parts[0].text.strip()
-            else:
-                return "（支援計画の生成に失敗しました。）"
-        except Exception as e:
-            return f"Gemini API呼び出しエラー: {e}"

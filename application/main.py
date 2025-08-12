@@ -1,7 +1,13 @@
 from fastapi import FastAPI, HTTPException, Request
 import os
 from infra.firestore import get_firestore_client
-from models.pydantic_models import ActivityReportRequest, Memo, Task, AssessmentMappingRequest, SupportPlanRequest
+from models.pydantic_models import (
+    ActivityReportRequest,
+    Memo,
+    Task,
+    AssessmentMappingRequest,
+    SupportPlanRequest,
+)
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from agent.gemini import GeminiAgent
@@ -69,7 +75,10 @@ async def get_memos(case_name: str):
     memos = [{"id": doc.id, **doc.to_dict()} for doc in docs]
     return {"memos": memos}
 
+
 # --- タスク保存エンドポイント ---
+
+
 @app.post("/tasks/")
 async def create_task(task: Task):
     task_dict = task.dict()
@@ -96,6 +105,7 @@ async def generate_activity_report(req: ActivityReportRequest):
     # Geminiで活動報告書を生成
     def call_gemini():
         return gemini_agent.generate_activity_report(req.case_name, req.memos, req.tasks)
+
     try:
         report = exponential_backoff(call_gemini)
     except Exception as e:
@@ -116,7 +126,10 @@ async def get_assessment_items():
         items = [{"id": doc.id, **doc.to_dict()} for doc in docs]
         return {"assessment_items": items}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"アセスメント項目の取得中にエラーが発生しました: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"アセスメント項目の取得中にエラーが発生しました: {str(e)}",
+        )
 
 
 # --- アセスメントマッピングエンドポイント ---
@@ -129,7 +142,10 @@ async def map_assessment(req: AssessmentMappingRequest):
         mapped_data = gemini_agent.map_to_assessment_items(req.text_content, req.assessment_items)
         return mapped_data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"アセスメントマッピング中にエラーが発生しました: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"アセスメントマッピング中にエラーが発生しました: {str(e)}",
+        )
 
 
 # --- 支援計画生成エンドポイント ---
@@ -142,4 +158,7 @@ async def generate_support_plan(req: SupportPlanRequest):
         plan = gemini_agent.generate_support_plan_with_agent(req.assessment_data)
         return {"plan": plan}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"支援計画の生成中にエラーが発生しました: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"支援計画の生成中にエラーが発生しました: {str(e)}",
+        )
