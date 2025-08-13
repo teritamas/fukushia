@@ -1,0 +1,390 @@
+import { useEffect, useMemo, useState } from 'react';
+import { fetchAdvancedSuggestions, AdvancedSuggestedResource } from '../lib/advancedSuggestions';
+import { db } from '../firebase';
+import { collection, addDoc, deleteDoc, doc, getDocs, query, where, updateDoc, serverTimestamp, DocumentData } from 'firebase/firestore';
+
+interface ResourceUsageDoc {
+  id: string;
+  clientName: string;
+  resourceId: string;
+  serviceName: string;
+  addedAt?: { seconds?: number };
+  addedBy?: string;
+  status?: 'active' | 'ended';
+  notes?: string;
+}
+
+interface ResourceRecord {
+  id?: string;
+  service_name: string;
+  category?: string;
+  description?: string;
+  keywords?: string[];
+  provider?: string;
+  eligibility?: string;
+  application_process?: string;
+  last_verified_at?: number;
+  target_users?: string;
+  location?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  contact_url?: string;
+}
+
+// Minimal nested assessment data structure actually referenced for token extraction
+type AssessmentLeaf = string | Record<string, string>;
+type AssessmentCategory = Record<string, AssessmentLeaf>;
+export interface AssessmentDataShape {
+  assessment?: Record<string, AssessmentCategory>;
+}
+
+interface ClientResourcesProps {
+  clientName: string | null;
+  assessmentData: AssessmentDataShape | null; // latest assessment for suggestions
+}
+
+interface SuggestionEntry {
+  resource: ResourceRecord;
+  score: number;
+  matched: string[]; // matched keywords
+}
+
+const API_BASE = 'http://localhost:8000';
+
+export default function ClientResources({ clientName, assessmentData }: ClientResourcesProps) {
+  const [usages, setUsages] = useState<ResourceUsageDoc[]>([]);
+  const [loadingUsage, setLoadingUsage] = useState(false);
+  const [resources, setResources] = useState<ResourceRecord[]>([]);
+  const [loadingResources, setLoadingResources] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [addingIds, setAddingIds] = useState<Record<string, boolean>>({});
+  const [togglingIds, setTogglingIds] = useState<Record<string, boolean>>({});
+  const [removingIds, setRemovingIds] = useState<Record<string, boolean>>({});
+  // Resource detail modal state
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailData, setDetailData] = useState<ResourceRecord | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || 'default-app-id';
+  const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || 'test-user';
+
+  // Load current usages for client
+  useEffect(()=>{
+    if (!clientName) { setUsages([]); return; }
+    const fetch = async () => {
+      setLoadingUsage(true); setError(null);
+      try {
+        const ref = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources`);
+        const q = query(ref, where('clientName','==', clientName));
+        const snap = await getDocs(q);
+        const list: ResourceUsageDoc[] = snap.docs.map(d=> {
+          const data = d.data() as DocumentData;
+          return {
+            id: d.id,
+            clientName: data.clientName as string,
+            resourceId: data.resourceId as string,
+            serviceName: data.serviceName as string,
+            addedAt: data.addedAt,
+            addedBy: data.addedBy,
+            status: data.status,
+            notes: data.notes,
+          };
+        });
+        // sort active first then addedAt desc
+        list.sort((a,b)=>{
+          const sa = a.status === 'active' ? 0 : 1;
+          const sb = b.status === 'active' ? 0 : 1;
+          if (sa !== sb) return sa - sb;
+          return (b.addedAt?.seconds||0) - (a.addedAt?.seconds||0);
+        });
+        setUsages(list);
+      } catch(e: unknown) { setError(e instanceof Error ? e.message : '利用中資源の取得に失敗'); }
+      finally { setLoadingUsage(false);} };
+    fetch();
+  }, [clientName, APP_ID, USER_ID]);
+
+  // Load all resources (could optimize later with server-side suggestion endpoint)
+  useEffect(()=>{
+    const fetchRes = async ()=> {
+      setLoadingResources(true); setError(null);
+      try {
+        const res = await fetch(`${API_BASE}/resources/`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.detail || '社会資源一覧取得失敗');
+        setResources(data as ResourceRecord[]);
+      } catch(e: unknown) { setError(e instanceof Error ? e.message : '社会資源一覧取得失敗'); }
+      finally { setLoadingResources(false); }
+    };
+    fetchRes();
+  }, []);
+
+  const existingIds = useMemo(()=> new Set(usages.map(u=>u.resourceId)), [usages]);
+
+  // Extract tokens from assessment for naive suggestion
+  const assessmentTokens = useMemo(()=>{
+    if (!assessmentData) return new Set<string>();
+    const texts: string[] = [];
+    try {
+      // Flatten assessmentData (form -> category -> value|subObject)
+      Object.values(assessmentData.assessment || {}).forEach((categories)=>{
+        Object.values(categories || {}).forEach((val)=>{
+          if (typeof val === 'string') texts.push(val);
+          else if (val && typeof val === 'object' && !Array.isArray(val)) {
+            Object.values(val).forEach((sub)=>{ if (typeof sub === 'string') texts.push(sub); });
+          }
+        });
+      });
+    } catch { /* ignore */ }
+    const joined = texts.join(' ');
+    const raw = joined.split(/[\s、。,.；;:\n\r\t/()「」『』【】\[\]{}]+/);
+    const toks = raw.map(t=>t.trim().toLowerCase()).filter(t=> t.length>1 && t.length <= 20);
+    return new Set(toks);
+  }, [assessmentData]);
+
+  const suggestions: SuggestionEntry[] = useMemo(()=>{
+    if (!assessmentData || resources.length === 0) return [];
+    const result: SuggestionEntry[] = [];
+    resources.forEach(r=>{
+      if (!r.id) return;
+      if (existingIds.has(r.id)) return; // skip already used
+      const rKeywords = (r.keywords || []).map(k=>k.toLowerCase());
+      const matched = rKeywords.filter(k=> assessmentTokens.has(k));
+      // also try simple includes from service_name/category
+      const serviceTokens = (r.service_name + ' ' + (r.category||'')).split(/[\s/]+/).map(s=>s.toLowerCase());
+      serviceTokens.forEach(st=>{ if (assessmentTokens.has(st) && !matched.includes(st)) matched.push(st); });
+      if (matched.length === 0) return;
+      const score = matched.length * 3 + (r.last_verified_at ? 1 : 0);
+      result.push({ resource: r, score, matched });
+    });
+    // sort by score desc then verified desc
+    result.sort((a,b)=>{ if (b.score !== a.score) return b.score - a.score; return (b.resource.last_verified_at||0)-(a.resource.last_verified_at||0); });
+    return result.slice(0, 8);
+  }, [assessmentData, resources, existingIds, assessmentTokens]);
+
+  // Advanced suggestions (LLM + embeddings) – fallback to naive if fails
+  const [adv, setAdv] = useState<AdvancedSuggestedResource[] | null>(null);
+  const [advLoading, setAdvLoading] = useState(false);
+  useEffect(()=>{
+    let cancelled = false;
+    if (!assessmentData || !clientName) { setAdv(null); return; }
+    setAdvLoading(true);
+    fetchAdvancedSuggestions(assessmentData).then(r=>{
+      if (cancelled) return;
+      if (r && r.resources) setAdv(r.resources);
+    }).finally(()=>{ if (!cancelled) setAdvLoading(false); });
+    return ()=>{ cancelled = true; };
+  }, [assessmentData, clientName]);
+
+  const addUsage = async (res: ResourceRecord) => {
+    if (!clientName || !res.id) return;
+    setAddingIds(prev=>({...prev, [res.id!]: true}));
+    try {
+      const ref = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources`);
+      await addDoc(ref, { clientName, resourceId: res.id, serviceName: res.service_name, status: 'active', addedAt: serverTimestamp(), addedBy: USER_ID });
+      // refresh usages list
+      const qRef = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources`);
+      const qSnap = await getDocs(query(qRef, where('clientName','==', clientName)));
+      const list: ResourceUsageDoc[] = qSnap.docs.map(d=> {
+        const data = d.data() as DocumentData;
+        return {
+          id: d.id,
+            clientName: data.clientName as string,
+            resourceId: data.resourceId as string,
+            serviceName: data.serviceName as string,
+            addedAt: data.addedAt,
+            addedBy: data.addedBy,
+            status: data.status,
+            notes: data.notes,
+        };
+      });
+      list.sort((a,b)=>{ const sa = a.status==='active'?0:1; const sb = b.status==='active'?0:1; if (sa!==sb) return sa-sb; return (b.addedAt?.seconds||0)-(a.addedAt?.seconds||0); });
+      setUsages(list);
+    } catch(e: unknown) { setError(e instanceof Error ? e.message : '追加失敗'); }
+    finally { setAddingIds(prev=>({...prev, [res.id!]: false})); }
+  };
+
+  const openDetail = async (resourceId: string) => {
+    setDetailId(resourceId);
+    setDetailError(null);
+    // Try from already loaded list first
+    const cached = resources.find(r => r.id === resourceId);
+    if (cached && (cached.description || cached.category)) {
+      setDetailData(cached);
+    } else {
+      setDetailData(null);
+    }
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/resources/${resourceId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || '詳細取得に失敗しました');
+      setDetailData(data as ResourceRecord);
+    } catch (e: unknown) {
+      setDetailError(e instanceof Error ? e.message : '詳細取得に失敗しました');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => { setDetailId(null); setDetailData(null); setDetailLoading(false); setDetailError(null); };
+
+  const toggleStatus = async (u: ResourceUsageDoc) => {
+    setTogglingIds(prev=>({...prev, [u.id]: true}));
+    try {
+      const ref = doc(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`);
+      const newStatus = u.status === 'active' ? 'ended' : 'active';
+      await updateDoc(ref, { status: newStatus });
+      setUsages(prev=> prev.map(p=> p.id === u.id ? { ...p, status: newStatus } : p));
+    } catch(e: unknown) { setError(e instanceof Error ? e.message : '状態更新失敗'); }
+    finally { setTogglingIds(prev=>({...prev, [u.id]: false})); }
+  };
+
+  const removeUsage = async (u: ResourceUsageDoc) => {
+    if (!confirm('利用中リストから削除しますか？')) return;
+    setRemovingIds(prev=>({...prev, [u.id]: true}));
+    try {
+      await deleteDoc(doc(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`));
+      setUsages(prev=> prev.filter(p=> p.id !== u.id));
+    } catch(e: unknown) { setError(e instanceof Error ? e.message : '削除失敗'); }
+    finally { setRemovingIds(prev=>({...prev, [u.id]: false})); }
+  };
+
+  return (
+    <div className="bg-sky-50 border-l-4 border-sky-400 rounded-xl shadow p-4 space-y-5">
+      <h3 className="font-bold text-sky-700 mb-2">社会資源・制度の提案と利用状況</h3>
+      {error && <div className="text-xs text-red-600">{error}</div>}
+      {!clientName && <p className="text-xs text-gray-500">支援対象者を選択してください。</p>}
+      {clientName && (
+        <>
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">利用中の社会資源・制度 {loadingUsage && <span className="text-[10px] text-gray-400">読込中...</span>}</h4>
+            {usages.length === 0 && !loadingUsage && <p className="text-xs text-gray-500">まだ登録されていません。</p>}
+            <ul className="flex flex-col gap-2">
+              {usages.map(u=> (
+                <li key={u.id} className="bg-white border rounded p-2 flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+                  <div className="flex-1 flex items-center gap-2">
+                    <button onClick={()=> openDetail(u.resourceId)} className="font-semibold mr-1 underline decoration-dotted hover:text-sky-700 text-left">
+                      {u.serviceName}
+                    </button>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] text-white ${u.status==='active' ? 'bg-emerald-600' : 'bg-gray-500'}`}>{u.status==='active' ? '利用中' : '終了'}</span>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={()=>toggleStatus(u)} disabled={togglingIds[u.id]} className="px-2 py-0.5 rounded border bg-white hover:bg-gray-50 disabled:opacity-40">{u.status==='active' ? '終了' : '再開'}</button>
+                    <button onClick={()=>removeUsage(u)} disabled={removingIds[u.id]} className="px-2 py-0.5 rounded border border-red-300 bg-white text-red-600 hover:bg-red-50 disabled:opacity-40">削除</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {assessmentData ? (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">利用できる社会資源・制度の提案 {loadingResources && <span className="text-[10px] text-gray-400">資源読込中...</span>} {advLoading && <span className="text-[10px] text-indigo-500">AI解析中...</span>}</h4>
+              {adv && adv.length === 0 && suggestions.length === 0 && !advLoading && <p className="text-[11px] text-gray-500">該当する提案はありません。</p>}
+              <ul className="space-y-2">
+                {adv && adv.length>0 && adv.map(a => {
+                  const already = existingIds.has(a.resource_id);
+                  const r = resources.find(r=> r.id === a.resource_id);
+                  return (
+                    <li key={a.resource_id} className="bg-white border rounded p-3 text-xs flex flex-col gap-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <button onClick={()=>openDetail(a.resource_id)} className="font-semibold leading-snug break-words text-left underline decoration-dotted hover:text-sky-700">
+                          {a.service_name}<span className="ml-1 text-[10px] text-indigo-600">AI</span>
+                        </button>
+                        {!already && r && <button onClick={()=>addUsage(r)} disabled={addingIds[a.resource_id]} className="text-[11px] px-2 py-0.5 rounded bg-blue-600 text-white disabled:bg-blue-300">追加</button>}
+                        {already && <span className="text-[10px] text-gray-400">登録済</span>}
+                      </div>
+                      <div className="text-[11px] text-gray-600 line-clamp-2">{a.excerpt}</div>
+                      <div className="text-[10px] text-gray-500">一致:{a.matched_keywords.slice(0,5).join(', ')}</div>
+                      <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                        <span>スコア:{a.score}</span>
+                        <div className="relative group inline-flex items-center">
+                          <span
+                            className="inline-flex items-center justify-center w-3 h-3 text-[9px] font-semibold text-white bg-gray-500 rounded-full cursor-help hover:bg-gray-600 transition"
+                          >?</span>
+                          <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 absolute left-1/2 -translate-x-1/2 top-full mt-1 w-60 max-w-xs z-20">
+                            <div className="relative bg-gray-900 text-white text-[10px] leading-snug rounded-lg shadow-lg p-2 space-y-1">
+                              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-gray-900"></div>
+                              <p className="font-semibold text-[10px] tracking-wide">スコア算出ロジック</p>
+                              <p><span className="font-mono">0.7×AI類似度</span> + <span className="font-mono">0.3×キーワード一致数</span></p>
+                              <p className="opacity-80">AI類似度: 要約/原文埋め込みと資源埋め込みのコサイン (0～1)</p>
+                              <p className="opacity-80">キーワード一致数: 資源 keywords と要約トークンの重複数 (最大12)</p>
+                              <p className="opacity-70">同点時はキーワード一致数が多い方を優先表示。</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+                {(!adv || adv.length===0) && suggestions.map(s => (
+                  <li key={s.resource.id} className="bg-white border rounded p-3 text-xs flex flex-col gap-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <button onClick={()=> s.resource.id && openDetail(s.resource.id)} className="font-semibold leading-snug break-words text-left underline decoration-dotted hover:text-sky-700">
+                        {s.resource.service_name}
+                      </button>
+                      <button onClick={()=>addUsage(s.resource)} disabled={addingIds[s.resource.id!]} className="text-[11px] px-2 py-0.5 rounded bg-blue-600 text-white disabled:bg-blue-300">追加</button>
+                    </div>
+                    <div className="text-[11px] text-gray-600 line-clamp-2">{s.resource.description}</div>
+                    <div className="text-[10px] text-gray-500">キーワード:{s.matched.slice(0,5).join(', ')}{s.matched.length>5 && '…'}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">利用できる社会資源・制度の提案</h4>
+              <p className="text-[11px] text-gray-500">最新アセスメントが保存されていないため提案は表示されません。まずアセスメントを作成してください。</p>
+            </div>
+          )}
+        </>
+      )}
+      {detailId && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center p-4 sm:p-8">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeDetail}></div>
+          <div className="relative z-10 w-full max-w-lg bg-white rounded-lg shadow-xl border border-gray-200 p-5 overflow-y-auto max-h-full space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-sky-700 text-sm">社会資源・制度詳細</h4>
+              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700 text-sm">×</button>
+            </div>
+            {detailLoading && <p className="text-gray-500">読込中...</p>}
+            {detailError && <p className="text-red-600">{detailError}</p>}
+            {!detailLoading && !detailError && detailData && (
+              <div className="space-y-2">
+                <div>
+                  <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">名称</div>
+                  <div className="text-sm font-semibold">{detailData.service_name}</div>
+                </div>
+                {detailData.category && <div><span className="font-semibold text-gray-600 mr-1">分類:</span><span>{detailData.category}</span></div>}
+                {detailData.target_users && <div><span className="font-semibold text-gray-600 mr-1">対象:</span><span>{detailData.target_users}</span></div>}
+                {detailData.description && <div><span className="font-semibold text-gray-600 mr-1">概要:</span><span className="whitespace-pre-wrap break-words">{detailData.description}</span></div>}
+                {detailData.eligibility && <div><span className="font-semibold text-gray-600 mr-1">要件:</span><span className="whitespace-pre-wrap break-words">{detailData.eligibility}</span></div>}
+                {detailData.application_process && <div><span className="font-semibold text-gray-600 mr-1">手続:</span><span className="whitespace-pre-wrap break-words">{detailData.application_process}</span></div>}
+                {detailData.provider && <div><span className="font-semibold text-gray-600 mr-1">提供主体:</span><span>{detailData.provider}</span></div>}
+                {detailData.location && <div><span className="font-semibold text-gray-600 mr-1">地域/所在地:</span><span>{detailData.location}</span></div>}
+                {(detailData.contact_phone || detailData.contact_email || detailData.contact_url) && (
+                  <div className="space-y-1">
+                    <div className="font-semibold text-gray-600">連絡先</div>
+                    {detailData.contact_phone && <div>電話: {detailData.contact_phone}</div>}
+                    {detailData.contact_email && <div>メール: {detailData.contact_email}</div>}
+                    {detailData.contact_url && <div className="truncate">URL: <a href={detailData.contact_url} target="_blank" className="text-sky-600 underline break-all">{detailData.contact_url}</a></div>}
+                  </div>
+                )}
+                {detailData.keywords && detailData.keywords.length>0 && (
+                  <div>
+                    <span className="font-semibold text-gray-600 mr-1">キーワード:</span>
+                    <span className="flex flex-wrap gap-1">{detailData.keywords.slice(0,30).map((k:string)=> <span key={k} className="px-1 py-0.5 bg-sky-100 text-sky-700 rounded text-[10px]">{k}</span>)}</span>
+                  </div>
+                )}
+                {detailData.last_verified_at && <div className="text-[10px] text-gray-400">最終確認: {new Date(detailData.last_verified_at*1000).toLocaleDateString()}</div>}
+              </div>
+            )}
+            <div className="pt-1 flex justify-end">
+              <button onClick={closeDetail} className="px-3 py-1 text-[11px] rounded bg-sky-600 text-white hover:bg-sky-700">閉じる</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

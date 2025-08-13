@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, addDoc, Timestamp } from "firebase/firestore";
 import ReportGenerator from "./ReportGenerator";
+import ClientResources from "./ClientResources";
 
 interface ClientDetailProps { selectedClient: string; }
 export default function ClientDetail({ selectedClient }: ClientDetailProps) {
@@ -361,7 +362,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         )}
       </div>
       {/* 右カラム: AI提案・情報整理 */}
-      <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
+  <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
         <div className="bg-purple-50 border-l-4 border-purple-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-purple-700 mb-2">
             活動報告書・支払い報告書生成
@@ -384,7 +385,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
             }))}
           />
         </div>
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
+  <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-yellow-700 mb-2">
             アセスメントと支援計画
           </h3>
@@ -470,7 +471,8 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
               )}
             </>
           )}
-        </div>
+  </div>
+  <ClientResources clientName={selectedClient || null} assessmentData={assessmentPlan} />
       </div>
     </div>
   );
