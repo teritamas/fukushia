@@ -1,60 +1,20 @@
 import google.generativeai as genai
-from services.utils import relative_date_tool
 from agent.natural_language_processor import NaturalLanguageProcessor
 import json
 import logging
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain.prompts import PromptTemplate
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.agents import Tool, tool
+from langchain.agents import create_react_agent, AgentExecutor, Tool
+from langchain.tools.render import render_text_description
 from langchain_google_community import GoogleSearchAPIWrapper
-from pydantic.v1 import BaseModel, Field
+from langchain.prompts import PromptTemplate
+
+from .prompts.planner import PLANNER_PROMPT
+from .tools.support_planner_tools import (
+    search_local_resources,
+)
 
 # loggingの設定
-logging.basicConfig(level=logging.INFO)
-
-# 事前に用意した社会資源データ（JSONファイルから読み込む）
-try:
-    # スクリプトの場所からの相対パスで指定
-    with open("../application/data/local_resources.json", "r", encoding="utf-8") as f:
-        local_resources = json.load(f)
-except FileNotFoundError:
-    local_resources = []
-    logging.warning("local_resources.jsonが見つかりません。ローカル検索ツールは機能しません。")
-
-@tool
-def search_local_resources(query: str) -> str:
-    """
-    提供されたクエリに基づいて、地域の社会資源データを検索するツール。
-    まずはこのツールを優先的に使用して、地域に根ざしたサービスを探してください。
-    クエリは、具体的な困りごとや支援の種類（例：「就労支援」「金銭管理」「住居支援」）を指定してください。
-    """
-    results = []
-    query_keywords = query.split()
-    for resource in local_resources:
-        # クエリの各キーワードが、カテゴリ、説明、サービス名のいずれかに含まれているかチェック
-        if any(keyword in resource.get("category", "") or 
-               keyword in resource.get("description", "") or 
-               keyword in resource.get("service_name", "") 
-               for keyword in query_keywords):
-            results.append(
-                f"サービス名: {resource.get('service_name', 'N/A')}\n"
-                f"カテゴリ: {resource.get('category', 'N/A')}\n"
-                f"概要: {resource.get('description', 'N/A')}\n"
-                f"連絡先: {resource.get('contact_info', 'N/A')}\n"
-            )
-    return "\n---\n".join(results) if results else "該当する地域の社会資源は見つかりませんでした。より広範な情報を得るためにGoogle Searchツールを試してください。"
-
-
-# 1. 支援者情報抽出エージェントが生成するJSONの型を定義
-class SupporterInfo(BaseModel):
-    name: str = Field(description="氏名")
-    age: int = Field(description="年齢")
-    concerns: str = Field(description="困りごと")
-    judgment_ability: str = Field(description="判断能力")
-    service_usage_status: str = Field(description="福祉サービスの利用状況")
-
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class GeminiAgent:
     def __init__(
@@ -62,313 +22,132 @@ class GeminiAgent:
         api_key: str,
         model_name: str = "gemini-1.5-flash",
         google_cse_id: str = None,
-        relative_date_tool_arg=None,
     ):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)
-        if relative_date_tool_arg is not None:
-            self.relative_date_tool = relative_date_tool_arg
-        else:
-            self.relative_date_tool = relative_date_tool
         self.nlp_processor = NaturalLanguageProcessor()
+        self.google_cse_id = google_cse_id
 
         # --- エージェントの定義 ---
+        # NOTE: convert_system_message_to_human parameter removed in newer langchain-google-genai versions
+        # Remove to avoid: 'ChatGoogleGenerativeAI' object has no attribute 'convert_system_message_to_human'
+        # ライブラリのバージョン不整合対策: _prepare_request が convert_system_message_to_human を参照するが
+        # モデル定義からフィールドが削除されている場合があるため、クラスに擬似フィールドを追加して解消
+        if not hasattr(ChatGoogleGenerativeAI, "convert_system_message_to_human"):
+            logging.warning("Monkeypatch: Adding missing attribute 'convert_system_message_to_human' to ChatGoogleGenerativeAI class (False).")
+            ChatGoogleGenerativeAI.convert_system_message_to_human = False  # class attribute
+
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash", google_api_key=api_key)
+            model="gemini-1.5-flash",
+            google_api_key=api_key,
+        )
 
-        # 1. 支援者情報抽出エージェント (ツール不要、JSON出力に特化)
-        self.information_extraction_agent = self.llm.with_structured_output(
-            SupporterInfo)
+        # --- Robust Google Search Tool (safe wrapper) ---
+        search_api = GoogleSearchAPIWrapper(google_api_key=api_key, google_cse_id=google_cse_id)
 
-        # 2. 支援計画立案エージェント (2つのツールを利用)
-        # Tool 1: Google Search
-        google_search = GoogleSearchAPIWrapper(
-            google_api_key=api_key, google_cse_id=google_cse_id)
+        def safe_google_search(query: str) -> str:
+            """トップ検索結果を安全に取得し構造化テキストで返す。失敗時もNoneを返さず必ず説明文を返す。"""
+            logging.info(f"【Tool】Executing safe_google_search with query: {query}")
+            try:
+                # 2025/令和7年度など最新年度情報を意図したクエリ強化: 年度指定が無く制度/給付系キーワードなら 2025 を付加
+                if not any(y in query for y in ["2025", "令和7", "R7"]) and any(k in query for k in ["制度", "給付", "補助", "支援", "助成", "要件", "対象"]):
+                    query += " 2025"
+                    logging.info(f"【Tool】Augmented google query with year -> {query}")
+                results = search_api.results(query, num_results=5)
+                if not results:
+                    return "Google検索結果は0件でした。クエリを具体化してください。"
+                formatted = []
+                for r in results:
+                    formatted.append(
+                        "タイトル: {title}\nリンク: {link}\nスニペット: {snippet}".format(
+                            title=r.get("title", "N/A"),
+                            link=r.get("link", "N/A"),
+                            snippet=r.get("snippet", "N/A"),
+                        )
+                    )
+                return "\n---\n".join(formatted)
+            except Exception as e:
+                logging.error(f"Google検索中に例外: {e}", exc_info=True)
+                return f"Google検索でエラーが発生しました（再試行/別クエリを検討）: {e}"
+
         google_search_tool = Tool(
-                name="Google Search",
-                func=google_search.run,
-                description="制度改正や新しいサービスなど、最新情報や広範な情報を検索する場合に利用します。search_local_resourcesツールで情報が見つからなかった場合にも有効です。",
-            )
-        
-        # Tool 2: Local Resources Search
-        local_search_tool = search_local_resources
+            name="google_search",
+            func=safe_google_search,
+            description="Google検索を実行し最新の制度・サービス情報を取得する。ローカル検索で不足した場合に使用する。出力はタイトル/リンク/スニペットの一覧。",
+        )
 
-        tools = [local_search_tool, google_search_tool]
+        tools = [
+            search_local_resources,
+            google_search_tool,
+        ]
 
         # ReActプロンプトテンプレートの作成
-        template = """
-        Answer the following questions as best you can. You have access to the following tools:
+        # `partial` を使って、プロンプト内で毎回変わらない部分（tools, tool_names）を先に埋める
+        prompt = PromptTemplate.from_template(PLANNER_PROMPT).partial(
+            tools=render_text_description(tools),
+            tool_names=", ".join([t.name for t in tools]),
+        )
 
-        {tools}
-
-        Use the following format:
-
-        Question: the input question you must answer
-        Thought: you should always think about what to do
-        Action: the action to take, should be one of [{tool_names}]
-        Action Input: the input to the action
-        Observation: the result of the action
-        ... (this Thought/Action/Action Input/Observation can repeat N times)
-        Thought: I now know the final answer
-        Final Answer: the final answer to the original input question
-
-        Begin!
-
-        Question: {input}
-        Thought:{agent_scratchpad}
-        """
-
-        prompt = PromptTemplate.from_template(template)
-
+        # エージェントの作成
         agent = create_react_agent(self.llm, tools, prompt)
-        self.support_plan_creation_agent = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
-
-    def _extract_supporter_information(self, assessment_text: str) -> dict:
-        """
-        支援者情報抽出エージェントを実行する
-        """
-        prompt = f"""
-        以下の支援者アセスメント情報から、困りごと、判断能力、福祉サービスの利用状況を抽出し、JSON形式で出力してください。
-        必ず、与えられた情報から情報を抽出してください。
-        与えられた情報から判定できない場合は、該当項目を「不明」としてください。
-
-        --- 支援者アセスメント情報 ---
-        {assessment_text}
-        -----------------------------
-        """
-        try:
-            logging.info("--- Running Information Extraction Agent ---")
-            structured_data = self.information_extraction_agent.invoke(prompt)
-            logging.info(
-                f"--- Extracted Information: {structured_data.dict()} ---")
-            # todo この部分をDBから取得するようにする
-            return {
-            "住居形態": "該当なし",
-            "住民票": "該当なし",
-            "同居状況": "該当なし",
-            "性別": "男性",
-            "氏名": "佐藤健",
-            "現住所": "山形県南陽市",
-            "生年月日": "1950年10月10日",
-            "電話番号": "該当なし",
-            **structured_data.dict()
-            }
-        
-        except Exception as e:
-            logging.error(f"Information Extraction Agent execution error: {e}")
-            raise
-
-    def _create_support_plan(self, assessment_data, supporter_info: dict, guidelines: str) -> str:
-        """
-        支援計画立案エージェントを実行する
-        """
-        supporter_info_text = json.dumps(
-            supporter_info, indent=2, ensure_ascii=False)
-
-        # todo 所属は設定で変えられるようにする。
-        prompt = f"""
-        あなたは南陽市社会福祉協議会に所属している、非常に優秀で経験豊富なケースワーカーです。あなたの役割は、相談者の問題解決を支援し、利用可能な公的制度や福祉サービスへ繋げることです。以下の情報に基づき、最高の支援計画を作成してください。
-
-        **思考プロセス:**
-        1.  **相談者情報の熟読**: 相談者の氏名、年齢、住所、現在の「困りごと」、サービスの利用状況を正確に把握します。特に「住所」と「困りごと」が重要です。
-        2.  **課題の分析と特定**: 「困りごと」（例：「仕事がなく収入が不安定」「金銭管理ができない」）から、解決すべき具体的な課題を明確にします。
-        3.  **ツールの選択と検索クエリの生成**:
-            *   **まず`search_local_resources`ツールを使うことを検討します。** 相談者の居住地（例：南陽市）に特化した社会資源を探すため、困りごとを直接的なクエリ（例：「就労支援」「生活困窮」）として検索します。
-            *   `search_local_resources`で十分な情報が得られない場合や、より広範な情報（制度改正、隣接地域のサービスなど）が必要な場合に、`Google Search`ツールを使います。その際は、地名と課題を組み合わせた具体的なクエリ（例：「南陽市 生活困窮者自立支援制度」）を生成します。
-            *   必要に応じて、両方のツールを複数回使用し、情報を徹底的に収集します。
-        4.  **所属組織の役割の考慮**: あなたは「南陽市社会福祉協議会」の職員です。もし提案する支援機関として「南陽市社会福祉協議会」が挙がった場合は、そこで思考を止めず、社会福祉協議会が提供する**具体的な事業名（例：生活福祉資金貸付制度、法人後見事業、心配ごと相談事業など）**を特定し、提案に含めてください。どの事業が利用可能か判断するために、必要であればツールを使って社会福祉協議会の事業内容を調査してください。
-        5.  **情報の整理と分析**: 収集した情報から、以下の点を整理します。
-            -   **制度/サービス/機関の固有名詞**: `「ハローワーク長井」` `「南陽市社会福祉協議会 生活福祉資金貸付制度」` `「南陽市役所 福祉課」`など。
-            -   **具体的な支援内容**: 何をしてくれるのか。
-            -   **利用条件・手続き**: 対象者、料金、申請方法、必要書類など。
-            -   **連絡先、所在地、URL**: 電話番号、住所、公式サイトのURL。
-        6.  **支援の選定と理由の明確化**: 収集した情報を基に、「提案する支援」と「検討したが不採用とした支援」に分類します。それぞれの「選定理由」「不採用理由」を明確に言語化します。
-        7.  **支援計画の具体化**: 分析した情報に基づき、支援計画の「具体的な支援内容」を記述します。**抽象的な表現（「関係機関と連携する」など）は絶対に使わず**、固有名詞と具体的なアクションを記述します。
-            -   良い例：`「ハローワーク長井に来所予約の電話をし、初回相談に同行する。生活福祉資金の申請も視野に入れ、南陽市社会福祉協議会に相談の予約を入れ、生活福祉資金貸付制度の利用について相談する。」`
-            -   悪い例：`「就労支援サービスの情報提供を行う。」`
-        8.  **対象可否の判断**: ガイドラインと相談者の状況を照らし合わせ、事業の対象となるか判断し、理由を記述します。
-        9.  **最終出力の生成**: 全ての情報を指定されたJSON形式にまとめます。**【要確認タスク】は、検索しても情報が不足した場合の最終手段**とし、安易に使用しません。
-        10. **出力の確認**: 出力内容がガイドラインに沿っているか、固有名詞や具体的なアクションが含まれているかを再確認します。
-
-        **最重要指示:**
-        - **ツールの優先順位**: まず`search_local_resources`を試し、それで不十分な場合に`Google Search`を使用してください。
-        - **固有名詞の徹底**: 提案する制度や機関は、必ず探し出した**固有名詞（ハローワーク長井、南陽市社会福祉協議会 生活福祉資金貸付制度など）**を記載してください。
-        - **具体的アクション**: 「情報提供」「連携」で終わらせず、「電話する」「同行する」「申請を支援する」など、具体的なアクションを記述してください。
-        - **JSON形式の厳守**: **最終的な回答は、以下のJSON形式の文字列のみを出力してください。**前後に説明文などをつけないでください。
-
-        **タスク:**
-        1.  **支援計画の作成**: 相談者の具体的な困りごとに対応する形で、公的制度や福祉サービス利用に繋げるための具体的な支援計画を提案してください。
-
-        **出力JSON形式:**
-        ```json
-        {{
-          "支援計画": {{
-            "判断軸": "（例：本人の意思を尊重し、経済的自立と地域での安定した生活の確立を最優先とする）",
-            "支援計画の根拠": "（例：失職により収入が途絶え、家賃の支払いに窮している状況。本人の就労意欲は高いが、心身の不調も見られるため、生活再建と健康回復を並行して支援する必要があると判断した。）",
-            "目標": "（例：安定した収入の確保と生活基盤の再建）",
-            "具体的な支援内容": [
-              {{
-                "支援項目": "（例：就労による収入確保）",
-                "サービス内容": "（例：調査結果に基づき、ハローワーク長井へ同行し、求職登録と職業相談を行う。同時に、南陽市シルバー人材センターに登録し、短期的な仕事を探す。）",
-                "実施期間": "（例：契約締結後1ヶ月以内）",
-                "担当": "（例：ケースワーカー）"
-              }},
-              {{
-                "支援項目": "（例：当面の生活維持）",
-                "サービス内容": "（例：調査結果に基づき、南陽市社会福祉協議会に同行し、生活福祉資金（緊急小口資金）の申請手続きを支援する。）",
-                "実施期間": "（例：契約締結後速やかに）",
-                "担当": "（例：ケースワーカー）"
-              }}
-            ],
-            "備考": "（【要確認タスク】緊急小口資金の申請に必要な住民票の取得方法を本人に確認する。など、どうしても確認が必要な事項のみ記述）"
-          }},
-          "調査結果": {{
-            "採用したサービス": [
-              {{
-                "サービス名": "（例：ハローワーク長井）",
-                "概要": "（例：公共職業安定所。求人情報の提供、職業相談、紹介状の発行など）",
-                "選定理由": "（例：本人の就労意欲が高く、多様な求人情報へのアクセスが不可欠なため。専門の相談員による個別支援が期待できる。）",
-                "所在地": "（例：山形県長井市ままの上7-8）",
-                "連絡先": "（例：0238-84-2131）",
-                "URL": "（例：https://jsite.mhlw.go.jp/yamagata-hellowork/list/nagai.html）"
-              }}
-            ],
-            "検討したが不採用としたサービス": [
-              {{
-                "サービス名": "（例：株式会社〇〇（民間の有料職業紹介所））",
-                "概要": "（例：IT専門職に特化した転職エージェント）",
-                "不採用理由": "（例：本人の職務経験や希望と合致しないため。また、利用料金が発生する点も、現在の経済状況では負担が大きいと判断した。）",
-                "所在地": "（例：東京都千代田区丸の内1-1-1）",
-                "連絡先": "（例：03-1234-5678）",
-                "URL": "（例：https://example.com）"
-              }}
-            ]
-          }}
-        }}
-        ```
-        --- 支援者基本情報 ---
-        {supporter_info_text}
-        --------------------
-        --- 支援者アセスメント情報 ---
-        {assessment_data}
-        --------------------
-        --- 福祉サービス利用援助事業のガイドライン ---
-        {guidelines}
-        -------------------------------------------
-        """
-        try:
-            logging.info("--- Running Support Plan Creation Agent ---")
-            response = self.support_plan_creation_agent.invoke(
-                {"input": prompt})
-            return response['output']
-        except Exception as e:
-            logging.error(f"Support Plan Creation Agent execution error: {e}")
-            raise
+        self.planner_agent = AgentExecutor(
+            agent=agent,
+            tools=tools,
+            verbose=True,
+            handle_parsing_errors=True,
+            max_iterations=10, # 無限ループを防ぐ
+        )
 
     def generate_support_plan_with_agent(self, assessment_data: dict) -> str:
         """
-        2つのエージェントを連携させ、支援計画を生成する。
+        プランナーエージェントを呼び出し、支援計画を生成する。
         """
-        # TODO: 将来的には、このガイドラインは外部ファイルやデータベースから読み込むようにする
-        guidelines = """
-        **福祉サービス利用援助事業 ガイドライン（サンプル）**
-        - **対象者**: 本事業の対象者は、判断能力が不十分な者（認知症高齢者、知的障害者、精神障害者等）であって、福祉サービスの利用に関する適切な判断が困難な者とする。
-        - **支援内容**: 福祉サービスの利用援助、それに伴う金銭管理、書類等の預かりサービス。
-        - **対象外**: 判断能力に問題がないと判断される者、資産管理や身上監護のみを目的とする者。
-        """
-
         try:
-            assessment_text = json.dumps(
-                assessment_data, indent=2, ensure_ascii=False)
+            logging.info("--- Invoking Planner Agent ---")
+            # supporter_info を明示的に抽出 / 供給
+            supporter_info = assessment_data.get("supporter_info")
 
-            # 1. 支援者情報抽出エージェントを実行
-            supporter_info = self._extract_supporter_information(
-                assessment_text)
+            # 簡易フォールバック抽出: assessment_data['assessment'] の構造から主要フィールドを拾う
+            if supporter_info is None:
+                supporter_info = {}
+                a = assessment_data.get("assessment") or {}
+                try:
+                    form1 = a.get('様式1：インテークシート', {})
+                    personal = form1.get('本人情報', {}) if isinstance(form1, dict) else {}
+                    consult = form1.get('相談内容', {}) if isinstance(form1, dict) else {}
+                    supporter_info.update({
+                        "name": personal.get('氏名') or personal.get('名前'),
+                        "address": personal.get('現住所') or personal.get('住所'),
+                    })
+                    # concerns を複数フィールドから連結
+                    concern_parts = []
+                    if isinstance(consult, dict):
+                        concern_parts.append(consult.get('相談の概要'))
+                    supporter_info["concerns"] = "。".join([p for p in concern_parts if p]) or None
+                except Exception:
+                    pass
 
-            # 2. 支援計画立案エージェントを実行
-            support_plan = self._create_support_plan(
-                assessment_data, supporter_info, guidelines)
+                # プレースホルダ補完
+                for k in ["name","address","concerns"]:
+                    supporter_info.setdefault(k, "不明")
 
-            return support_plan
+            # エージェントに与える入力テキストを構築
+            agent_input_obj = {
+                "supporter_info": supporter_info,
+                "raw_assessment": assessment_data,
+            }
+            assessment_text = json.dumps(agent_input_obj, indent=2, ensure_ascii=False)
+            
+            # エージェントの入力は`input`キーに文字列として渡す
+            response = self.planner_agent.invoke({"input": assessment_text})
+            
+            plan_json = response['output']
+
+            logging.info("--- Planner Agent Finished ---")
+            # JSONオブジェクトを整形された文字列として返す
+            return json.dumps(plan_json, indent=2, ensure_ascii=False)
+
         except Exception as e:
-            logging.error(f"Support plan generation failed: {e}")
+            logging.error(f"Planner Agent execution failed: {e}", exc_info=True)
             return f"支援計画の生成中にエラーが発生しました: {e}"
 
-    def analyze(
-        self,
-        text_content: str,
-        assessment_item_name: str,
-        user_assessment_items: dict,
-    ) -> str:
-        assessment_structure_info = ""
-        for category, sub_items in user_assessment_items.items():
-            assessment_structure_info += f"- {category}: {', '.join(sub_items)}\n"
-
-        prompt = f"""
-        あなたはケースワーカーのアセスメントシート作成を支援するAIアシスタントです。
-        以下のアセスメントシートの項目「{assessment_item_name}」について、提供された日々のメモの内容から関連する情報を抽出出し、箇条書きで簡潔に要約してください。
-        客観的な事実に基づいて記述し、推測や評価は含めないでください。
-        関連情報がない場合は、「（関連情報なし）」と回答してください。
-
-        ---アセスメントシートの項目構造---
-        {assessment_structure_info}
-        ---日々のメモ内容---
-        {text_content}
-        -------------------
-
-        「{assessment_item_name}」項目に関連する要約情報:
-        """
-        try:
-            response = self.model.generate_content(prompt)
-            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-                return response.candidates[0].content.parts[0].text.strip()
-            else:
-                return "（応答がありませんでした。）"
-        except Exception as e:
-            return f"Gemini API呼び出しエラー: {e}"
-
-    def map_to_assessment_items(self, text_content: str, assessment_items: dict) -> dict:
-        """
-        NLPで抽出した情報とGeminiの解釈をアセスメント項目にマッピングする。
-        """
-        # 1. NLPによる情報抽出
-        nlp_results = self.nlp_processor.analyze_text(text_content)
-        entities = nlp_results["entities"]
-        sentiment = nlp_results["sentiment"]
-
-        # 2. Geminiによる文脈解釈とマッピング
-        prompt = f"""
-        あなたはケースワーカーのアセスメント業務を支援するAIアシスタントです。
-        以下の「面談記録」と「抽出されたエンティティ情報」を分析し、
-        指定された「アセスメントシートの項目」に沿って、関連する情報を整理・要約してください。
-
-        出力は、各アセスメント項目に対応する情報を記述したJSON形式でなければなりません。
-        客観的な事実に基づいて記述し、情報がない項目は「該当なし」としてください。
-
-        --- 面談記録 ---
-        {text_content}
-        ----------------
-
-        --- 抽出されたエンティティ情報 ---
-        {", ".join([entity.name for entity in entities])}
-        ----------------
-
-        --- アセスメントシートの項目 ---
-        {json.dumps(assessment_items, indent=2, ensure_ascii=False)}
-        ----------------
-
-        以下のJSON形式で、アセスメント項目に対応する情報を記述してください:
-        """
-        try:
-            response = self.model.generate_content(prompt)
-            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-                # Geminiからの応答（JSON文字列を想定）をパースする
-                response_text = response.candidates[0].content.parts[0].text.strip()
-                # マークダウンの```json ... ```を削除
-                if response_text.startswith("```json"):
-                    response_text = response_text[7:-3].strip()
-                return json.loads(response_text)
-            else:
-                return {"error": "Geminiからの応答がありませんでした。"}
-        except Exception as e:
-            return {"error": f"Gemini API呼び出しエラー: {e}"}
