@@ -1,12 +1,8 @@
 import json
 import os
 from langchain.agents import tool
-from langchain_google_community import GoogleSearchAPIWrapper
 from pydantic.v1 import BaseModel, Field
-from typing import List, Optional
 import logging
-
-from ..schemas.support_plan import SupporterInfo, FinalSupportPlan, ServiceDetail
 
 # loggingの設定
 logging.basicConfig(level=logging.INFO)
@@ -20,9 +16,11 @@ DATA_FILE_CANDIDATES = [
     os.path.join(os.getcwd(), "data", "local_resources.json"),
 ]
 
+
 def _sanitize_json_text(txt: str) -> str:
     """軽量サニタイズ: // / # コメント行除去 と 末尾カンマ削除 (厳密JSON化目的)."""
     import re
+
     lines = []
     for line in txt.splitlines():
         s = line.strip()
@@ -33,6 +31,7 @@ def _sanitize_json_text(txt: str) -> str:
     # 末尾カンマ ( ,] / ,} ) を削る簡易パターン
     cleaned = re.sub(r",(\s*[}\]])", r"\1", cleaned)
     return cleaned
+
 
 def _load_local_resources() -> list:
     load_errors = []
@@ -64,6 +63,7 @@ def _load_local_resources() -> list:
         logging.warning("local_resources.json が見つかりません。")
     return []
 
+
 local_resources = _load_local_resources()
 
 # 欠落フィールドを補完（将来の一貫性確保）
@@ -78,11 +78,14 @@ for r in local_resources:
         if k not in r:
             r[k] = v
 
+
 class ExtractInfoInput(BaseModel):
     assessment_text: str = Field(description="相談者のアセスメント情報が記載されたテキスト。")
 
+
 class SearchInput(BaseModel):
     query: str = Field(description="検索クエリ。地名と具体的な困りごと（例：「南陽市 就労支援」）を含めること。")
+
 
 def reset_search_state():
     """支援計画生成 1 セッションごとのローカル検索状態をリセット。"""
@@ -116,9 +119,7 @@ def search_local_resources(query: str) -> str:
 
     normalized_q = query.strip()
     if normalized_q in _SEARCH_HISTORY:
-        return (
-            "(REPEAT_QUERY) 同一クエリ再実行。別のキーワードへ切替、または google_search を一度だけ試し、その後 create_final_support_plan に進んでください。"
-        )
+        return "(REPEAT_QUERY) 同一クエリ再実行。別のキーワードへ切替、または google_search を一度だけ試し、その後 create_final_support_plan に進んでください。"
     _SEARCH_HISTORY.append(normalized_q)
     _LOCAL_SEARCH_ATTEMPTS += 1
     results = []
@@ -134,7 +135,7 @@ def search_local_resources(query: str) -> str:
             continue
         neg = False
         term = t
-        if term.startswith('-') and len(term) > 1:
+        if term.startswith("-") and len(term) > 1:
             neg = True
             term = term[1:]
         structured_terms.append((term, current_op, neg))
@@ -155,7 +156,7 @@ def search_local_resources(query: str) -> str:
     # 地域トークン候補: 市/町/村/区/県/府/道 で終わる最初の語
     region_token = None
     for t in tokens:
-        if t.endswith(('市','町','村','区','県','府','道')):
+        if t.endswith(("市", "町", "村", "区", "県", "府", "道")):
             region_token = t
             break
     keyword_tokens = [t for t in tokens if t != region_token]
@@ -168,14 +169,16 @@ def search_local_resources(query: str) -> str:
         expanded_tokens.append("2025")
 
     def resource_matches(resource, kw_tokens, and_mode=True):
-        haystack = " ".join([
-            str(resource.get("service_name", "")),
-            str(resource.get("category", "")),
-            str(resource.get("description", "")),
-            " ".join(resource.get("keywords", [])),
-            str(resource.get("eligibility", "")),
-            str(resource.get("application_process", "")),
-        ]).lower()
+        haystack = " ".join(
+            [
+                str(resource.get("service_name", "")),
+                str(resource.get("category", "")),
+                str(resource.get("description", "")),
+                " ".join(resource.get("keywords", [])),
+                str(resource.get("eligibility", "")),
+                str(resource.get("application_process", "")),
+            ]
+        ).lower()
         if not kw_tokens:
             return True
         kw_tokens_lower = [k.lower() for k in kw_tokens]
@@ -186,14 +189,16 @@ def search_local_resources(query: str) -> str:
 
     # スコアリング: マッチトークン数 + 年度ボーナス
     def score_resource(resource, tokens_for_score):
-        text = " ".join([
-            str(resource.get("service_name", "")),
-            str(resource.get("category", "")),
-            str(resource.get("description", "")),
-            " ".join(resource.get("keywords", [])),
-            str(resource.get("eligibility", "")),
-            str(resource.get("application_process", "")),
-        ]).lower()
+        text = " ".join(
+            [
+                str(resource.get("service_name", "")),
+                str(resource.get("category", "")),
+                str(resource.get("description", "")),
+                " ".join(resource.get("keywords", [])),
+                str(resource.get("eligibility", "")),
+                str(resource.get("application_process", "")),
+            ]
+        ).lower()
         score = 0
         for t in tokens_for_score:
             if t.lower() in text:
@@ -207,9 +212,9 @@ def search_local_resources(query: str) -> str:
     region_filtered = []
     if region_token:
         for r in local_resources:
-            loc = str(r.get('location',''))
-            prov = str(r.get('provider',''))
-            name = str(r.get('service_name',''))
+            loc = str(r.get("location", ""))
+            prov = str(r.get("provider", ""))
+            name = str(r.get("service_name", ""))
             if region_token in loc or region_token in prov or region_token in name:
                 region_filtered.append(r)
         if region_filtered:
@@ -228,20 +233,22 @@ def search_local_resources(query: str) -> str:
                     contact_repr = str(contact)
                 prefix = "[地域一致] " if region_filtered else ""
                 results.append(
-                    "\n".join([
-                        f"{prefix}サービス名: {resource.get('service_name', 'N/A')}",
-                        f"カテゴリ: {resource.get('category', 'N/A')}",
-                        f"対象: {resource.get('target_users', 'N/A')}",
-                        f"利用条件: {resource.get('eligibility', 'N/A')}",
-                        f"申請手続き: {resource.get('application_process', 'N/A')}",
-                        f"費用: {resource.get('cost', 'N/A')}",
-                        f"概要: {resource.get('description', 'N/A')}",
-                        f"キーワード: {', '.join(resource.get('keywords', []))}",
-                        f"連絡先: {contact_repr}",
-                        f"提供主体: {resource.get('provider', 'N/A')}",
-                        f"所在地: {resource.get('location', 'N/A')}",
-                        f"内部スコア: {sc}",
-                    ])
+                    "\n".join(
+                        [
+                            f"{prefix}サービス名: {resource.get('service_name', 'N/A')}",
+                            f"カテゴリ: {resource.get('category', 'N/A')}",
+                            f"対象: {resource.get('target_users', 'N/A')}",
+                            f"利用条件: {resource.get('eligibility', 'N/A')}",
+                            f"申請手続き: {resource.get('application_process', 'N/A')}",
+                            f"費用: {resource.get('cost', 'N/A')}",
+                            f"概要: {resource.get('description', 'N/A')}",
+                            f"キーワード: {', '.join(resource.get('keywords', []))}",
+                            f"連絡先: {contact_repr}",
+                            f"提供主体: {resource.get('provider', 'N/A')}",
+                            f"所在地: {resource.get('location', 'N/A')}",
+                            f"内部スコア: {sc}",
+                        ]
+                    )
                 )
 
     if not results and region_token and not region_filtered:
@@ -259,20 +266,22 @@ def search_local_resources(query: str) -> str:
             else:
                 contact_repr = str(contact)
             results.append(
-                "\n".join([
-                    f"[他地域] サービス名: {resource.get('service_name', 'N/A')}",
-                    f"カテゴリ: {resource.get('category', 'N/A')}",
-                    f"対象: {resource.get('target_users', 'N/A')}",
-                    f"利用条件: {resource.get('eligibility', 'N/A')}",
-                    f"申請手続き: {resource.get('application_process', 'N/A')}",
-                    f"費用: {resource.get('cost', 'N/A')}",
-                    f"概要: {resource.get('description', 'N/A')}",
-                    f"キーワード: {', '.join(resource.get('keywords', []))}",
-                    f"連絡先: {contact_repr}",
-                    f"提供主体: {resource.get('provider', 'N/A')}",
-                    f"所在地: {resource.get('location', 'N/A')}",
-                    f"内部スコア: {score}",
-                ])
+                "\n".join(
+                    [
+                        f"[他地域] サービス名: {resource.get('service_name', 'N/A')}",
+                        f"カテゴリ: {resource.get('category', 'N/A')}",
+                        f"対象: {resource.get('target_users', 'N/A')}",
+                        f"利用条件: {resource.get('eligibility', 'N/A')}",
+                        f"申請手続き: {resource.get('application_process', 'N/A')}",
+                        f"費用: {resource.get('cost', 'N/A')}",
+                        f"概要: {resource.get('description', 'N/A')}",
+                        f"キーワード: {', '.join(resource.get('keywords', []))}",
+                        f"連絡先: {contact_repr}",
+                        f"提供主体: {resource.get('provider', 'N/A')}",
+                        f"所在地: {resource.get('location', 'N/A')}",
+                        f"内部スコア: {score}",
+                    ]
+                )
             )
 
     if results:
@@ -283,15 +292,22 @@ def search_local_resources(query: str) -> str:
         _LOCAL_SEARCH_FAILURES += 1
         guidance = []
         if _LOCAL_SEARCH_FAILURES == 1:
-            guidance.append("(NO_RESULT_1) ローカルDBで該当なし。語彙拡張例: '家計', '自立', '相談', '支援事業', '就労', '金銭管理'。複合は +、代替は |、除外は -語 で指定可。例: 南陽市 +家計 +相談 |就労 -児童")
+            guidance.append(
+                "(NO_RESULT_1) ローカルDBで該当なし。語彙拡張例: '家計', '自立', '相談', '支援事業', '就労', '金銭管理'。複合は +、代替は |、除外は -語 で指定可。例: 南陽市 +家計 +相談 |就労 -児童"
+            )
         elif _LOCAL_SEARCH_FAILURES == 2:
-            guidance.append("(NO_RESULT_2) 2回連続でローカル該当なし。次は google_search を1回だけ試し、その後 create_final_support_plan に進む準備。")
+            guidance.append(
+                "(NO_RESULT_2) 2回連続でローカル該当なし。次は google_search を1回だけ試し、その後 create_final_support_plan に進む準備。"
+            )
         else:
-            guidance.append("(NO_RESULT_3) 3回以上該当なし。これ以上のローカル再検索は禁止。現在得られている情報を要約し create_final_support_plan を実行してください。")
+            guidance.append(
+                "(NO_RESULT_3) 3回以上該当なし。これ以上のローカル再検索は禁止。現在得られている情報を要約し create_final_support_plan を実行してください。"
+            )
         guidance.append(f"(Attempts: {_LOCAL_SEARCH_ATTEMPTS}, Failures: {_LOCAL_SEARCH_FAILURES})")
         result_str = " ".join(guidance)
         logging.info(f"【Tool】Local search guidance: {result_str}")
         return result_str
+
 
 @tool("google_search", args_schema=SearchInput, return_direct=False)
 def google_search(query: str) -> str:
@@ -304,10 +320,12 @@ def google_search(query: str) -> str:
     # ここではプレースホルダーとして定義
     raise NotImplementedError("Google Search must be initialized within the GeminiAgent class.")
 
+
 class CreatePlanInput(BaseModel):
     payload: str = Field(
-        description="最終計画生成用のJSON文字列。例: {\"supporter_info\": {...}, \"investigation_results\": [\"...\"]}。自然文の場合は内部でベストエフォート抽出。"
+        description='最終計画生成用のJSON文字列。例: {"supporter_info": {...}, "investigation_results": ["..."]}。自然文の場合は内部でベストエフォート抽出。'
     )
+
 
 # キーワードなどのカラムが足りないものをここに避難
 # JSONだとコメントアウトできなかった

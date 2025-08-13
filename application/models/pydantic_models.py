@@ -76,8 +76,10 @@ class ResourceBase(BaseModel):
     keywords: Optional[List[str]] = []
     last_verified_at: Optional[float] = None
 
+
 class ResourceCreate(ResourceBase):
     pass
+
 
 class ResourceUpdate(BaseModel):
     service_name: Optional[str] = None
@@ -96,14 +98,17 @@ class ResourceUpdate(BaseModel):
     keywords: Optional[List[str]] = None
     last_verified_at: Optional[float] = None
 
+
 class Resource(ResourceBase):
     id: str
+
 
 # --- Advanced suggestion models ---
 class ResourceSuggestRequest(BaseModel):
     assessment_data: Dict[str, Any]
     top_k: int = 8
     use_llm_summary: bool = True
+
 
 class SuggestedResource(BaseModel):
     resource_id: str
@@ -112,6 +117,7 @@ class SuggestedResource(BaseModel):
     matched_keywords: List[str] = []
     excerpt: Optional[str] = None
     reasons: Optional[List[str]] = []
+
 
 class ResourceSuggestResponse(BaseModel):
     query_tokens: List[str]
@@ -124,11 +130,14 @@ class ResourceMemoBase(BaseModel):
     resource_id: str
     content: str
 
+
 class ResourceMemoCreate(ResourceMemoBase):
     pass
 
+
 class ResourceMemoUpdate(BaseModel):
     content: str
+
 
 class ResourceMemo(ResourceMemoBase):
     id: str

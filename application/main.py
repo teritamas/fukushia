@@ -15,7 +15,6 @@ from models.pydantic_models import (
     ResourceSuggestResponse,
     SuggestedResource,
 )
-import uvicorn
 import logging
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
@@ -23,7 +22,8 @@ from contextlib import asynccontextmanager
 from agent.gemini import GeminiAgent
 from pydantic import BaseModel
 import time
-import json, hashlib
+import json
+import hashlib
 import random
 import re
 import math
@@ -35,6 +35,7 @@ from google.api_core.exceptions import NotFound as FirestoreNotFound, FailedPrec
 TARGET_APP_ID = os.getenv("TARGET_FIREBASE_APP_ID", "1:667712908416:web:ad84cae4853ac6de444a65")
 TARGET_USER_ID = os.getenv("TARGET_FIREBASE_USER_ID", "firebase-adminsdk-fbsvc@tritama-e20cf.iam.gserviceaccount.com")
 
+
 def _resource_collection():
     return (
         db.collection("artifacts")
@@ -43,6 +44,7 @@ def _resource_collection():
         .document(TARGET_USER_ID)
         .collection("resources")
     )
+
 
 def _resource_memo_collection():
     return (
@@ -53,10 +55,12 @@ def _resource_memo_collection():
         .collection("resource_memos")
     )
 
+
 # AssessmentMappingRequestモデルの定義
 class AssessmentMappingRequest(BaseModel):
     text_content: str
     assessment_items: list
+
 
 # Firestoreクライアント初期化: Firebase Admin 経由 (FIREBASE_SERVICE_ACCOUNT) 優先 / なければ Application Default
 def _init_firestore():
@@ -66,7 +70,9 @@ def _init_firestore():
     except Exception as e:
         logger.warning(f"Firebase Admin 初期化失敗 / フォールバック (google.cloud.firestore.Client): {e}")
         try:
-            project_id = os.getenv("FIREBASE_PROJECT_ID") or os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
+            project_id = (
+                os.getenv("FIREBASE_PROJECT_ID") or os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
+            )
             if project_id:
                 client = firestore.Client(project=project_id)
             else:
@@ -76,6 +82,7 @@ def _init_firestore():
         except Exception as inner:
             logger.error(f"Firestore 初期化に失敗しました: {inner}")
             raise
+
 
 db = _init_firestore()
 
@@ -95,13 +102,15 @@ logger = logging.getLogger(__name__)
 EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "models/text-embedding-004")
 _resource_embeddings: dict[str, list[float]] = {}
 
+
 def _cosine(a: list[float], b: list[float]) -> float:
     if not a or not b or len(a) != len(b):
         return 0.0
-    dot = sum(x*y for x,y in zip(a,b))
-    na = math.sqrt(sum(x*x for x in a)) or 1e-9
-    nb = math.sqrt(sum(y*y for y in b)) or 1e-9
-    return dot/(na*nb)
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a)) or 1e-9
+    nb = math.sqrt(sum(y * y for y in b)) or 1e-9
+    return dot / (na * nb)
+
 
 def _embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a list of texts returning list of float vectors.
@@ -113,6 +122,7 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
         return []
     try:
         import google.generativeai as genai  # type: ignore
+
         if GEMINI_API_KEY:
             try:
                 genai.configure(api_key=GEMINI_API_KEY)
@@ -120,7 +130,7 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
                 logger.warning(f"genai configure failed: {ce}")
         vecs: list[list[float]] = []
         for t in texts:
-            truncated = (t or '')[:8000]
+            truncated = (t or "")[:8000]
             if not truncated.strip():
                 vecs.append([])
                 continue
@@ -128,9 +138,9 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
                 resp = genai.embed_content(model=EMBED_MODEL_NAME, content=truncated)
                 # New SDK returns dict with 'embedding'; older could be object
                 if isinstance(resp, dict):
-                    emb = resp.get('embedding', [])
+                    emb = resp.get("embedding", [])
                 else:
-                    emb = getattr(resp, 'embedding', [])
+                    emb = getattr(resp, "embedding", [])
                 if not isinstance(emb, list):
                     emb = []
                 vecs.append(emb)
@@ -145,9 +155,19 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
     # Fallback: return empty vectors preserving length
     return [[] for _ in texts]
 
+
 def _resource_to_corpus(r: Resource) -> str:
-    parts = [r.service_name or "", r.category or "", r.description or "", r.eligibility or "", r.application_process or "", r.target_users or "", " ".join(r.keywords or [])]
+    parts = [
+        r.service_name or "",
+        r.category or "",
+        r.description or "",
+        r.eligibility or "",
+        r.application_process or "",
+        r.target_users or "",
+        " ".join(r.keywords or []),
+    ]
     return "\n".join([p for p in parts if p])
+
 
 def _ensure_resource_embeddings():
     if _resource_embeddings:
@@ -169,6 +189,7 @@ def _ensure_resource_embeddings():
     except Exception as e:
         logger.error(f"Failed to build embeddings: {e}")
 
+
 def _refresh_resource_embedding(resource_id: str):
     try:
         snap = _resource_collection().document(resource_id).get()
@@ -189,11 +210,9 @@ async def lifespan(app: FastAPI):
     logger.info("アプリケーションを起動します...")
     if not GEMINI_API_KEY or not GOOGLE_CSE_ID:
         raise ValueError("APIキーまたはCSE IDが設定されていません。")
-    
+
     # GeminiAgentを初期化してapp.stateに格納
-    app.state.gemini_agent = GeminiAgent(
-        api_key=GEMINI_API_KEY, google_cse_id=GOOGLE_CSE_ID
-    )
+    app.state.gemini_agent = GeminiAgent(api_key=GEMINI_API_KEY, google_cse_id=GOOGLE_CSE_ID)
     logger.info("GeminiAgentの初期化が完了しました。")
     yield
     # アプリケーション終了時に実行
@@ -225,13 +244,17 @@ def exponential_backoff(func, max_attempts=5, initial_delay=1, max_delay=16):
                 raise
             time.sleep(delay + random.uniform(0, 0.5))
             delay = min(delay * 2, max_delay)
+
+
 # Firestoreクライアントの初期化 (二重初期化を避け _init_firestore の結果を利用)
+
 
 # Memoモデルの定義
 class Memo(BaseModel):
     case_name: str
     content: str
     # 必要に応じて他のフィールドを追加
+
 
 # Taskモデルの定義
 class Task(BaseModel):
@@ -295,6 +318,7 @@ async def create_resource_simple(resource: ResourceCreate):
     doc_ref.set(data)
     return {"id": doc_ref.id, **data}
 
+
 # --- 社会資源 簡易取得エンドポイント（service_name で絞り込み） ---
 @app.get("/resources/simple/by-name/{service_name}")
 async def get_resources_by_name(service_name: str):
@@ -303,12 +327,6 @@ async def get_resources_by_name(service_name: str):
     items = [{"id": d.id, **d.to_dict()} for d in docs]
     return {"resources": items}
 
-
-# ActivityReportRequestモデルの定義
-class ActivityReportRequest(BaseModel):
-    case_name: str
-    memos: list
-    tasks: list
 
 # --- 活動報告書生成エンドポイント ---
 @app.post("/reports/activity/")
@@ -365,6 +383,7 @@ async def map_assessment(req: AssessmentMappingRequest, request: Request):
 class SupportPlanRequest(BaseModel):
     assessment_data: dict  # 必要に応じて型やフィールドを調整
 
+
 # --- 支援計画生成エンドポイント ---
 @app.post("/support-plan/generate/")
 async def generate_support_plan(req: SupportPlanRequest, request: Request):
@@ -385,8 +404,10 @@ async def generate_support_plan(req: SupportPlanRequest, request: Request):
 
 # --- 社会資源 CRUD エンドポイント ---
 
+
 def _resource_doc_to_model(doc) -> Resource:
     data = doc.to_dict()
+
     def _coerce(v):
         if v is None:
             return None
@@ -395,9 +416,11 @@ def _resource_doc_to_model(doc) -> Resource:
         # dict / list -> JSON 文字列化
         try:
             import json as _json
+
             return _json.dumps(v, ensure_ascii=False)
         except Exception:
             return str(v)
+
     service_name_val = _coerce(data.get("service_name"))
     if not service_name_val:  # None or empty
         raise ValueError("missing service_name")
@@ -417,8 +440,9 @@ def _resource_doc_to_model(doc) -> Resource:
         contact_email=_coerce(data.get("contact_email")),
         contact_url=_coerce(data.get("contact_url")),
         keywords=data.get("keywords", []),
-    last_verified_at=data.get("last_verified_at"),
+        last_verified_at=data.get("last_verified_at"),
     )
+
 
 @app.post("/resources/", response_model=Resource)
 async def create_resource(resource: ResourceCreate):
@@ -427,12 +451,24 @@ async def create_resource(resource: ResourceCreate):
         data = resource.dict()
         # Firestore 保存前に dict/list が誤って入った場合 JSON 文字列化
         for k in [
-            "category","target_users","description","eligibility","application_process","cost","provider","location","contact_phone","contact_fax","contact_email","contact_url"
+            "category",
+            "target_users",
+            "description",
+            "eligibility",
+            "application_process",
+            "cost",
+            "provider",
+            "location",
+            "contact_phone",
+            "contact_fax",
+            "contact_email",
+            "contact_url",
         ]:
             v = data.get(k)
             if v is not None and not isinstance(v, str):
                 try:
                     import json as _json
+
                     data[k] = _json.dumps(v, ensure_ascii=False)
                 except Exception:
                     data[k] = str(v)
@@ -444,6 +480,7 @@ async def create_resource(resource: ResourceCreate):
         return created
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源登録失敗: {e}")
+
 
 @app.get("/resources/", response_model=List[Resource])
 async def list_resources():
@@ -462,6 +499,7 @@ async def list_resources():
         return items
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源一覧取得失敗: {e}")
+
 
 @app.get("/resources/search", response_model=List[Resource])
 async def search_resources(q: str, limit: int = 100):
@@ -487,7 +525,7 @@ async def search_resources(q: str, limit: int = 100):
                 rid = data.get("resource_id")
                 if not rid:
                     continue
-                content = (data.get("content") or "")
+                content = data.get("content") or ""
                 if not isinstance(content, str):
                     try:
                         content = json.dumps(content, ensure_ascii=False)
@@ -524,7 +562,9 @@ async def search_resources(q: str, limit: int = 100):
                 memo_map.get(r.id, ""),  # 追加: メモ内容
             ]
             # lower 済みメモ以外を lower 化
-            haystack = " \n".join([part.lower() if i < len(haystack_parts)-1 else part for i, part in enumerate(haystack_parts)])
+            haystack = " \n".join(
+                [part.lower() if i < len(haystack_parts) - 1 else part for i, part in enumerate(haystack_parts)]
+            )
             if all(tok in haystack for tok in tokens):
                 results.append(r)
         if skipped_invalid:
@@ -533,12 +573,14 @@ async def search_resources(q: str, limit: int = 100):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源検索失敗: {e}")
 
+
 @app.get("/resources/{resource_id}", response_model=Resource)
 async def get_resource(resource_id: str):
     doc = _resource_collection().document(resource_id).get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="社会資源が見つかりません")
     return _resource_doc_to_model(doc)
+
 
 @app.patch("/resources/{resource_id}", response_model=Resource)
 async def update_resource(resource_id: str, resource: ResourceUpdate):
@@ -551,9 +593,23 @@ async def update_resource(resource_id: str, resource: ResourceUpdate):
         update_data["last_verified_at"] = time.time()
     # Coerce complex types
     for k, v in list(update_data.items()):
-        if k in {"category","target_users","description","eligibility","application_process","cost","provider","location","contact_phone","contact_fax","contact_email","contact_url"} and not isinstance(v, str):
+        if k in {
+            "category",
+            "target_users",
+            "description",
+            "eligibility",
+            "application_process",
+            "cost",
+            "provider",
+            "location",
+            "contact_phone",
+            "contact_fax",
+            "contact_email",
+            "contact_url",
+        } and not isinstance(v, str):
             try:
                 import json as _json
+
                 update_data[k] = _json.dumps(v, ensure_ascii=False)
             except Exception:
                 update_data[k] = str(v)
@@ -565,6 +621,7 @@ async def update_resource(resource_id: str, resource: ResourceUpdate):
         return model
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源更新失敗: {e}")
+
 
 @app.delete("/resources/{resource_id}")
 async def delete_resource(resource_id: str):
@@ -586,6 +643,7 @@ def _candidate_local_resource_paths():
         os.path.join(os.getcwd(), "data", "local_resources.json"),
     ]
 
+
 def _load_local_resources_file():
     for p in _candidate_local_resource_paths():
         if os.path.exists(p):
@@ -595,6 +653,7 @@ def _load_local_resources_file():
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"ローカル資源ファイル読込失敗: {p}: {e}")
     raise HTTPException(status_code=404, detail="local_resources.json が見つかりませんでした")
+
 
 def _normalize_resource(raw: dict) -> dict:
     contact = raw.get("contact_info") or {}
@@ -614,6 +673,7 @@ def _normalize_resource(raw: dict) -> dict:
         "contact_url": contact.get("url"),
         "keywords": raw.get("keywords", []),
     }
+
 
 @app.post("/resources/import-local")
 async def import_local_resources(overwrite: bool = False, dry_run: bool = False):
@@ -638,8 +698,18 @@ async def import_local_resources(overwrite: bool = False, dry_run: bool = False)
     skipped_invalid_service_name = 0
     # 欠損集計: service_name 以外の主要フィールド
     track_fields = [
-        "category","target_users","description","eligibility","application_process","cost",
-        "provider","location","contact_phone","contact_fax","contact_email","contact_url"
+        "category",
+        "target_users",
+        "description",
+        "eligibility",
+        "application_process",
+        "cost",
+        "provider",
+        "location",
+        "contact_phone",
+        "contact_fax",
+        "contact_email",
+        "contact_url",
     ]
     missing_field_counts = {f: 0 for f in track_fields}
     try:
@@ -658,9 +728,12 @@ async def import_local_resources(overwrite: bool = False, dry_run: bool = False)
                 exists = doc_ref.get().exists
             except FirestoreNotFound:
                 # DB 未作成
-                raise HTTPException(status_code=503, detail=(
-                    "Firestore データベースが未作成です。コンソールで 'Firestore データベースを作成' を実行し Native モードを選択してください。"
-                ))
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "Firestore データベースが未作成です。コンソールで 'Firestore データベースを作成' を実行し Native モードを選択してください。"
+                    ),
+                )
             norm = _normalize_resource(entry)
             # 欠損フィールド集計 (空文字または None)
             for f in track_fields:
@@ -686,7 +759,10 @@ async def import_local_resources(overwrite: bool = False, dry_run: bool = False)
     except HTTPException:
         raise
     except FirestoreNotFound:
-        raise HTTPException(status_code=503, detail="Firestore データベース (default) が存在しません。Cloud Console で作成後に再実行してください。")
+        raise HTTPException(
+            status_code=503,
+            detail="Firestore データベース (default) が存在しません。Cloud Console で作成後に再実行してください。",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"インポート中に想定外エラー: {e}")
     return {
@@ -702,6 +778,7 @@ async def import_local_resources(overwrite: bool = False, dry_run: bool = False)
         "skipped_invalid_service_name": skipped_invalid_service_name,
     }
 
+
 @app.get("/firestore/health")
 async def firestore_health():
     """Firestore 接続と DB 存在チェック。
@@ -710,7 +787,7 @@ async def firestore_health():
     try:
         # 軽量にランダム doc を取得 (存在しなくて良い) -> DB 存在のために batch_get 呼び出しされる
         _ = db.collection("__healthcheck").document("ping").get()
-        return {"status": "ok", "project": getattr(db, 'project', None)}
+        return {"status": "ok", "project": getattr(db, "project", None)}
     except FirestoreNotFound:
         raise HTTPException(status_code=503, detail="Firestore データベース未作成 (Native モードで作成してください)")
     except PermissionDenied as e:
@@ -719,6 +796,7 @@ async def firestore_health():
         raise HTTPException(status_code=412, detail=f"Firestore 状態エラー: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Firestore ヘルスチェック失敗: {e}")
+
 
 # --- Resource Memo CRUD ---
 def _resource_memo_doc_to_model(doc) -> ResourceMemo:
@@ -731,6 +809,7 @@ def _resource_memo_doc_to_model(doc) -> ResourceMemo:
         updated_at=data.get("updated_at", 0.0),
     )
 
+
 @app.post("/resources/{resource_id}/memos", response_model=ResourceMemo)
 async def create_resource_memo(resource_id: str, memo: ResourceMemoCreate):
     # Ensure resource exists
@@ -741,6 +820,7 @@ async def create_resource_memo(resource_id: str, memo: ResourceMemoCreate):
     data = {"resource_id": resource_id, "content": memo.content, "created_at": now, "updated_at": now}
     doc_ref.set(data)
     return _resource_memo_doc_to_model(doc_ref.get())
+
 
 @app.get("/resources/{resource_id}/memos", response_model=list[ResourceMemo])
 async def list_resource_memos(resource_id: str):
@@ -762,6 +842,7 @@ async def list_resource_memos(resource_id: str):
         memos.sort(key=lambda m: m.created_at)
         return memos
 
+
 @app.patch("/resources/memos/{memo_id}", response_model=ResourceMemo)
 async def update_resource_memo(memo_id: str, memo: ResourceMemoUpdate):
     doc_ref = _resource_memo_collection().document(memo_id)
@@ -775,6 +856,7 @@ async def update_resource_memo(memo_id: str, memo: ResourceMemoUpdate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"資源メモ更新失敗: {e}")
 
+
 @app.delete("/resources/memos/{memo_id}")
 async def delete_resource_memo(memo_id: str):
     doc_ref = _resource_memo_collection().document(memo_id)
@@ -786,11 +868,12 @@ async def delete_resource_memo(memo_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"資源メモ削除失敗: {e}")
 
+
 # --- Advanced Suggestion Endpoints ---
 @app.post("/resources/advanced/suggest", response_model=ResourceSuggestResponse)
 async def suggest_resources(req: ResourceSuggestRequest, request: Request):
     _ensure_resource_embeddings()
-    assessment = req.assessment_data.get('assessment') if isinstance(req.assessment_data, dict) else None
+    assessment = req.assessment_data.get("assessment") if isinstance(req.assessment_data, dict) else None
     texts: list[str] = []
     if isinstance(assessment, dict):
         for form_val in assessment.values():
@@ -813,15 +896,19 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
             summary_text = gemini_agent.summarize_for_resource_match(base_text)
             used_summary = True
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"[suggest_debug] summarization used_summary={used_summary} summary_len={len(summary_text)}")
+                logger.debug(
+                    f"[suggest_debug] summarization used_summary={used_summary} summary_len={len(summary_text)}"
+                )
         except Exception as e:
             logger.warning(f"summary failed fallback raw: {e}")
             summary_text = base_text
-    tokens = [t.lower() for t in re.split(r"[\s、。,.；;:\n\r\t/()『』「」【】\[\]{}]+", summary_text) if len(t) > 1][:1000]
+    tokens = [t.lower() for t in re.split(r"[\s、。,.；;:\n\r\t/()『』「」【】\[\]{}]+", summary_text) if len(t) > 1][
+        :1000
+    ]
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(f"[suggest_debug] token_count={len(tokens)} first_tokens={tokens[:15]}")
     q_vec = _embed_texts([summary_text])[0]
-    scored: list[tuple[str,float,list[str],Resource]] = []
+    scored: list[tuple[str, float, list[str], Resource]] = []
     debug_components: list[dict] = []
     try:
         docs = _resource_collection().stream()
@@ -840,23 +927,28 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
             scored.append((res.id, final, overlap, res))
             if logger.isEnabledFor(logging.DEBUG):
                 if len(debug_components) < 50:  # limit to avoid log explosion
-                    debug_components.append({
-                        "id": res.id,
-                        "name": res.service_name[:60],
-                        "kw_overlap": overlap,
-                        "kw_score": kw_score,
-                        "emb_score": round(emb_score, 4),
-                        "final": round(final, 4)
-                    })
+                    debug_components.append(
+                        {
+                            "id": res.id,
+                            "name": res.service_name[:60],
+                            "kw_overlap": overlap,
+                            "kw_score": kw_score,
+                            "emb_score": round(emb_score, 4),
+                            "final": round(final, 4),
+                        }
+                    )
     except Exception as e:
         logger.error(f"suggest iteration failed: {e}")
     scored.sort(key=lambda x: x[1], reverse=True)
     top = scored[: req.top_k]
     if logger.isEnabledFor(logging.DEBUG):
-        logger.debug(f"[suggest_debug] candidates_considered={len(scored)} returning={len(top)} used_summary={used_summary}")
+        logger.debug(
+            f"[suggest_debug] candidates_considered={len(scored)} returning={len(top)} used_summary={used_summary}"
+        )
         # log top 10 component breakdown (already limited above)
         try:
             import json as _json
+
             logger.debug("[suggest_debug] score_components=" + _json.dumps(debug_components[:10], ensure_ascii=False))
         except Exception:
             pass
@@ -866,13 +958,15 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
             SuggestedResource(
                 resource_id=i,
                 service_name=r.service_name,
-                score=round(s,4),
+                score=round(s, 4),
                 matched_keywords=mk,
-                excerpt=(r.description or '')[:180]
-            ) for i,s,mk,r in top
+                excerpt=(r.description or "")[:180],
+            )
+            for i, s, mk, r in top
         ],
         used_summary=used_summary,
     )
+
 
 @app.post("/resources/advanced/reindex")
 async def reindex_resources():

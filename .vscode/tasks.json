@@ -36,6 +36,18 @@
       "presentation": {
         "reveal": "always"
       }
+    },
+    {
+      "label": "uv ruff format",
+      "type": "shell",
+      "command": "uv run ruff format .",
+      "options": {
+        "cwd": "${workspaceFolder}/application"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
     }
   ]
 }
