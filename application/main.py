@@ -1,12 +1,16 @@
 from fastapi import FastAPI, HTTPException, Request
 import os
 from infra.firestore import get_firestore_client
+from typing import List
 from models.pydantic_models import (
     ActivityReportRequest,
     Memo,
     Task,
     AssessmentMappingRequest,
     SupportPlanRequest,
+    ResourceCreate,
+    ResourceUpdate,
+    Resource,
 )
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
@@ -163,3 +167,76 @@ async def generate_support_plan(req: SupportPlanRequest):
             status_code=500,
             detail=f"支援計画の生成中にエラーが発生しました: {str(e)}",
         )
+
+
+# --- 社会資源 CRUD エンドポイント ---
+RESOURCE_COLLECTION = "resources"
+
+def _resource_doc_to_model(doc) -> Resource:
+    data = doc.to_dict()
+    return Resource(
+        id=doc.id,
+        service_name=data.get("service_name"),
+        category=data.get("category"),
+        target_users=data.get("target_users"),
+        description=data.get("description"),
+        eligibility=data.get("eligibility"),
+        application_process=data.get("application_process"),
+        cost=data.get("cost"),
+        provider=data.get("provider"),
+        location=data.get("location"),
+        contact_phone=data.get("contact_phone"),
+        contact_fax=data.get("contact_fax"),
+        contact_email=data.get("contact_email"),
+        contact_url=data.get("contact_url"),
+        keywords=data.get("keywords", []),
+    )
+
+@app.post("/resources/", response_model=Resource)
+async def create_resource(resource: ResourceCreate):
+    try:
+        doc_ref = db.collection(RESOURCE_COLLECTION).document()
+        data = resource.dict()
+        doc_ref.set(data)
+        return Resource(id=doc_ref.id, **data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"社会資源登録失敗: {e}")
+
+@app.get("/resources/", response_model=List[Resource])
+async def list_resources():
+    try:
+        docs = db.collection(RESOURCE_COLLECTION).stream()
+        return [_resource_doc_to_model(doc) for doc in docs]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"社会資源一覧取得失敗: {e}")
+
+@app.get("/resources/{resource_id}", response_model=Resource)
+async def get_resource(resource_id: str):
+    doc = db.collection(RESOURCE_COLLECTION).document(resource_id).get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="社会資源が見つかりません")
+    return _resource_doc_to_model(doc)
+
+@app.patch("/resources/{resource_id}", response_model=Resource)
+async def update_resource(resource_id: str, resource: ResourceUpdate):
+    doc_ref = db.collection(RESOURCE_COLLECTION).document(resource_id)
+    if not doc_ref.get().exists:
+        raise HTTPException(status_code=404, detail="社会資源が見つかりません")
+    update_data = {k: v for k, v in resource.dict(exclude_unset=True).items() if v is not None}
+    try:
+        doc_ref.update(update_data)
+        updated = doc_ref.get()
+        return _resource_doc_to_model(updated)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"社会資源更新失敗: {e}")
+
+@app.delete("/resources/{resource_id}")
+async def delete_resource(resource_id: str):
+    doc_ref = db.collection(RESOURCE_COLLECTION).document(resource_id)
+    if not doc_ref.get().exists:
+        raise HTTPException(status_code=404, detail="社会資源が見つかりません")
+    try:
+        doc_ref.delete()
+        return {"status": "deleted", "id": resource_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"社会資源削除失敗: {e}")
