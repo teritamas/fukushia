@@ -10,7 +10,7 @@ import { useClientContext, ClientData } from './ClientContext';
 // For now, it will just have tabs to switch between client details and assessment.
 export default function ClientWorkspace() {
   const [activeTab, setActiveTab] = useState<'detail' | 'assessment'>('detail');
-  const { currentClient, setCurrentClient } = useClientContext();
+  const { currentClient, setCurrentClient, requestAssessmentEdit } = useClientContext();
   const [clients, setClients] = useState<ClientData[]>([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -177,7 +177,14 @@ export default function ClientWorkspace() {
             </div>
             <div className="md:col-span-2 space-y-2">
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-semibold text-gray-600">基本情報（最新アセスメント「本人情報」）</h3>
+                <h3 className="text-xs font-semibold text-gray-600 flex items-center gap-2">基本情報（最新アセスメント「本人情報」）
+                  {hasAssessment && (
+                    <button
+                      onClick={()=>{ requestAssessmentEdit({ category: '本人情報' }); setActiveTab('assessment'); }}
+                      className="ml-2 px-2 py-0.5 text-[10px] rounded border bg-white hover:bg-gray-50 text-gray-600"
+                    >編集</button>
+                  )}
+                </h3>
                 {changedKeys.size>0 && <span className="text-[10px] bg-amber-200 text-amber-800 px-2 py-0.5 rounded">{changedKeys.size}項目更新</span>}
               </div>
               {personalLoading && <p className="text-[11px] text-gray-500">読み込み中...</p>}
