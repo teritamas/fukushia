@@ -7,10 +7,9 @@ interface AppHeaderProps {
 }
 
 const NAV_ITEMS: { key: string; label: string }[] = [
-  { key: 'clients', label: '支援者管理' },
-  { key: 'notes', label: 'メモ・TODO管理' },
-  { key: 'assessment', label: 'アセスメント管理' },
-  { key: 'resources', label: '社会資源管理' },
+  { key: 'clients', label: '支援者 / アセスメント' },
+  { key: 'notes', label: 'メモ・TODO' },
+  { key: 'resources', label: '社会資源' },
 ];
 
 export default function AppHeader({ active, onChange }: AppHeaderProps) {
