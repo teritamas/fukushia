@@ -102,11 +102,13 @@ class ResourceUpdate(BaseModel):
 class Resource(ResourceBase):
     id: str
 
+
 # --- Advanced suggestion models ---
 class ResourceSuggestRequest(BaseModel):
     assessment_data: Dict[str, Any]
     top_k: int = 8
     use_llm_summary: bool = True
+
 
 class SuggestedResource(BaseModel):
     resource_id: str
@@ -115,6 +117,7 @@ class SuggestedResource(BaseModel):
     matched_keywords: List[str] = []
     excerpt: Optional[str] = None
     reasons: Optional[List[str]] = []
+
 
 class ResourceSuggestResponse(BaseModel):
     query_tokens: List[str]
