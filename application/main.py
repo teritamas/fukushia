@@ -1,4 +1,3 @@
-from fastapi import FastAPI, HTTPException, Request
 import os
 from infra.firestore import get_firestore_client
 from typing import List
@@ -12,52 +11,98 @@ from models.pydantic_models import (
     ResourceUpdate,
     Resource,
 )
+import uvicorn
+import logging
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
+from contextlib import asynccontextmanager
+from agent.gemini import GeminiAgent
+from pydantic import BaseModel
+import time
+import functools
+import random
+from google.cloud import firestore  # Add this import
+from fastapi import FastAPI, HTTPException, Request
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from agent.gemini import GeminiAgent
-import time
 
+# AssessmentMappingRequestモデルの定義
+class AssessmentMappingRequest(BaseModel):
+    text_content: str
+    assessment_items: list
+
+# Firestoreクライアントの初期化
+db = firestore.Client()
+
+# .envファイルから環境変数を読み込む
 load_dotenv()
 
-app = FastAPI()
+# 環境変数からAPIキーを取得
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 
+# loggingの設定
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # アプリケーション起動時に実行
+    logger.info("アプリケーションを起動します...")
+    if not GEMINI_API_KEY or not GOOGLE_CSE_ID:
+        raise ValueError("APIキーまたはCSE IDが設定されていません。")
+    
+    # GeminiAgentを初期化してapp.stateに格納
+    app.state.gemini_agent = GeminiAgent(
+        api_key=GEMINI_API_KEY, google_cse_id=GOOGLE_CSE_ID
+    )
+    logger.info("GeminiAgentの初期化が完了しました。")
+    yield
+    # アプリケーション終了時に実行
+    logger.info("アプリケーションをシャットダウンします...")
+
+
+app = FastAPI(lifespan=lifespan)
 # CORS設定（React/Next.jsからのリクエストを許可）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 本番は限定してください
+    allow_origins=["*"],  # 本番環境ではより厳密な設定を推奨
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# GeminiAgentの初期化
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
-gemini_agent = GeminiAgent(api_key=GEMINI_API_KEY, google_cse_id=GOOGLE_CSE_ID)
 
-# Firestoreクライアントの初期化
-db = get_firestore_client()
-
-
-def exponential_backoff(func, *args, retries=3, **kwargs):
-    delay = 1
-    for i in range(retries):
+# --- Exponential Backoff Utility ---
+def exponential_backoff(func, max_attempts=5, initial_delay=1, max_delay=16):
+    """
+    指定した関数を指数バックオフで再試行するユーティリティ関数。
+    """
+    delay = initial_delay
+    for attempt in range(max_attempts):
         try:
-            return func(*args, **kwargs)
+            return func()
         except Exception as e:
-            if i == retries - 1:
-                raise e
-            time.sleep(delay)
-            delay *= 2
+            if attempt == max_attempts - 1:
+                raise
+            time.sleep(delay + random.uniform(0, 0.5))
+            delay = min(delay * 2, max_delay)
+# Firestoreクライアントの初期化
+db = firestore.Client()
 
+# Memoモデルの定義
+class Memo(BaseModel):
+    case_name: str
+    content: str
+    # 必要に応じて他のフィールドを追加
 
-@app.post("/api/gemini")
-async def gemini_api(request: Request):
-    data = await request.json()
-    text = data.get("text", "")
-    assessment_item_name = data.get("assessment_item_name", "")
-    user_assessment_items = data.get("user_assessment_items", {})
-    result = gemini_agent.analyze(text, assessment_item_name, user_assessment_items)
-    return {"result": result}
+# Taskモデルの定義
+class Task(BaseModel):
+    case_name: str
+    description: str
+    # 必要に応じて他のフィールドを追加
 
 
 # --- メモ保存エンドポイント ---
@@ -72,7 +117,7 @@ async def create_memo(memo: Memo):
     return {"id": doc_ref.id, **memo_dict}
 
 
-# --- メモ取得エンドポイント（ケース名で絞り込み） ---
+# --- メモ取得エンドポイント ---
 @app.get("/memos/{case_name}")
 async def get_memos(case_name: str):
     memos_ref = db.collection("memos").where("case_name", "==", case_name)
@@ -82,8 +127,6 @@ async def get_memos(case_name: str):
 
 
 # --- タスク保存エンドポイント ---
-
-
 @app.post("/tasks/")
 async def create_task(task: Task):
     task_dict = task.dict()
@@ -104,11 +147,18 @@ async def get_tasks(case_name: str):
     return {"tasks": tasks}
 
 
+# ActivityReportRequestモデルの定義
+class ActivityReportRequest(BaseModel):
+    case_name: str
+    memos: list
+    tasks: list
+
 # --- 活動報告書生成エンドポイント ---
 @app.post("/reports/activity/")
 async def generate_activity_report(req: ActivityReportRequest):
     # Geminiで活動報告書を生成
     def call_gemini():
+        gemini_agent: GeminiAgent = app.state.gemini_agent
         return gemini_agent.generate_activity_report(req.case_name, req.memos, req.tasks)
 
     try:
@@ -139,10 +189,11 @@ async def get_assessment_items():
 
 # --- アセスメントマッピングエンドポイント ---
 @app.post("/assessment/map/")
-async def map_assessment(req: AssessmentMappingRequest):
+async def map_assessment(req: AssessmentMappingRequest, request: Request):
     """
     面談記録を解析し、アセスメント項目にマッピングするエンドポイント。
     """
+    gemini_agent: GeminiAgent = request.app.state.gemini_agent
     try:
         mapped_data = gemini_agent.map_to_assessment_items(req.text_content, req.assessment_items)
         return mapped_data
@@ -153,16 +204,22 @@ async def map_assessment(req: AssessmentMappingRequest):
         )
 
 
+# SupportPlanRequestモデルの定義
+class SupportPlanRequest(BaseModel):
+    assessment_data: dict  # 必要に応じて型やフィールドを調整
+
 # --- 支援計画生成エンドポイント ---
 @app.post("/support-plan/generate/")
-async def generate_support_plan(req: SupportPlanRequest):
+async def generate_support_plan(req: SupportPlanRequest, request: Request):
     """
     アセスメント情報を基に支援計画を生成するエンドポイント。
     """
+    gemini_agent: GeminiAgent = request.app.state.gemini_agent
     try:
         plan = gemini_agent.generate_support_plan_with_agent(req.assessment_data)
         return {"plan": plan}
     except Exception as e:
+        logger.error(f"支援計画の生成中にエラーが発生しました: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"支援計画の生成中にエラーが発生しました: {str(e)}",
@@ -240,3 +297,12 @@ async def delete_resource(resource_id: str):
         return {"status": "deleted", "id": resource_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源削除失敗: {e}")
+# if __name__ == "__main__":
+#     # Windowsでのリロード問題を避けるため、reload_dirsを指定
+#     uvicorn.run(
+#         "main:app",
+#         host="0.0.0.0",
+#         port=8000,
+#         reload=True,
+#         reload_dirs=["application"],
+#     )
