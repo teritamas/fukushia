@@ -102,6 +102,25 @@ class ResourceUpdate(BaseModel):
 class Resource(ResourceBase):
     id: str
 
+# --- Advanced suggestion models ---
+class ResourceSuggestRequest(BaseModel):
+    assessment_data: Dict[str, Any]
+    top_k: int = 8
+    use_llm_summary: bool = True
+
+class SuggestedResource(BaseModel):
+    resource_id: str
+    service_name: str
+    score: float
+    matched_keywords: List[str] = []
+    excerpt: Optional[str] = None
+    reasons: Optional[List[str]] = []
+
+class ResourceSuggestResponse(BaseModel):
+    query_tokens: List[str]
+    resources: List[SuggestedResource]
+    used_summary: bool
+
 
 # --- Resource Memo Models ---
 class ResourceMemoBase(BaseModel):
