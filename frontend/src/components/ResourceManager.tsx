@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+"use client";
+import { useEffect, useState, useCallback } from 'react';
 
 interface Resource {
   id?: string;
@@ -27,6 +28,19 @@ interface ResourceMemo {
   updated_at?: number;
 }
 
+interface ImportResult {
+  source_path: string;
+  total_input: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors?: string[];
+  overwrite: boolean;
+  dry_run: boolean;
+  missing_field_counts: Record<string, number>;
+  skipped_invalid_service_name: number;
+}
+
 const emptyResource: Resource = {
   service_name: '',
   category: '',
@@ -53,10 +67,12 @@ export default function ResourceManager() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Resource>({ ...emptyResource });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [memoDrafts, setMemoDrafts] = useState<Record<string, string>>({});
+  // AbortError 判定用 type guard
+  const isAbortError = (err: unknown): boolean =>
+    typeof err === 'object' && err !== null && 'name' in err && (err as { name?: string }).name === 'AbortError';
   const [memos, setMemos] = useState<Record<string, ResourceMemo[]>>({});
   const [memoLoading, setMemoLoading] = useState<Record<string, boolean>>({});
-  const [importResult, setImportResult] = useState<any | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searching, setSearching] = useState<boolean>(false);
   const [searchMode, setSearchMode] = useState<boolean>(false);
@@ -65,7 +81,7 @@ export default function ResourceManager() {
   const [newDetailMemoContent, setNewDetailMemoContent] = useState<string>('');
   const API_BASE = 'http://localhost:8000';
 
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     setResourcesLoading(true);
     setError(null);
     try {
@@ -73,19 +89,24 @@ export default function ResourceManager() {
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
       const res = await fetch(`${API_BASE}/resources/`, { signal: controller.signal });
       clearTimeout(timeoutId);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '取得に失敗しました');
-      setResources(data);
-    } catch (e:any) {
-      if (e.name === 'AbortError') {
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || '取得に失敗しました');
+      }
+      setResources(data as Resource[]);
+    } catch (e: unknown) {
+  if (isAbortError(e)) {
         setError('タイムアウト: バックエンドが起動していない可能性があります (uvicorn を起動してください)。');
-      } else {
+      } else if (e instanceof Error) {
         setError(e.message || '取得エラー');
+      } else {
+        setError('取得エラー');
       }
     } finally {
       setResourcesLoading(false);
     }
-  };
+  }, []);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -101,21 +122,26 @@ export default function ResourceManager() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(`${API_BASE}/resources/search?q=${encodeURIComponent(searchQuery.trim())}`, { signal: controller.signal });
       clearTimeout(timeoutId);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '検索に失敗しました');
-      setResources(data);
-    } catch(e:any) {
-      if (e.name === 'AbortError') {
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || '検索に失敗しました');
+      }
+      setResources(data as Resource[]);
+    } catch(e: unknown) {
+  if (isAbortError(e)) {
         setError('タイムアウト: バックエンドが起動していない可能性があります。');
-      } else {
+      } else if (e instanceof Error) {
         setError(e.message || '検索エラー');
+      } else {
+        setError('検索エラー');
       }
     } finally {
       setSearching(false);
     }
   };
 
-  useEffect(() => { fetchResources(); }, []);
+  useEffect(() => { fetchResources(); }, [fetchResources]);
 
   const handleChange = (field: keyof Resource, value: string) => {
     if (field === 'keywords') {
@@ -136,13 +162,16 @@ export default function ResourceManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || '保存に失敗しました');
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || '保存に失敗しました');
+      }
       setForm({ ...emptyResource });
       setEditingId(null);
       fetchResources();
-    } catch (e:any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '保存に失敗しました');
     } finally {
       setActionLoading(false);
     }
@@ -153,12 +182,15 @@ export default function ResourceManager() {
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/resources/import-local?overwrite=${overwrite}` , { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'インポート失敗');
-  setImportResult(data);
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || 'インポート失敗');
+      }
+	setImportResult(data as ImportResult);
       fetchResources();
-    } catch(e:any) {
-      setError(e.message);
+    } catch(e: unknown) {
+      setError(e instanceof Error ? e.message : 'インポート失敗');
     } finally {
       setActionLoading(false);
     }
@@ -175,16 +207,17 @@ export default function ResourceManager() {
     try {
       const res = await fetch(`${API_BASE}/resources/${id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || '削除に失敗しました');
+        const data: unknown = await res.json();
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || '削除に失敗しました');
       }
       if (editingId === id) {
         setEditingId(null);
         setForm({ ...emptyResource });
       }
       fetchResources();
-    } catch (e:any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '削除に失敗しました');
     }
   };
 
@@ -192,11 +225,14 @@ export default function ResourceManager() {
     setMemoLoading(prev=>({...prev, [resourceId]: true}));
     try {
       const res = await fetch(`${API_BASE}/resources/${resourceId}/memos`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'メモ取得失敗');
-      setMemos(prev=>({...prev, [resourceId]: data}));
-    } catch(e:any) {
-      setError(e.message);
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || 'メモ取得失敗');
+      }
+      setMemos(prev=>({...prev, [resourceId]: data as ResourceMemo[]}));
+    } catch(e: unknown) {
+      setError(e instanceof Error ? e.message : 'メモ取得失敗');
     } finally {
       setMemoLoading(prev=>({...prev, [resourceId]: false}));
     }
@@ -207,7 +243,7 @@ export default function ResourceManager() {
     if (detailResource?.id && !memos[detailResource.id]) {
       fetchMemos(detailResource.id);
     }
-  }, [detailResource]);
+  }, [detailResource, memos]);
 
   const addMemoInDetail = async () => {
     if (!detailResource?.id) return;
@@ -219,30 +255,15 @@ export default function ResourceManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resource_id: detailResource.id, content })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'メモ追加失敗');
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || 'メモ追加失敗');
+      }
       setNewDetailMemoContent('');
       fetchMemos(detailResource.id);
-    } catch(e:any) {
-      setError(e.message);
-    }
-  };
-
-  const addMemo = async (resourceId: string) => {
-    const content = memoDrafts[resourceId];
-    if (!content?.trim()) return;
-    try {
-      const res = await fetch(`${API_BASE}/resources/${resourceId}/memos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resource_id: resourceId, content })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'メモ追加失敗');
-      setMemoDrafts(prev=>({...prev, [resourceId]: ''}));
-      fetchMemos(resourceId);
-    } catch(e:any) {
-      setError(e.message);
+    } catch(e: unknown) {
+      setError(e instanceof Error ? e.message : 'メモ追加失敗');
     }
   };
 
@@ -255,11 +276,14 @@ export default function ResourceManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: newContent })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'メモ更新失敗');
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || 'メモ更新失敗');
+      }
       fetchMemos(memo.resource_id);
-    } catch(e:any) {
-      setError(e.message);
+    } catch(e: unknown) {
+      setError(e instanceof Error ? e.message : 'メモ更新失敗');
     }
   };
 
@@ -268,12 +292,13 @@ export default function ResourceManager() {
     try {
       const res = await fetch(`${API_BASE}/resources/memos/${memo.id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || 'メモ削除失敗');
+        const data: unknown = await res.json();
+        const detail = (data as { detail?: string })?.detail;
+        throw new Error(detail || 'メモ削除失敗');
       }
       fetchMemos(memo.resource_id);
-    } catch(e:any) {
-      setError(e.message);
+    } catch(e: unknown) {
+      setError(e instanceof Error ? e.message : 'メモ削除失敗');
     }
   };
 
@@ -285,7 +310,7 @@ export default function ResourceManager() {
       <div className="flex flex-wrap gap-2 items-center bg-white border rounded p-3">
         <input
           className="border p-2 rounded flex-1 min-w-[240px]"
-          placeholder="検索キーワード (資源＋メモ全文"
+          placeholder="検索キーワード (資源＋メモ全文 / スペースAND)"
           value={searchQuery}
           onChange={e=>setSearchQuery(e.target.value)}
           onKeyDown={e=>{ if(e.key==='Enter') handleSearch(); }}
