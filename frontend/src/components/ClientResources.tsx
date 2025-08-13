@@ -40,7 +40,8 @@ export interface AssessmentDataShape {
 
 interface ClientResourcesProps {
   clientName: string | null;
-  assessmentData: AssessmentDataShape | null; // latest assessment for suggestions
+  assessmentData: AssessmentDataShape | null; // simplified assessment for suggestions
+  hasAssessmentPlan: boolean; // original existence flag (even if simplification produced null)
 }
 
 interface SuggestionEntry {
@@ -51,7 +52,7 @@ interface SuggestionEntry {
 
 const API_BASE = 'http://localhost:8000';
 
-export default function ClientResources({ clientName, assessmentData }: ClientResourcesProps) {
+export default function ClientResources({ clientName, assessmentData, hasAssessmentPlan }: ClientResourcesProps) {
   const [usages, setUsages] = useState<ResourceUsageDoc[]>([]);
   const [loadingUsage, setLoadingUsage] = useState(false);
   const [resources, setResources] = useState<ResourceRecord[]>([]);
@@ -165,16 +166,27 @@ export default function ClientResources({ clientName, assessmentData }: ClientRe
   // Advanced suggestions (LLM + embeddings) – fallback to naive if fails
   const [adv, setAdv] = useState<AdvancedSuggestedResource[] | null>(null);
   const [advLoading, setAdvLoading] = useState(false);
+  const [advFailed, setAdvFailed] = useState(false);
+  const [advReloadKey, setAdvReloadKey] = useState(0);
   useEffect(()=>{
     let cancelled = false;
     if (!assessmentData || !clientName) { setAdv(null); return; }
     setAdvLoading(true);
+    setAdvFailed(false);
     fetchAdvancedSuggestions(assessmentData).then(r=>{
       if (cancelled) return;
-      if (r && r.resources) setAdv(r.resources);
+      if (r && r.resources) {
+        setAdv(r.resources);
+      } else {
+        // null -> fetch error or non-OK
+        setAdvFailed(true);
+        setAdv([]); // keep array for easier conditional rendering
+      }
     }).finally(()=>{ if (!cancelled) setAdvLoading(false); });
     return ()=>{ cancelled = true; };
-  }, [assessmentData, clientName]);
+  }, [assessmentData, clientName, advReloadKey]);
+
+  const retryAdvanced = () => setAdvReloadKey(k=>k+1);
 
   const addUsage = async (res: ResourceRecord) => {
     if (!clientName || !res.id) return;
@@ -280,7 +292,18 @@ export default function ClientResources({ clientName, assessmentData }: ClientRe
           {assessmentData ? (
             <div>
               <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">利用できる社会資源・制度の提案 {loadingResources && <span className="text-[10px] text-gray-400">資源読込中...</span>} {advLoading && <span className="text-[10px] text-indigo-500">AI解析中...</span>}</h4>
-              {adv && adv.length === 0 && suggestions.length === 0 && !advLoading && <p className="text-[11px] text-gray-500">該当する提案はありません。</p>}
+              {advFailed && !advLoading && (
+                <div className="text-[11px] text-red-600 flex flex-col gap-1">
+                  <span>AI提案の取得に失敗しました（ネットワークまたはサーバエラー）。</span>
+                  <div className="flex items-center gap-2">
+                    <button onClick={retryAdvanced} className="px-2 py-0.5 text-[11px] rounded bg-red-600 text-white hover:bg-red-700">再試行</button>
+                    <span className="text-[10px] text-gray-500">フォールバック: キーワード一致のみを表示</span>
+                  </div>
+                </div>
+              )}
+              {!advFailed && adv && adv.length === 0 && suggestions.length === 0 && !advLoading && (
+                <p className="text-[11px] text-gray-500">現在のアセスメント内容から提案できる社会資源・制度は見つかりませんでした。記述を具体化するか関連キーワードを追加してください。</p>
+              )}
               <ul className="space-y-2">
                 {adv && adv.length>0 && adv.map(a => {
                   const already = existingIds.has(a.resource_id);
@@ -334,7 +357,11 @@ export default function ClientResources({ clientName, assessmentData }: ClientRe
           ) : (
             <div>
               <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">利用できる社会資源・制度の提案</h4>
-              <p className="text-[11px] text-gray-500">最新アセスメントが保存されていないため提案は表示されません。まずアセスメントを作成してください。</p>
+              {hasAssessmentPlan ? (
+                <p className="text-[11px] text-gray-500">アセスメントはありますがテキスト化できる内容がほとんど無いため提案を生成できません。各カテゴリに要約や所感を入力後、対象者を再選択してください。</p>
+              ) : (
+                <p className="text-[11px] text-gray-500">最新アセスメントが保存されていないため提案は表示されません。まずアセスメントを作成してください。</p>
+              )}
             </div>
           )}
         </>

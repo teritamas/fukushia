@@ -86,8 +86,9 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 
-# loggingの設定
-logging.basicConfig(level=logging.INFO)
+# logging の設定 (LOG_LEVEL 環境変数で上書き可能: DEBUG / INFO / WARNING ...)
+_log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, _log_level, logging.INFO))
 logger = logging.getLogger(__name__)
 
 # ---------------- In-memory embedding index (prototype) ----------------
@@ -103,20 +104,46 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot/(na*nb)
 
 def _embed_texts(texts: list[str]) -> list[list[float]]:
+    """Embed a list of texts returning list of float vectors.
+
+    Supports current google-generativeai SDK (embed_content) and falls back gracefully
+    if the SDK is missing / misconfigured.
+    """
+    if not texts:
+        return []
     try:
-        from google.generativeai import embeddings
+        import google.generativeai as genai  # type: ignore
+        if GEMINI_API_KEY:
+            try:
+                genai.configure(api_key=GEMINI_API_KEY)
+            except Exception as ce:  # configuration errors
+                logger.warning(f"genai configure failed: {ce}")
         vecs: list[list[float]] = []
         for t in texts:
+            truncated = (t or '')[:8000]
+            if not truncated.strip():
+                vecs.append([])
+                continue
             try:
-                resp = embeddings.embed_content(model=EMBED_MODEL_NAME, content=t[:8000])
-                vecs.append(resp["embedding"])  # type: ignore
+                resp = genai.embed_content(model=EMBED_MODEL_NAME, content=truncated)
+                # New SDK returns dict with 'embedding'; older could be object
+                if isinstance(resp, dict):
+                    emb = resp.get('embedding', [])
+                else:
+                    emb = getattr(resp, 'embedding', [])
+                if not isinstance(emb, list):
+                    emb = []
+                vecs.append(emb)
             except Exception as e:
                 logger.warning(f"embedding failure: {e}")
                 vecs.append([])
         return vecs
+    except ImportError as ie:
+        logger.error(f"Embedding API import error: {ie}")
     except Exception as e:
         logger.error(f"Embedding API error: {e}")
-        return [[] for _ in texts]
+    # Fallback: return empty vectors preserving length
+    return [[] for _ in texts]
 
 def _resource_to_corpus(r: Resource) -> str:
     parts = [r.service_name or "", r.category or "", r.description or "", r.eligibility or "", r.application_process or "", r.target_users or "", " ".join(r.keywords or [])]
@@ -778,17 +805,24 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
     base_text = "\n".join(texts)[:20000]
     summary_text = base_text
     used_summary = False
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(f"[suggest_debug] raw_text_len={len(base_text)} snippets={len(texts)}")
     if req.use_llm_summary and base_text:
         try:
             gemini_agent: GeminiAgent = request.app.state.gemini_agent
             summary_text = gemini_agent.summarize_for_resource_match(base_text)
             used_summary = True
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"[suggest_debug] summarization used_summary={used_summary} summary_len={len(summary_text)}")
         except Exception as e:
             logger.warning(f"summary failed fallback raw: {e}")
             summary_text = base_text
     tokens = [t.lower() for t in re.split(r"[\s、。,.；;:\n\r\t/()『』「」【】\[\]{}]+", summary_text) if len(t) > 1][:1000]
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(f"[suggest_debug] token_count={len(tokens)} first_tokens={tokens[:15]}")
     q_vec = _embed_texts([summary_text])[0]
     scored: list[tuple[str,float,list[str],Resource]] = []
+    debug_components: list[dict] = []
     try:
         docs = _resource_collection().stream()
         for d in docs:
@@ -804,10 +838,28 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
             if final <= 0:
                 continue
             scored.append((res.id, final, overlap, res))
+            if logger.isEnabledFor(logging.DEBUG):
+                if len(debug_components) < 50:  # limit to avoid log explosion
+                    debug_components.append({
+                        "id": res.id,
+                        "name": res.service_name[:60],
+                        "kw_overlap": overlap,
+                        "kw_score": kw_score,
+                        "emb_score": round(emb_score, 4),
+                        "final": round(final, 4)
+                    })
     except Exception as e:
         logger.error(f"suggest iteration failed: {e}")
     scored.sort(key=lambda x: x[1], reverse=True)
     top = scored[: req.top_k]
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(f"[suggest_debug] candidates_considered={len(scored)} returning={len(top)} used_summary={used_summary}")
+        # log top 10 component breakdown (already limited above)
+        try:
+            import json as _json
+            logger.debug("[suggest_debug] score_components=" + _json.dumps(debug_components[:10], ensure_ascii=False))
+        except Exception:
+            pass
     return ResourceSuggestResponse(
         query_tokens=tokens[:100],
         resources=[
