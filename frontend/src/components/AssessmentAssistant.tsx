@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, addDoc, Timestamp, getDocs, query, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import { collection, addDoc, Timestamp, getDocs, query, where, QueryDocumentSnapshot, DocumentData, doc, updateDoc, orderBy, limit, writeBatch } from "firebase/firestore";
 import { assessmentItems } from "../lib/assessmentItems";
 import { useClientContext } from "./ClientContext";
 
@@ -8,10 +8,12 @@ export default function AssessmentAssistant() {
   const [assessmentResult] = useState("");
   const [assessmentLoading] = useState(false);
   const [assessmentError] = useState<string | null>(null);
-  const { currentClient } = useClientContext();
+  const { currentClient, assessmentEditSignal, assessmentEditTarget } = useClientContext();
   type MappedResult = Record<string, Record<string, string | Record<string, string>>>;
   const [mappedResult, setMappedResult] = useState<MappedResult | null>(null);
   const [existingAssessment, setExistingAssessment] = useState<MappedResult | null>(null);
+  const [existingDocId, setExistingDocId] = useState<string | null>(null);
+  const [existingVersion, setExistingVersion] = useState<number | null>(null);
   const [existingLoading, setExistingLoading] = useState(false);
   const [existingError, setExistingError] = useState<string | null>(null);
   const [showCreation, setShowCreation] = useState(false); // まだ保存が無いときに作成フローを開くか
@@ -37,10 +39,24 @@ export default function AssessmentAssistant() {
 
 田中: 離婚して、今は一人暮らしです。遠方に住んでいる母親がいますが、高齢なので心配はかけたくありません。
 
-社会福祉士: 承知いたしました。本日はたくさんお話しいただきありがとうございました。本日お伺いした内容を元に、まずは生活を安定させるための支援と、田中さんの得意なことを活かせる就労支援について、一緒に計画を立てていきましょう。`);
+社会福祉士: 承知いたしました。本日はたくさんお話しいいただきありがとうございました。本日お伺いした内容を元に、まずは生活を安定させるための支援と、田中さんの得意なことを活かせる就労支援について、一緒に計画を立てていきましょう。`);
   const [mappingLoading, setMappingLoading] = useState(false);
   const [mappingError, setMappingError] = useState<string | null>(null);
-  
+
+  // Editing states
+  const [editing, setEditing] = useState(false);
+  // Flat edit buffer so we don't mutate original object each keystroke (prevents re-renders & focus loss)
+  const [editBuffer, setEditBuffer] = useState<Record<string,string>>({}); // key: form|category|sub?
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [saveEditMessage, setSaveEditMessage] = useState<string | null>(null);
+
+  // Change history
+  interface ChangeEntry { id: string; path: string; oldValue: string; newValue: string; userId: string; createdAt?: { seconds?: number }; }
+  const [history, setHistory] = useState<ChangeEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+
   // 支援者一覧取得と選択は親コンポーネント(ClientWorkspace)で管理
 
   const handleMapAssessment = async () => {
@@ -112,9 +128,12 @@ export default function AssessmentAssistant() {
         originalScript: script,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
+        version: 1,
       });
       // 保存後は既存表示モードへ移行
       setExistingAssessment(mappedResult);
+      setExistingDocId(docRef.id);
+      setExistingVersion(1);
       setMappedResult(null);
       alert(`アセスメント結果が保存されました。 (ID: ${docRef.id})`);
     } catch (error) {
@@ -123,10 +142,10 @@ export default function AssessmentAssistant() {
     }
   };
 
-  // 既存アセスメント読込
+  // 既存アセスメント読込 (store docId)
   useEffect(()=>{
     const loadExisting = async () => {
-      if (!currentClient) { setExistingAssessment(null); return; }
+      if (!currentClient) { setExistingAssessment(null); setExistingDocId(null); return; }
       setExistingLoading(true); setExistingError(null);
       try {
         const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
@@ -134,47 +153,229 @@ export default function AssessmentAssistant() {
         const ref = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`);
         const qAssess = query(ref, where('clientName','==', currentClient.name));
         const snap = await getDocs(qAssess);
-        if (snap.empty) { setExistingAssessment(null); }
+        if (snap.empty) { setExistingAssessment(null); setExistingDocId(null); }
         else {
-            interface RawDoc { id: string; createdAt?: { seconds?: number } | null; assessment?: MappedResult | null }
-            const docs = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...(d.data() as DocumentData) })) as RawDoc[];
-            docs.sort((a,b)=> ((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
-            setExistingAssessment(docs[0]?.assessment ?? null);
+          interface RawDoc { id: string; createdAt?: { seconds?: number } | null; assessment?: MappedResult | null; version?: number | null }
+          const docs = snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => ({ id: d.id, ...(d.data() as DocumentData) })) as RawDoc[];
+          docs.sort((a,b)=> ((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
+          setExistingAssessment(docs[0]?.assessment ?? null);
+          setExistingDocId(docs[0]?.id || null);
+          setExistingVersion(docs[0]?.version || 1);
         }
-  } catch(e) {
+      } catch(e) {
         console.error(e);
         setExistingError('既存アセスメントの取得に失敗しました');
-      } finally {
-        setExistingLoading(false);
-      }
-    };
+      } finally { setExistingLoading(false);}  };
     loadExisting();
   }, [currentClient]);
 
-  // 既存があれば読み取り専用表示
-  if (existingAssessment) {
+  // 履歴読み込み
+  useEffect(()=>{
+    const loadHistory = async () => {
+      if (!existingDocId || !currentClient) { setHistory([]); return; }
+      setHistoryLoading(true); setHistoryError(null);
+      try {
+        const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+        const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+        const changesRef = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}/changes`);
+        const qHist = query(changesRef, orderBy('createdAt','desc'), limit(30));
+        const snap = await getDocs(qHist);
+        const list: ChangeEntry[] = snap.docs.map(d=> ({ id: d.id, ...(d.data() as DocumentData) })) as ChangeEntry[];
+        setHistory(list);
+      } catch(e) {
+        console.error(e);
+        setHistoryError('履歴の取得に失敗しました');
+      } finally { setHistoryLoading(false); }
+    };
+    loadHistory();
+  }, [existingDocId, currentClient]);
+
+  // 編集開始
+  const startEdit = () => {
+    if (!existingAssessment) return;
+    const flat: Record<string,string> = {};
+    for (const [form, cats] of Object.entries(existingAssessment)) {
+      for (const [cat, val] of Object.entries(cats)) {
+        if (typeof val === 'string') flat[`${form}|${cat}`] = val;
+        else for (const [sub, subVal] of Object.entries(val as Record<string,string>)) flat[`${form}|${cat}|${sub}`] = subVal;
+      }
+    }
+    setEditBuffer(flat);
+    setEditing(true);
+    setSaveEditMessage(null);
+  };
+
+  const handleEditedChange = (form: string, category: string, sub: string | null, value: string) => {
+    const key = sub ? `${form}|${category}|${sub}` : `${form}|${category}`;
+    setEditBuffer(prev => ({ ...prev, [key]: value }));
+  };
+
+  // 差分抽出
+  interface FieldChange { path: string; oldValue: string; newValue: string; }
+  const diffAssessments = (before: MappedResult, after: MappedResult): FieldChange[] => {
+    const changes: FieldChange[] = [];
+    for (const [form, categories] of Object.entries(after)) {
+      const beforeForm = before[form] || {};
+      for (const [category, value] of Object.entries(categories)) {
+        const beforeVal = beforeForm[category];
+        if (typeof value === 'string') {
+          const oldStr = typeof beforeVal === 'string' ? beforeVal : '';
+            if (oldStr !== value) changes.push({ path: `${form} > ${category}`, oldValue: oldStr, newValue: value });
+        } else {
+          // object
+          const valueObj = value as Record<string,string>;
+          const beforeObj = (beforeVal && typeof beforeVal === 'object') ? beforeVal as Record<string,string> : {};
+          for (const [sub, subVal] of Object.entries(valueObj)) {
+            const oldSub = beforeObj[sub] || '';
+            if (oldSub !== subVal) changes.push({ path: `${form} > ${category} > ${sub}`, oldValue: oldSub, newValue: subVal });
+          }
+          // detect deleted subs (if needed) - skipped for now
+        }
+      }
+    }
+    return changes;
+  };
+
+  const saveEdits = async () => {
+    if (!currentClient || !existingDocId || !existingAssessment) return;
+    // reconstruct
+    const reconstructed: MappedResult = JSON.parse(JSON.stringify(existingAssessment));
+    for (const [key, val] of Object.entries(editBuffer)) {
+      const parts = key.split('|');
+      const [form, cat, sub] = parts;
+      if (!reconstructed[form]) reconstructed[form] = {} as Record<string, string | Record<string,string>>;
+      if (sub) {
+        if (typeof reconstructed[form][cat] !== 'object' || reconstructed[form][cat] === null) {
+          reconstructed[form][cat] = {} as Record<string,string>;
+        }
+        (reconstructed[form][cat] as Record<string,string>)[sub] = val;
+      } else {
+        reconstructed[form][cat] = val;
+      }
+    }
+    const changes = diffAssessments(existingAssessment, reconstructed);
+    if (changes.length === 0) { setSaveEditMessage('変更はありません'); setEditing(false); return; }
+    setSavingEdit(true); setSaveEditMessage(null);
+    try {
+      const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+      const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+      const assessDocRef = doc(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}`);
+      const newVersion = (existingVersion || 1) + 1;
+      await updateDoc(assessDocRef, {
+        assessment: reconstructed,
+        updatedAt: Timestamp.now(),
+        version: newVersion,
+      });
+      // Write change entries in batch
+      const changesColPath = `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}/changes`;
+      const changesColRef = collection(db, changesColPath);
+      const batch = writeBatch(db);
+      const now = Timestamp.now();
+      const userId = USER_ID;
+      const newHistoryEntries: ChangeEntry[] = [];
+      for (const c of changes) {
+        const changeDocRef = doc(changesColRef); // auto ID
+        batch.set(changeDocRef, { path: c.path, oldValue: c.oldValue, newValue: c.newValue, userId, createdAt: now });
+        newHistoryEntries.push({ id: changeDocRef.id, path: c.path, oldValue: c.oldValue, newValue: c.newValue, userId, createdAt: { seconds: now.seconds } });
+      }
+      await batch.commit();
+    setExistingAssessment(reconstructed);
+      setExistingVersion(newVersion);
+      setHistory(prev => ([...newHistoryEntries, ...prev]).slice(0,30));
+      setEditing(false);
+      setSaveEditMessage(`${changes.length}件の変更を保存しました (v${newVersion})`);
+    } catch(e) {
+      console.error(e);
+      setSaveEditMessage('保存中にエラーが発生しました');
+    } finally { setSavingEdit(false); }
+  };
+
+  const cancelEdit = () => { setEditing(false); setEditBuffer({}); setSaveEditMessage(null); };
+
+  // (removed auto-resize & field editor for stability)
+
+  // 外部からの編集リクエストを監視
+  useEffect(()=>{
+    if (!assessmentEditSignal) return;
+    // Only trigger if we already have an existing assessment loaded
+    if (existingAssessment) {
+      startEdit();
+      // Scroll to target if specified
+      if (assessmentEditTarget?.category) {
+        setTimeout(()=>{
+          const el = document.querySelector(`[data-assessment-category="${assessmentEditTarget.category}"]`);
+          if (el) (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessmentEditSignal]);
+
+  // 既存があれば読み取り専用表示 (enhanced with edit + history)
+  if (existingAssessment && !showCreation) {
+  const displayData = existingAssessment;
     return (
       <div>
-        <h2 className="text-xl font-semibold mb-4">保存済みアセスメント</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">保存済みアセスメント{existingVersion ? ` (v${existingVersion})` : ''}</h2>
+          <div className="flex gap-2">
+            {existingDocId && (
+              <button onClick={()=> setShowHistory(s=>!s)} className="text-xs px-3 py-1 rounded border bg-white hover:bg-gray-50">{showHistory? '履歴を隠す' : '変更履歴'}</button>
+            )}
+            {!editing && <button onClick={startEdit} className="text-xs px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700">編集</button>}
+            {editing && (
+              <>
+                <button disabled={savingEdit} onClick={saveEdits} className="text-xs px-3 py-1 rounded bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50">{savingEdit? '保存中...' : '変更を保存'}</button>
+                <button disabled={savingEdit} onClick={cancelEdit} className="text-xs px-3 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-50">キャンセル</button>
+              </>
+            )}
+          </div>
+        </div>
+        {saveEditMessage && <p className="text-xs mb-2 text-gray-600">{saveEditMessage}</p>}
         {currentClient && (
           <div className="text-sm text-gray-700 mb-3">対象支援者: <span className="font-semibold">{currentClient.name}</span></div>
         )}
         {existingLoading && <p className="text-xs text-gray-500">読み込み中...</p>}
         {existingError && <p className="text-xs text-red-500">{existingError}</p>}
-        {!existingLoading && !existingError && (
+
+        {showHistory && (
+          <div className="mb-6 border rounded bg-white p-4 text-xs max-h-64 overflow-auto">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-gray-700 text-sm">変更履歴</h3>
+              {historyLoading && <span className="text-gray-400 text-[10px]">更新中...</span>}
+            </div>
+            {historyError && <p className="text-red-500">{historyError}</p>}
+            {!historyLoading && history.length === 0 && <p className="text-gray-400 italic">履歴がありません</p>}
+            <ul className="space-y-2">
+              {history.map(h => (
+                <li key={h.id} className="border rounded p-2 bg-gray-50">
+                  <div className="flex flex-wrap gap-x-2 gap-y-1">
+                    <span className="font-medium text-gray-700">{h.path}</span>
+                    <span className="text-gray-400">{h.createdAt?.seconds ? new Date(h.createdAt.seconds*1000).toLocaleString('ja-JP') : ''}</span>
+                    <span className="text-gray-500">by {h.userId}</span>
+                  </div>
+                  <div className="mt-1 grid grid-cols-2 gap-2">
+                    <div className="bg-white border rounded p-1">
+                      <p className="text-[10px] text-gray-400 mb-0.5">旧</p>
+                      <div className="whitespace-pre-wrap break-words max-h-24 overflow-auto">{h.oldValue || '—'}</div>
+                    </div>
+                    <div className="bg-white border rounded p-1">
+                      <p className="text-[10px] text-gray-400 mb-0.5">新</p>
+                      <div className="whitespace-pre-wrap break-words max-h-24 overflow-auto">{h.newValue || '—'}</div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {!existingLoading && !existingError && displayData && (
           <div className="space-y-10">
-            {Object.entries(existingAssessment)
+            {Object.entries(displayData)
               .sort((a,b)=>{
-                const order = (name:string)=>{
-                  if (name.startsWith('様式1')) return 0;
-                  if (name.startsWith('様式2')) return 1;
-                  return 10; // fallback later forms
-                };
-                const oa = order(a[0]);
-                const ob = order(b[0]);
-                if (oa!==ob) return oa-ob;
-                return a[0].localeCompare(b[0], 'ja');
-              })
+                const order = (name:string)=>{ if (name.startsWith('様式1')) return 0; if (name.startsWith('様式2')) return 1; return 10; };
+                const oa = order(a[0]); const ob = order(b[0]); if (oa!==ob) return oa-ob; return a[0].localeCompare(b[0], 'ja'); })
               .map(([form, categories]) => (
               <div key={form} className="border rounded bg-white shadow-sm p-5">
                 <div className="flex items-center justify-between mb-4">
@@ -182,16 +383,34 @@ export default function AssessmentAssistant() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {Object.entries(categories as Record<string, string | Record<string, string>>).map(([category, value]) => (
-                    <div key={category} className="text-sm flex flex-col">
+                    <div key={category} className="text-sm flex flex-col" data-assessment-category={category}>
                       <p className="font-semibold text-gray-700 mb-1">{category}</p>
                       {typeof value === 'string' ? (
-                        <div className="bg-gray-50 border rounded p-2 whitespace-pre-wrap leading-relaxed text-gray-800 min-h-[3rem]">{value || '—'}</div>
+                        editing ? (
+                          <textarea
+                            value={editBuffer[`${form}|${category}`] ?? value ?? ''}
+                            onChange={(e)=> handleEditedChange(form, category, null, e.target.value)}
+                            className="border rounded p-2 text-sm w-full"
+                            rows={3}
+                          />
+                        ) : (
+                          <div className="bg-gray-50 border rounded p-2 whitespace-pre-wrap leading-relaxed text-gray-800 min-h-[3rem]">{value || '—'}</div>
+                        )
                       ) : (
                         <div className="space-y-3">
                           {Object.entries(value as Record<string,string>).map(([sub, subVal]) => (
                             <div key={sub} className="border rounded bg-gray-50 p-2">
                               <p className="text-[11px] font-semibold text-gray-500 mb-1">{sub}</p>
-                              <div className="whitespace-pre-wrap leading-relaxed text-gray-800 text-[12px]">{subVal || '—'}</div>
+                              {editing ? (
+                                <textarea
+                                  value={editBuffer[`${form}|${category}|${sub}`] ?? subVal ?? ''}
+                                  onChange={(e)=> handleEditedChange(form, category, sub, e.target.value)}
+                                  className="border rounded p-1 w-full text-[12px]"
+                                  rows={2}
+                                />
+                              ) : (
+                                <div className="whitespace-pre-wrap leading-relaxed text-gray-800 text-[12px]">{subVal || '—'}</div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -297,7 +516,7 @@ export default function AssessmentAssistant() {
                           {typeof value === 'string' ? (
                             <textarea
                               value={value}
-                              onChange={(e) => handleResultChange(form, category, null, e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleResultChange(form, category, null, e.target.value)}
                               className="w-full border p-2 rounded mt-1 text-sm"
                               rows={3}
                             />
@@ -308,7 +527,7 @@ export default function AssessmentAssistant() {
                                   <label className="text-sm font-semibold text-gray-500">{subCategory}</label>
                                   <textarea
                                     value={subValue as string}
-                                    onChange={(e) => handleResultChange(form, category, subCategory, e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleResultChange(form, category, subCategory, e.target.value)}
                                     className="w-full border p-2 rounded mt-1 text-sm"
                                     rows={2}
                                   />
