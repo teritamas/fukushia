@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-
-import ClientList from "./ClientList";
+import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, addDoc, Timestamp } from "firebase/firestore";
 import ReportGenerator from "./ReportGenerator";
 
-export default function ClientDetail() {
-  const [clients, setClients] = useState<string[]>([]);
-  const [selectedClient, setSelectedClient] = useState("");
+interface ClientDetailProps { selectedClient: string; }
+export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   type TodoItem = {
     text: string;
     dueDate?: { seconds: number } | string;
@@ -49,6 +46,50 @@ export default function ClientDetail() {
   const [editableSupportPlan, setEditableSupportPlan] = useState<string>("");
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
   const [assessmentsError, setAssessmentsError] = useState<string | null>(null);
+
+  // メモ / TODO 入力用 draft state
+  type TodoDraft = { id: string; text: string; dueDate: string };
+  const [speaker, setSpeaker] = useState("");
+  const [memoContent, setMemoContent] = useState("");
+  const [todos, setTodos] = useState<TodoDraft[]>([{ id: 'initial', text: '', dueDate: '' }]);
+  const addTodoField = () => setTodos(prev => [...prev, { id: Date.now().toString(), text: '', dueDate: '' }]);
+  const removeTodoField = (id: string) => setTodos(prev => prev.filter(t => t.id !== id));
+  const updateTodoField = (id: string, key: 'text' | 'dueDate', value: string) => setTodos(prev => prev.map(t => t.id === id ? { ...t, [key]: value } : t));
+  const handleSaveClientNote = async () => {
+    if (!selectedClient) return;
+    if (!memoContent.trim() && todos.every(t => !t.text.trim())) return;
+    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+    const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+    const todoItems = todos.filter(t => t.text.trim()).map(t => ({
+      id: t.id,
+      text: t.text.trim(),
+      dueDate: t.dueDate ? Timestamp.fromDate(new Date(t.dueDate)) : null,
+      isCompleted: false
+    }));
+    try {
+      await addDoc(collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`), {
+        clientName: selectedClient,
+        speaker: speaker.trim(),
+        content: memoContent.trim(),
+        todoItems,
+        timestamp: Timestamp.now()
+      });
+      // 再取得でも良いが即時反映
+      // Note 型へ合わせる (dueDate は文字列 or {seconds})
+      const noteTodoItems = todoItems.map(t => ({
+        text: t.text,
+        dueDate: t.dueDate ? { seconds: Math.floor((t.dueDate as Timestamp).seconds ?? Date.now()/1000) } : undefined,
+        isCompleted: t.isCompleted
+      }));
+      setNotes(prev => [{ speaker: speaker.trim(), content: memoContent.trim(), todoItems: noteTodoItems, timestamp: { seconds: Math.floor(Date.now()/1000) } }, ...prev]);
+      setSpeaker("");
+      setMemoContent("");
+      setTodos([{ id: 'initial', text: '', dueDate: '' }]);
+    } catch (e) {
+      console.error(e);
+      alert('メモ保存に失敗しました');
+    }
+  };
 
   // 支援計画生成用
   const [planLoading, setPlanLoading] = useState<boolean>(false);
@@ -106,21 +147,7 @@ export default function ClientDetail() {
     }
   };
 
-  // Firestoreから支援者一覧を取得
-  useEffect(() => {
-    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-    const USER_ID =
-      process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-    const fetchClients = async () => {
-      const ref = collection(
-        db,
-        `artifacts/${APP_ID}/users/${USER_ID}/clients`
-      );
-      const snap = await getDocs(ref);
-      setClients(snap.docs.map((doc) => doc.data().name));
-    };
-    fetchClients();
-  }, []);
+  // 支援者一覧取得は上位コンポーネントに移動済み
 
   // 支援者選択時にその人のメモと最新のアセスメントを取得
   useEffect(() => {
@@ -193,12 +220,35 @@ export default function ClientDetail() {
         <h2 className="text-xl font-bold mb-4 text-blue-900">
           日々の活動メモ入力
         </h2>
-        <ClientList
-          selectedClient={selectedClient}
-          setSelectedClient={setSelectedClient}
-          clients={clients}
-          setClients={setClients}
-        />
+  {/* 支援者選択 UI は上部 ClientWorkspace に統合 */}
+        {/* メモ / TODO 入力フォーム */}
+        <div className="mb-6 p-4 border rounded bg-gray-50">
+          <div className="mb-2 flex items-center gap-2">
+            <label className="text-sm text-gray-700 w-14">発言者</label>
+            <input value={speaker} onChange={e=>setSpeaker(e.target.value)} placeholder="例: 本人 / 家族" className="flex-1 border rounded px-2 py-1 text-sm" />
+            <button type="button" onClick={()=>setSpeaker('本人')} className="text-xs px-2 py-1 bg-gray-200 rounded">本人</button>
+          </div>
+          <div className="mb-2">
+            <label className="text-sm text-gray-700 block mb-1">メモ内容</label>
+            <textarea value={memoContent} onChange={e=>setMemoContent(e.target.value)} rows={3} className="w-full border rounded px-2 py-1 text-sm" placeholder="活動や気づき、課題など" />
+          </div>
+          <div className="mb-3">
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-sm font-medium text-gray-700">TODO（タスク化）</label>
+              <button type="button" onClick={addTodoField} className="text-xs text-blue-600 hover:underline">＋追加</button>
+            </div>
+            <div className="space-y-2">
+              {todos.map((t,i)=>(
+                <div key={t.id} className="flex gap-2 items-center">
+                  <input value={t.text} onChange={e=>updateTodoField(t.id,'text',e.target.value)} placeholder={`タスク${i+1}`} className="flex-1 border rounded px-2 py-1 text-xs" />
+                  <input type="date" value={t.dueDate} onChange={e=>updateTodoField(t.id,'dueDate',e.target.value)} className="border rounded px-2 py-1 text-xs" />
+                  <button type="button" onClick={()=>removeTodoField(t.id)} disabled={todos.length===1} className="text-[10px] text-red-500 disabled:opacity-30">削除</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button disabled={!selectedClient || (!memoContent.trim() && todos.every(t=>!t.text.trim()))} onClick={handleSaveClientNote} className="w-full bg-blue-600 disabled:bg-blue-300 text-white text-sm py-2 rounded">保存</button>
+        </div>
         {loading && <p>読み込み中...</p>}
         {selectedClient && !loading && (
           <div>
