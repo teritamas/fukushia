@@ -76,8 +76,10 @@ class ResourceBase(BaseModel):
     keywords: Optional[List[str]] = []
     last_verified_at: Optional[float] = None
 
+
 class ResourceCreate(ResourceBase):
     pass
+
 
 class ResourceUpdate(BaseModel):
     service_name: Optional[str] = None
@@ -96,6 +98,7 @@ class ResourceUpdate(BaseModel):
     keywords: Optional[List[str]] = None
     last_verified_at: Optional[float] = None
 
+
 class Resource(ResourceBase):
     id: str
 
@@ -105,11 +108,14 @@ class ResourceMemoBase(BaseModel):
     resource_id: str
     content: str
 
+
 class ResourceMemoCreate(ResourceMemoBase):
     pass
 
+
 class ResourceMemoUpdate(BaseModel):
     content: str
+
 
 class ResourceMemo(ResourceMemoBase):
     id: str

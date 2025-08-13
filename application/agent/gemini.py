@@ -14,7 +14,8 @@ from .tools.support_planner_tools import (
 )
 
 # loggingの設定
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
 
 class GeminiAgent:
     def __init__(
@@ -34,7 +35,9 @@ class GeminiAgent:
         # ライブラリのバージョン不整合対策: _prepare_request が convert_system_message_to_human を参照するが
         # モデル定義からフィールドが削除されている場合があるため、クラスに擬似フィールドを追加して解消
         if not hasattr(ChatGoogleGenerativeAI, "convert_system_message_to_human"):
-            logging.warning("Monkeypatch: Adding missing attribute 'convert_system_message_to_human' to ChatGoogleGenerativeAI class (False).")
+            logging.warning(
+                "Monkeypatch: Adding missing attribute 'convert_system_message_to_human' to ChatGoogleGenerativeAI class (False)."
+            )
             ChatGoogleGenerativeAI.convert_system_message_to_human = False  # class attribute
 
         self.llm = ChatGoogleGenerativeAI(
@@ -50,7 +53,9 @@ class GeminiAgent:
             logging.info(f"【Tool】Executing safe_google_search with query: {query}")
             try:
                 # 2025/令和7年度など最新年度情報を意図したクエリ強化: 年度指定が無く制度/給付系キーワードなら 2025 を付加
-                if not any(y in query for y in ["2025", "令和7", "R7"]) and any(k in query for k in ["制度", "給付", "補助", "支援", "助成", "要件", "対象"]):
+                if not any(y in query for y in ["2025", "令和7", "R7"]) and any(
+                    k in query for k in ["制度", "給付", "補助", "支援", "助成", "要件", "対象"]
+                ):
                     query += " 2025"
                     logging.info(f"【Tool】Augmented google query with year -> {query}")
                 results = search_api.results(query, num_results=5)
@@ -95,7 +100,7 @@ class GeminiAgent:
             tools=tools,
             verbose=True,
             handle_parsing_errors=True,
-            max_iterations=10, # 無限ループを防ぐ
+            max_iterations=10,  # 無限ループを防ぐ
         )
 
     def generate_support_plan_with_agent(self, assessment_data: dict) -> str:
@@ -112,23 +117,25 @@ class GeminiAgent:
                 supporter_info = {}
                 a = assessment_data.get("assessment") or {}
                 try:
-                    form1 = a.get('様式1：インテークシート', {})
-                    personal = form1.get('本人情報', {}) if isinstance(form1, dict) else {}
-                    consult = form1.get('相談内容', {}) if isinstance(form1, dict) else {}
-                    supporter_info.update({
-                        "name": personal.get('氏名') or personal.get('名前'),
-                        "address": personal.get('現住所') or personal.get('住所'),
-                    })
+                    form1 = a.get("様式1：インテークシート", {})
+                    personal = form1.get("本人情報", {}) if isinstance(form1, dict) else {}
+                    consult = form1.get("相談内容", {}) if isinstance(form1, dict) else {}
+                    supporter_info.update(
+                        {
+                            "name": personal.get("氏名") or personal.get("名前"),
+                            "address": personal.get("現住所") or personal.get("住所"),
+                        }
+                    )
                     # concerns を複数フィールドから連結
                     concern_parts = []
                     if isinstance(consult, dict):
-                        concern_parts.append(consult.get('相談の概要'))
+                        concern_parts.append(consult.get("相談の概要"))
                     supporter_info["concerns"] = "。".join([p for p in concern_parts if p]) or None
                 except Exception:
                     pass
 
                 # プレースホルダ補完
-                for k in ["name","address","concerns"]:
+                for k in ["name", "address", "concerns"]:
                     supporter_info.setdefault(k, "不明")
 
             # エージェントに与える入力テキストを構築
@@ -137,11 +144,11 @@ class GeminiAgent:
                 "raw_assessment": assessment_data,
             }
             assessment_text = json.dumps(agent_input_obj, indent=2, ensure_ascii=False)
-            
+
             # エージェントの入力は`input`キーに文字列として渡す
             response = self.planner_agent.invoke({"input": assessment_text})
-            
-            plan_json = response['output']
+
+            plan_json = response["output"]
 
             logging.info("--- Planner Agent Finished ---")
             # JSONオブジェクトを整形された文字列として返す
@@ -150,4 +157,3 @@ class GeminiAgent:
         except Exception as e:
             logging.error(f"Planner Agent execution failed: {e}", exc_info=True)
             return f"支援計画の生成中にエラーが発生しました: {e}"
-
