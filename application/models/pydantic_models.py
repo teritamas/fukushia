@@ -74,6 +74,7 @@ class ResourceBase(BaseModel):
     contact_email: Optional[str] = None
     contact_url: Optional[str] = None
     keywords: Optional[List[str]] = []
+    last_verified_at: Optional[float] = None
 
 class ResourceCreate(ResourceBase):
     pass
@@ -93,6 +94,24 @@ class ResourceUpdate(BaseModel):
     contact_email: Optional[str] = None
     contact_url: Optional[str] = None
     keywords: Optional[List[str]] = None
+    last_verified_at: Optional[float] = None
 
 class Resource(ResourceBase):
     id: str
+
+
+# --- Resource Memo Models ---
+class ResourceMemoBase(BaseModel):
+    resource_id: str
+    content: str
+
+class ResourceMemoCreate(ResourceMemoBase):
+    pass
+
+class ResourceMemoUpdate(BaseModel):
+    content: str
+
+class ResourceMemo(ResourceMemoBase):
+    id: str
+    created_at: float
+    updated_at: float
