@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase";
 import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, addDoc, Timestamp } from "firebase/firestore";
 import ReportGenerator from "./ReportGenerator";
+import ClientResources, { AssessmentDataShape } from "./ClientResources";
 
 interface ClientDetailProps { selectedClient: string; }
 export default function ClientDetail({ selectedClient }: ClientDetailProps) {
@@ -94,6 +95,62 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   // 支援計画生成用
   const [planLoading, setPlanLoading] = useState<boolean>(false);
   const [planError, setPlanError] = useState<string | null>(null);
+
+  // --- Simplify assessment structure for downstream suggestion component ---
+  const simplifiedAssessment: AssessmentDataShape | null = useMemo(() => {
+    if (!assessmentPlan || !assessmentPlan.assessment) return null;
+    type SimplifiedCategory = Record<string, string | Record<string, string>>;
+    const out: AssessmentDataShape = { assessment: {} as Record<string, SimplifiedCategory> };
+
+    const isDetail = (obj: unknown): obj is AssessmentItemDetail => (
+      typeof obj === 'object' && obj !== null &&
+      'summary' in (obj as Record<string, unknown>) &&
+      'sentiment' in (obj as Record<string, unknown>)
+    );
+
+    Object.entries(assessmentPlan.assessment).forEach(([form, categories]) => {
+      if (!categories || typeof categories !== 'object') return;
+      const formObj: Record<string, string | Record<string, string>> = {};
+      Object.entries(categories).forEach(([category, items]) => {
+        if (!items || typeof items !== 'object') return;
+        if (isDetail(items)) {
+          const summary = items.summary?.trim() || '';
+          const sentiment = items.sentiment?.trim() || '';
+            if (summary || sentiment) {
+              formObj[category] = sentiment ? `${summary}\n(所感:${sentiment})` : summary;
+            }
+          return;
+        }
+        const catObj: Record<string, string> = {};
+        Object.entries(items as AssessmentCategory).forEach(([itemKey, detail]) => {
+          if (!detail || typeof detail !== 'object') return;
+          const summary = detail.summary?.trim() || '';
+          const sentiment = detail.sentiment?.trim() || '';
+          if (summary || sentiment) {
+            catObj[itemKey] = sentiment ? `${summary}\n(所感:${sentiment})` : summary;
+          }
+        });
+        if (Object.keys(catObj).length === 1) {
+          formObj[category] = Object.values(catObj)[0];
+        } else if (Object.keys(catObj).length > 0) {
+          formObj[category] = catObj;
+        }
+      });
+      if (Object.keys(formObj).length > 0) {
+        (out.assessment as Record<string, SimplifiedCategory>)[form] = formObj as SimplifiedCategory;
+      }
+    });
+
+    if (!out.assessment || Object.keys(out.assessment).length === 0) {
+      // fallback minimal form to avoid null (keeps downstream UI informative)
+      out.assessment = {
+        _raw: {
+          dump: JSON.stringify(assessmentPlan.assessment).slice(0, 4000)
+        }
+      } as Record<string, SimplifiedCategory>;
+    }
+    return out;
+  }, [assessmentPlan]);
 
   // 支援計画の保存ハンドラ
   const handleSaveSupportPlan = async () => {
@@ -361,7 +418,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         )}
       </div>
       {/* 右カラム: AI提案・情報整理 */}
-      <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
+  <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
         <div className="bg-purple-50 border-l-4 border-purple-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-purple-700 mb-2">
             活動報告書・支払い報告書生成
@@ -384,7 +441,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
             }))}
           />
         </div>
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
+  <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-yellow-700 mb-2">
             アセスメントと支援計画
           </h3>
@@ -470,7 +527,9 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
               )}
             </>
           )}
-        </div>
+  </div>
+  {/* ClientResources: pass simplified assessment for suggestions (may be null if no data) */}
+  <ClientResources clientName={selectedClient || null} hasAssessmentPlan={!!assessmentPlan} assessmentData={simplifiedAssessment} />
       </div>
     </div>
   );

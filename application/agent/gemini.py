@@ -151,3 +151,23 @@ class GeminiAgent:
             logging.error(f"Planner Agent execution failed: {e}", exc_info=True)
             return f"支援計画の生成中にエラーが発生しました: {e}"
 
+    # --- Lightweight summarization for resource suggestion query embedding ---
+    def summarize_for_resource_match(self, raw_text: str) -> str:
+        """Summarize assessment free-form concatenated text into focused needs / goals / barriers list.
+
+        Keeps it short (<= 800 tokens) and bullet oriented to produce better embedding signal.
+        Fallback: returns raw_text if model call fails.
+        """
+        prompt = (
+            "以下は福祉アセスメントから抽出した自由記述テキストです。"\
+            "支援上関連する: 1) 主訴/課題 2) 生活上のリスク・障壁 3) 既存の強み・活用可能な資源 4) 直近ニーズ の4分類で日本語簡潔箇条書き要約を生成してください。"\
+            "各行は分類タグを[]で先頭に付け、20～60文字程度。最大40行。余計な前置きや締め文は不要。\n\n" + raw_text[:12000]
+        )
+        try:
+            resp = self.model.generate_content(prompt)
+            out = getattr(resp, 'text', None) or (resp.candidates[0].content.parts[0].text if resp.candidates else '')  # type: ignore
+            return out.strip()[:8000] if out else raw_text
+        except Exception as e:
+            logging.warning(f"summarize_for_resource_match failed: {e}")
+            return raw_text
+
