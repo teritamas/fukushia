@@ -4,12 +4,47 @@ from agent.natural_language_processor import NaturalLanguageProcessor
 import json
 import logging
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import Tool, initialize_agent, AgentType
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.agents import Tool, tool
 from langchain_google_community import GoogleSearchAPIWrapper
 from pydantic.v1 import BaseModel, Field
 
 # loggingの設定
 logging.basicConfig(level=logging.INFO)
+
+# 事前に用意した社会資源データ（JSONファイルから読み込む）
+try:
+    # スクリプトの場所からの相対パスで指定
+    with open("../application/data/local_resources.json", "r", encoding="utf-8") as f:
+        local_resources = json.load(f)
+except FileNotFoundError:
+    local_resources = []
+    logging.warning("local_resources.jsonが見つかりません。ローカル検索ツールは機能しません。")
+
+@tool
+def search_local_resources(query: str) -> str:
+    """
+    提供されたクエリに基づいて、地域の社会資源データを検索するツール。
+    まずはこのツールを優先的に使用して、地域に根ざしたサービスを探してください。
+    クエリは、具体的な困りごとや支援の種類（例：「就労支援」「金銭管理」「住居支援」）を指定してください。
+    """
+    results = []
+    query_keywords = query.split()
+    for resource in local_resources:
+        # クエリの各キーワードが、カテゴリ、説明、サービス名のいずれかに含まれているかチェック
+        if any(keyword in resource.get("category", "") or 
+               keyword in resource.get("description", "") or 
+               keyword in resource.get("service_name", "") 
+               for keyword in query_keywords):
+            results.append(
+                f"サービス名: {resource.get('service_name', 'N/A')}\n"
+                f"カテゴリ: {resource.get('category', 'N/A')}\n"
+                f"概要: {resource.get('description', 'N/A')}\n"
+                f"連絡先: {resource.get('contact_info', 'N/A')}\n"
+            )
+    return "\n---\n".join(results) if results else "該当する地域の社会資源は見つかりませんでした。より広範な情報を得るためにGoogle Searchツールを試してください。"
 
 
 # 1. 支援者情報抽出エージェントが生成するJSONの型を定義
@@ -45,18 +80,48 @@ class GeminiAgent:
         self.information_extraction_agent = self.llm.with_structured_output(
             SupporterInfo)
 
-        # 2. 支援計画立案エージェント (検索ツールを利用)
-        search = GoogleSearchAPIWrapper(
+        # 2. 支援計画立案エージェント (2つのツールを利用)
+        # Tool 1: Google Search
+        google_search = GoogleSearchAPIWrapper(
             google_api_key=api_key, google_cse_id=google_cse_id)
-        tools = [
-            Tool(
+        google_search_tool = Tool(
                 name="Google Search",
-                func=search.run,
-                description="useful for when you need to answer questions about current events or find up-to-date information on services, resources, or specific topics related to social work and client support.",
+                func=google_search.run,
+                description="制度改正や新しいサービスなど、最新情報や広範な情報を検索する場合に利用します。search_local_resourcesツールで情報が見つからなかった場合にも有効です。",
             )
-        ]
-        self.support_plan_creation_agent = initialize_agent(
-            tools, self.llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True, return_intermediate_steps=True, handle_parsing_errors=True)
+        
+        # Tool 2: Local Resources Search
+        local_search_tool = search_local_resources
+
+        tools = [local_search_tool, google_search_tool]
+
+        # ReActプロンプトテンプレートの作成
+        template = """
+        Answer the following questions as best you can. You have access to the following tools:
+
+        {tools}
+
+        Use the following format:
+
+        Question: the input question you must answer
+        Thought: you should always think about what to do
+        Action: the action to take, should be one of [{tool_names}]
+        Action Input: the input to the action
+        Observation: the result of the action
+        ... (this Thought/Action/Action Input/Observation can repeat N times)
+        Thought: I now know the final answer
+        Final Answer: the final answer to the original input question
+
+        Begin!
+
+        Question: {input}
+        Thought:{agent_scratchpad}
+        """
+
+        prompt = PromptTemplate.from_template(template)
+
+        agent = create_react_agent(self.llm, tools, prompt)
+        self.support_plan_creation_agent = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
 
     def _extract_supporter_information(self, assessment_text: str) -> dict:
         """
@@ -100,30 +165,34 @@ class GeminiAgent:
         supporter_info_text = json.dumps(
             supporter_info, indent=2, ensure_ascii=False)
 
+        # todo 所属は設定で変えられるようにする。
         prompt = f"""
-        あなたは非常に優秀で経験豊富なケースワーカーです。あなたの役割は、相談者の問題解決を支援し、利用可能な公的制度や福祉サービスへ繋げることです。以下の情報に基づき、最高の支援計画を作成してください。
+        あなたは南陽市社会福祉協議会に所属している、非常に優秀で経験豊富なケースワーカーです。あなたの役割は、相談者の問題解決を支援し、利用可能な公的制度や福祉サービスへ繋げることです。以下の情報に基づき、最高の支援計画を作成してください。
 
         **思考プロセス:**
         1.  **相談者情報の熟読**: 相談者の氏名、年齢、住所、現在の「困りごと」、サービスの利用状況を正確に把握します。特に「住所」と「困りごと」が重要です。
         2.  **課題の分析と特定**: 「困りごと」（例：「仕事がなく収入が不安定」「金銭管理ができない」）から、解決すべき具体的な課題を明確にします。
-        3.  **検索クエリの生成**: 課題解決に必要な公的制度や福祉サービスを見つけるため、具体的で効果的な検索クエリを**最低10個以上**考えます。必ず地名（市区町村名）を含め、多角的な視点（制度名、課題、施設名など）でクエリを作成します。
-            -   例：`「南陽市 生活困窮者自立支援制度」` `「南陽市 ハローワーク 求人」` `「南陽市 社会福祉協議会 貸付」` `「南陽市 認知症 相談窓口」` `「南陽市 地域包括支援センター」` `「山形県 精神保健福祉センター」` `「南陽市 訪問介護事業所」` `「南陽市 日常生活自立支援事業」` `「南陽市 配食サービス」` `「南陽市 腰痛 専門医」`
-        4.  **Google Searchの実行**: 生成したクエリでGoogle Searchツールを使い、**最低10回以上検索を実行**し、徹底的に情報を収集します。公的機関の公式サイトを中心に、情報の正確性を高めます。
+        3.  **ツールの選択と検索クエリの生成**:
+            *   **まず`search_local_resources`ツールを使うことを検討します。** 相談者の居住地（例：南陽市）に特化した社会資源を探すため、困りごとを直接的なクエリ（例：「就労支援」「生活困窮」）として検索します。
+            *   `search_local_resources`で十分な情報が得られない場合や、より広範な情報（制度改正、隣接地域のサービスなど）が必要な場合に、`Google Search`ツールを使います。その際は、地名と課題を組み合わせた具体的なクエリ（例：「南陽市 生活困窮者自立支援制度」）を生成します。
+            *   必要に応じて、両方のツールを複数回使用し、情報を徹底的に収集します。
+        4.  **所属組織の役割の考慮**: あなたは「南陽市社会福祉協議会」の職員です。もし提案する支援機関として「南陽市社会福祉協議会」が挙がった場合は、そこで思考を止めず、社会福祉協議会が提供する**具体的な事業名（例：生活福祉資金貸付制度、法人後見事業、心配ごと相談事業など）**を特定し、提案に含めてください。どの事業が利用可能か判断するために、必要であればツールを使って社会福祉協議会の事業内容を調査してください。
         5.  **情報の整理と分析**: 収集した情報から、以下の点を整理します。
-            -   **制度/サービス/機関の固有名詞**: `「ハローワーク長井」` `「南陽市社会福祉協議会」` `「南陽市役所 福祉課」`など。
+            -   **制度/サービス/機関の固有名詞**: `「ハローワーク長井」` `「南陽市社会福祉協議会 生活福祉資金貸付制度」` `「南陽市役所 福祉課」`など。
             -   **具体的な支援内容**: 何をしてくれるのか。
             -   **利用条件・手続き**: 対象者、料金、申請方法、必要書類など。
             -   **連絡先、所在地、URL**: 電話番号、住所、公式サイトのURL。
         6.  **支援の選定と理由の明確化**: 収集した情報を基に、「提案する支援」と「検討したが不採用とした支援」に分類します。それぞれの「選定理由」「不採用理由」を明確に言語化します。
         7.  **支援計画の具体化**: 分析した情報に基づき、支援計画の「具体的な支援内容」を記述します。**抽象的な表現（「関係機関と連携する」など）は絶対に使わず**、固有名詞と具体的なアクションを記述します。
-            -   良い例：`「ハローワーク長井に来所予約の電話をし、初回相談に同行する。生活福祉資金の申請も視野に入れ、南陽市社会福祉協議会に相談の予約を入れる。」`
+            -   良い例：`「ハローワーク長井に来所予約の電話をし、初回相談に同行する。生活福祉資金の申請も視野に入れ、南陽市社会福祉協議会に相談の予約を入れ、生活福祉資金貸付制度の利用について相談する。」`
             -   悪い例：`「就労支援サービスの情報提供を行う。」`
         8.  **対象可否の判断**: ガイドラインと相談者の状況を照らし合わせ、事業の対象となるか判断し、理由を記述します。
         9.  **最終出力の生成**: 全ての情報を指定されたJSON形式にまとめます。**【要確認タスク】は、検索しても情報が不足した場合の最終手段**とし、安易に使用しません。
         10. **出力の確認**: 出力内容がガイドラインに沿っているか、固有名詞や具体的なアクションが含まれているかを再確認します。
 
         **最重要指示:**
-        - **固有名詞の徹底**: 提案する制度や機関は、必ず`Google Search`で探し出した**固有名詞（ハローワーク長井、南陽市社会福祉協議会など）**を記載してください。
+        - **ツールの優先順位**: まず`search_local_resources`を試し、それで不十分な場合に`Google Search`を使用してください。
+        - **固有名詞の徹底**: 提案する制度や機関は、必ず探し出した**固有名詞（ハローワーク長井、南陽市社会福祉協議会 生活福祉資金貸付制度など）**を記載してください。
         - **具体的アクション**: 「情報提供」「連携」で終わらせず、「電話する」「同行する」「申請を支援する」など、具体的なアクションを記述してください。
         - **JSON形式の厳守**: **最終的な回答は、以下のJSON形式の文字列のみを出力してください。**前後に説明文などをつけないでください。
 

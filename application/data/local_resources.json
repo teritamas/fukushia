@@ -1,0 +1,2620 @@
+[
+  {
+    "service_name": "さくら福祉会 (法人全体)",
+    "category": "総合福祉事業",
+    "target_users": "地域の皆様",
+    "description": "ご利用者がその人らしく生活し、笑顔で過ごされることを支援する方々地域の皆様に必要とされる介護福祉サービスの提供を目的とし、現在39事業所を展開。平成7年設立以来27年目。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "社会福祉法人さくら福祉会",
+    "location": "山形県"
+  },
+  {
+    "service_name": "宅老所・デイサービス (例: ソーシャル いずみ, ソーシャル さつき, ソーシャル わかば)",
+    "category": "高齢者福祉",
+    "target_users": "日中自宅に一人でいる方や日常生活を送るのに困難な方",
+    "description": "家庭的な雰囲気の中でデイサービスを利用でき、夜間も宿泊可能。",
+    "contact_info": {
+      "phone": "023-673-0294 (本部)",
+      "fax": "0234-43-1531 (ソーシャル さつき)",
+      "email": "メールでのお問い合せ 24時間365日受付中",
+      "url": null
+    },
+    "provider": "株式会社東北福祉サービス",
+    "location": "本部: 〒990-0886, ソーシャル さつき: 〒998-0013 酒田市東泉町5丁目5番1"
+  },
+  {
+    "service_name": "グループホーム (例: グループホーム嶋, ケアステーション21清池など)",
+    "category": "高齢者福祉 (認知症対応型)",
+    "target_users": "認知症のある方",
+    "description": "認知症の進行を遅らせることを目標に、スタッフと共同生活を送り、安らげる環境で自活を支援。",
+    "contact_info": {
+      "phone": "023-673-0294 (本部)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "株式会社東北福祉サービス",
+    "location": "本部: 〒990-0886"
+  },
+  {
+    "service_name": "見守りアパート (住宅型有料老人ホーム)",
+    "category": "高齢者福祉, 住居支援",
+    "target_users": "入居者",
+    "description": "管理人常駐による見守りサービスで、安心と安全な住空間を提供。",
+    "contact_info": {
+      "phone": "023-673-0294 (本部)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "株式会社東北福祉サービス",
+    "location": "本部: 〒990-0886"
+  },
+  {
+    "service_name": "居宅介護支援事業 (ケアプラン作成)",
+    "category": "高齢者福祉, 相談支援",
+    "target_users": "介護サービス利用者",
+    "description": "ご利用者の希望に基づき、訪問看護・訪問介護・通所介護などの適切なサービスが総合的に提供できるよう、居宅サービス計画（ケアプラン）の作成や、サービス機関等との連絡調整を行う。",
+    "contact_info": {
+      "phone": "023-673-0294 (本部)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "株式会社東北福祉サービス",
+    "location": "本部: 〒990-0886"
+  },
+  {
+    "service_name": "企業主導型保育事業 (例: TFキッズ保育園 鈴川, TFキッズ保育園 嶋南, TFキッズ保育園 天童)",
+    "category": "子育て支援",
+    "target_users": "保護者 (勤労者) の子ども",
+    "description": "保護者がお勤めに専念できるよう安全、安心な保育に努める。",
+    "contact_info": {
+      "phone": "023-673-0294 (本部)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "株式会社東北福祉サービス",
+    "location": "本部: 〒990-0886"
+  },
+  {
+    "service_name": "障がい児通所（入所）支援 まんさくの丘",
+    "category": "障がい福祉",
+    "target_users": "障がいのある方 (障がい児)",
+    "description": "障がいのある方のための福祉総合施設。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "〒990-8540 山形県山形市旅篭町二丁目3番25号"
+  },
+  {
+    "service_name": "山形市総合福祉センター (体育ホール, 入浴施設, 会議研修室など)",
+    "category": "総合福祉施設, 地域交流",
+    "target_users": "市民全般 (児童、青少年、女性、障がい者、高齢者、ボランティアなど)",
+    "description": "市民の福祉活動を総合的に支援し、住民主体の地域福祉社会の形成を図ることを目的とした多機能施設。",
+    "contact_info": {
+      "phone": "023-645-9234",
+      "fax": "023-645-8015",
+      "email": "kyosei@city.yamagata-yamagata.lg.jp",
+      "url": null
+    },
+    "provider": "山形市 / 指定管理者: 社会福祉法人 山形市社会福祉協議会",
+    "location": "〒990-0832 山形市城西町二丁目2番22号"
+  },
+  {
+    "service_name": "山形市成年後見センター",
+    "category": "相談支援, 金銭管理支援",
+    "target_users": "判断能力が不十分な方",
+    "description": "成年後見制度に関する相談や支援を行い、判断能力が不十分な方の権利擁護を目的とする。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市あたご荘 (養護老人ホーム)",
+    "category": "高齢者福祉, 入所施設",
+    "target_users": "経済的な理由や家庭環境などにより、自宅での生活が困難な高齢者",
+    "description": "高齢者が入所し、生活支援を受けることができる施設。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市黒沢いこい荘 (老人福祉センター)",
+    "category": "高齢者福祉, 地域交流",
+    "target_users": "高齢者",
+    "description": "高齢者の健康増進、教養の向上、レクリエーション活動などを目的とした施設。地域に住む高齢者が気軽に立ち寄り、交流できる場を提供。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市菅沢デイサービスセンター",
+    "category": "高齢者福祉, デイサービス",
+    "target_users": "自宅で生活する高齢者",
+    "description": "日中に通所し、入浴、食事、機能訓練、レクリエーションなどのサービスを受けることができる施設。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市銅町デイサービスセンター",
+    "category": "高齢者福祉, デイサービス",
+    "target_users": "自宅で生活する高齢者",
+    "description": "自宅で生活する高齢者向けのデイサービスを提供。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市特別養護老人ホーム菅沢荘",
+    "category": "高齢者福祉, 入所施設",
+    "target_users": "身体上または精神上の著しい障がいがあるため、常時介護を必要とし、自宅での介護が困難な高齢者",
+    "description": "常時介護を必要とする高齢者が入所する施設。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市漆山やすらぎ荘 (老人福祉センター)",
+    "category": "高齢者福祉, 地域交流",
+    "target_users": "高齢者",
+    "description": "高齢者のための福祉センター。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市大曽根さわやか荘 (老人福祉センター)",
+    "category": "高齢者福祉, 地域交流",
+    "target_users": "高齢者",
+    "description": "高齢者のための福祉センター。",
+    "contact_info": {
+      "phone": "023-641-1212",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市"
+  },
+  {
+    "service_name": "山形市生活サポート相談窓口",
+    "category": "生活支援, 相談支援",
+    "target_users": "経済的に困窮し、最低限度の生活を維持することができなくなるおそれのある者",
+    "description": "生活困窮者自立支援制度に基づく相談窓口。",
+    "contact_info": {
+      "phone": "023-676-7223 (城西町), 023-641-1212 (旅籠町)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形市",
+    "location": "山形市城西町二丁目2番22号 / 山形市旅籠町二丁目3番25号"
+  },
+  {
+    "service_name": "福祉サービス (詳細不明)",
+    "category": "勤労者福祉",
+    "target_users": "勤労者 (会員数6,508名)",
+    "description": "勤労者の福祉向上を目的としたサービス。具体的なサービス内容は不明。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "一般社団法人山形勤労者福祉サービスセンター",
+    "location": "〒990-0042 山形市七日町一丁目4番18号トラッドセブンビル2階"
+  },
+  {
+    "service_name": "高齢者福祉サービス (在宅福祉サービス, 地域包括ケア(介護予防など))",
+    "category": "高齢者福祉",
+    "target_users": "高齢者",
+    "description": "高齢者のための在宅福祉サービスや介護予防を含む地域包括ケア。",
+    "contact_info": {
+      "phone": "0238-22-5111 (代表)",
+      "fax": "0238-22-0498",
+      "email": null,
+      "url": null
+    },
+    "provider": "米沢市",
+    "location": "〒992-8501 山形県米沢市金池五丁目2番25号"
+  },
+  {
+    "service_name": "ひきこもりサポート",
+    "category": "生活支援, 相談支援",
+    "target_users": "ひきこもり状態にある方々",
+    "description": "ひきこもり状態にある方々への支援を提供。",
+    "contact_info": {
+      "phone": "0238-22-5111 (代表)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "米沢市 健康福祉部 社会福祉課",
+    "location": "〒992-8501 山形県米沢市金池五丁目2番25号"
+  },
+  {
+    "service_name": "生活困窮者への支援",
+    "category": "生活支援, 相談支援",
+    "target_users": "生活に困窮している方々",
+    "description": "生活に困窮している方々への支援に関する情報提供および支援。",
+    "contact_info": {
+      "phone": "0238-22-5111 (代表)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "米沢市 健康福祉部 社会福祉課",
+    "location": "〒992-8501 山形県米沢市金池五丁目2番25号"
+  },
+  {
+    "service_name": "福祉総合相談窓口 (米沢市)",
+    "category": "相談支援",
+    "target_users": "福祉に関する困りごとを抱える市民",
+    "description": "福祉に関する総合的な相談窓口が設置されており、様々な福祉の悩みについて相談できる。",
+    "contact_info": {
+      "phone": "0238-22-5111 (代表)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "米沢市 健康福祉部 社会福祉課",
+    "location": "〒992-8501 山形県米沢市金池五丁目2番25号"
+  },
+  {
+    "service_name": "民生委員・児童委員",
+    "category": "地域福祉, 相談支援",
+    "target_users": "地域住民",
+    "description": "地域住民の生活や福祉に関する相談に応じ、必要な支援機関への橋渡しを行う。",
+    "contact_info": {
+      "phone": "0238-22-5111 (代表)",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "米沢市 健康福祉部 社会福祉課",
+    "location": "〒992-8501 山形県米沢市金池五丁目2番25号"
+  },
+  {
+    "service_name": "米沢市生活自立支援センター",
+    "category": "生活支援, 相談支援",
+    "target_users": "米沢市在住で生活や仕事で困っている方",
+    "description": "一人ひとりの状況に合わせた支援プランを作成し、専門の支援員が寄り添い、他の専門機関と連携して解決に向けて継続的にお手伝い。",
+    "contact_info": {
+      "phone": "0238-21-7867",
+      "fax": "0238-21-7867",
+      "email": null,
+      "url": null
+    },
+    "provider": "米沢市社会福祉協議会",
+    "location": "米沢市西大通1丁目5番60号 (米沢市すこやかセンター内)"
+  },
+  {
+    "service_name": "生活福祉資金 (貸付制度)",
+    "category": "金銭管理支援, 生活支援",
+    "target_users": "低所得者世帯、障がい者世帯、高齢者世帯",
+    "description": "生活の安定や社会参加の促進を図ることを目的に必要な資金の貸付による生活支援。山形県社会福祉協議会が実施。",
+    "contact_info": {
+      "phone": "0238-24-7881",
+      "fax": "0238-24-7861",
+      "email": "honobono-eshakyo@tiara.ocn.ne.jp",
+      "url": null
+    },
+    "provider": "山形県社会福祉協議会 (相談・受付は米沢市社会福祉協議会)",
+    "location": "米沢市"
+  },
+  {
+    "service_name": "米沢市社会福祉資金 (貸付制度)",
+    "category": "金銭管理支援, 生活支援",
+    "target_users": "低所得者世帯、高齢者世帯、障がい者世帯",
+    "description": "経済的自立と生活の安定に必要な金品の貸与等。",
+    "contact_info": {
+      "phone": "0238-24-7881",
+      "fax": "0238-24-7861",
+      "email": "honobono-eshakyo@tiara.ocn.ne.jp",
+      "url": null
+    },
+    "provider": "米沢市社会福祉協議会",
+    "location": "米沢市"
+  },
+  {
+    "service_name": "日常生活自立支援事業 (福祉サービス利用援助事業)",
+    "category": "金銭管理支援, 相談支援",
+    "target_users": "認知症等の高齢者や知的障がい者、精神障がい者など、判断能力が不十分な方",
+    "description": "福祉サービスの利用援助や日常的な金銭管理を行うことで、自立した地域生活が送れるように支援。",
+    "contact_info": {
+      "phone": "0238-24-7881",
+      "fax": "0238-24-7861",
+      "email": "honobono-eshakyo@tiara.ocn.ne.jp",
+      "url": null
+    },
+    "provider": "米沢市社会福祉協議会",
+    "location": "米沢市"
+  },
+  {
+    "service_name": "相談支援事業所「はないろ」",
+    "category": "障がい福祉, 相談支援",
+    "target_users": "障がい者 (強度行動障害支援者研修修了者、精神障害特性及びこれに応じた支援技法に関する研修修了者が配置)",
+    "description": "専門的な相談支援を提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "特定非営利活動法人 地域福祉共生会",
+    "location": "〒992-0062 山形県米沢市林泉寺2丁目10-21"
+  },
+  {
+    "service_name": "デイケアサポート(生活介護) 青い帽子",
+    "category": "障がい福祉, デイサービス",
+    "target_users": "障がい者",
+    "description": "主に日中、施設において入浴・食事の介護、創作活動の機会を障がい者の方に提供し、ひとりひとりが生き甲斐を持ち、リズムのある生活をしていただくサービス。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "特定非営利活動法人 地域福祉共生会",
+    "location": "〒992-0062 山形県米沢市林泉寺2丁目10-21"
+  },
+  {
+    "service_name": "放課後等デイサービス あおいそら",
+    "category": "障がい福祉, 子育て支援",
+    "target_users": "障がいを持った児童",
+    "description": "養護学校や各学校の支援学級の授業後、または夏休み等の長期休暇期間等はフルタイムでお預かりし、遊びを通して仲間との関係や社会ルールを学ぶ機会を提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "特定非営利活動法人 地域福祉共生会",
+    "location": "〒992-0062 山形県米沢市林泉寺2丁目10-21"
+  },
+  {
+    "service_name": "ショートステイ(短期入所) あおいうみ",
+    "category": "障がい福祉, 短期入所",
+    "target_users": "障がい者の介護者 (疾病その他の理由で介護ができない時)",
+    "description": "障がい者の介護者が疾病その他の理由で介護ができない時に利用でき、入浴、排せつ、食事の介護などのサービスを提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "特定非営利活動法人 地域福祉共生会",
+    "location": "〒992-0062 山形県米沢市林泉寺2丁目10-21"
+  },
+  {
+    "service_name": "日中一時支援事業 わくわく",
+    "category": "障がい福祉, 子育て支援",
+    "target_users": "障がい児者等の家族 (就労支援及び日常介護している家族の一時的な負担軽減)",
+    "description": "障がい児者等の日中における活動の場を提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "特定非営利活動法人 地域福祉共生会",
+    "location": "〒992-0062 山形県米沢市林泉寺2丁目10-21"
+  },
+  {
+    "service_name": "地域福祉・在宅福祉活動の推進",
+    "category": "地域福祉, 総合福祉事業",
+    "target_users": "すべての住民",
+    "description": "「すべての住民が住み慣れた地域や家庭で安心して暮らしていけるまちづくり」をめざして活動。地域福祉活動計画を策定し、地域住民や福祉活動を行う組織、社会福祉事業者などと協力して推進。",
+    "contact_info": {
+      "phone": "0235-26-7815",
+      "fax": "0235-26-7837",
+      "email": null,
+      "url": "http://www.shk01.jp/"
+    },
+    "provider": "鶴岡市社会福祉協議会",
+    "location": "〒997-0028 山形県鶴岡市山王町13番36号"
+  },
+  {
+    "service_name": "介護保険事業 (鶴岡市)",
+    "category": "高齢者福祉, 介護保険",
+    "target_users": "高齢者や障がいのある方",
+    "description": "介護保険サービスを提供。",
+    "contact_info": {
+      "phone": "0235-26-7815",
+      "fax": "0235-26-7837",
+      "email": null,
+      "url": "http://www.shk01.jp/"
+    },
+    "provider": "鶴岡市社会福祉協議会",
+    "location": "〒997-0028 山形県鶴岡市山王町13番36号"
+  },
+  {
+    "service_name": "障害者支援事業 (障がい福祉サービス) (鶴岡市)",
+    "category": "障がい福祉",
+    "target_users": "障がいのある方",
+    "description": "障がい福祉サービスを提供。",
+    "contact_info": {
+      "phone": "0235-26-7815",
+      "fax": "0235-26-7837",
+      "email": null,
+      "url": "http://www.shk01.jp/"
+    },
+    "provider": "鶴岡市社会福祉協議会",
+    "location": "〒997-0028 山形県鶴岡市山王町13番36号"
+  },
+  {
+    "service_name": "子育て支援事業 (鶴岡市)",
+    "category": "子育て支援",
+    "target_users": "子どもや子育て世帯",
+    "description": "子どもや子育て支援に関する事業。",
+    "contact_info": {
+      "phone": "0235-26-7815",
+      "fax": "0235-26-7837",
+      "email": null,
+      "url": "http://www.shk01.jp/"
+    },
+    "provider": "鶴岡市社会福祉協議会",
+    "location": "〒997-0028 山形県鶴岡市山王町13番36号"
+  },
+  {
+    "service_name": "鶴岡市障害者相談支援センター (計画相談支援, 地域相談支援, 障害児相談支援など)",
+    "category": "障がい福祉, 相談支援",
+    "target_users": "障がい者、障がい児",
+    "description": "関係法令を遵守し、他の社会資源との連携を図った適正かつ、きめの細かな相談支援サービスを提供。",
+    "contact_info": {
+      "phone": "0235-25-2794",
+      "fax": "0235-25-2476",
+      "email": null,
+      "url": null
+    },
+    "provider": "鶴岡市社会福祉協議会",
+    "location": "山形県鶴岡市泉町5番30号 鶴岡市総合福祉センター"
+  },
+  {
+    "service_name": "鶴岡市総合保健福祉センター「にこふる」 (健康課, 休日夜間診療所, 子ども家庭支援センターなど)",
+    "category": "総合福祉施設, 地域交流",
+    "target_users": "市民全般 (子育て世代、子ども、障がい者など)",
+    "description": "市民の健康と福祉を総合的に支援する多機能施設。",
+    "contact_info": {
+      "phone": "0235-25-2111 (健康課)",
+      "fax": "0235-25-7722",
+      "email": null,
+      "url": null
+    },
+    "provider": "鶴岡市",
+    "location": "〒997-0033 山形県鶴岡市泉町5番30号"
+  },
+  {
+    "service_name": "鶴岡地域生活自立支援センター くらしステーション",
+    "category": "生活支援, 相談支援",
+    "target_users": "生活や仕事に困っている方 (仕事、家計、生活、健康の困りごと)",
+    "description": "専門の支援員が相談者に寄り添いながら、一人ひとりの状況に合わせた支援プランを作成し、他の専門機関と連携して問題解決に向けた支援を行う。",
+    "contact_info": {
+      "phone": "0235-29-1729",
+      "fax": null,
+      "email": "tsk_ziritu@shk01.jp",
+      "url": null
+    },
+    "provider": "鶴岡市 (社会福祉法人 鶴岡市社会福祉協議会に事業委託)",
+    "location": "鶴岡市役所 1階 馬場町9番25号"
+  },
+  {
+    "service_name": "グループホーム愛あい館 (JA鶴岡)",
+    "category": "高齢者福祉 (認知症対応型)",
+    "target_users": "鶴岡市に住民票がある原則65歳以上の方、要支援2～要介護5までの方、医師から認知症の診断を受けた方、集団生活を営むことに支障のない方",
+    "description": "利用者一人ひとりができる喜びを増やし、自分らしい自立した生活を送れるよう、職員が互いに尊重し協力しながら質の高いチームケアに取り組む。定員18名（全室個室）。",
+    "contact_info": {
+      "phone": "0235-64-0605",
+      "fax": "0235-33-2855",
+      "email": null,
+      "url": null
+    },
+    "provider": "JA鶴岡",
+    "location": "〒997-1121 鶴岡市大山字中道92-2"
+  },
+  {
+    "service_name": "げんき館 デイサービスセンター (JA鶴岡)",
+    "category": "高齢者福祉, デイサービス",
+    "target_users": "高齢者",
+    "description": "楽しいレクリエーションやイベント、温かいお風呂でのリラックスタイムなどを通じて、一日をゆったりと笑顔で過ごせる空間づくりを心がける。営業時間: 月曜～土曜 8:30～17:30。",
+    "contact_info": {
+      "phone": "0235-29-7725",
+      "fax": "0235-24-3311",
+      "email": null,
+      "url": null
+    },
+    "provider": "JA鶴岡",
+    "location": "〒997-0368 鶴岡市青龍寺字村下34-1"
+  },
+  {
+    "service_name": "福祉用具貸与事業 (車椅子・ベッドなどの貸出) (JA鶴岡)",
+    "category": "高齢者福祉, 介護支援",
+    "target_users": "介護が必要な方",
+    "description": "ケアプランに沿って、車椅子やベッドを貸し出し。特定福祉用具の販売や住宅改修の相談業務も行う。",
+    "contact_info": {
+      "phone": "0235-25-4345 (福祉課)",
+      "fax": "0235-29-9231",
+      "email": null,
+      "url": null
+    },
+    "provider": "JA鶴岡",
+    "location": "〒997-0368 鶴岡市青龍寺字村下34-1 (げんき館2階 福祉課)"
+  },
+  {
+    "service_name": "居宅介護支援事業 (ケアプラン作成) (JA鶴岡)",
+    "category": "高齢者福祉, 相談支援",
+    "target_users": "介護サービス利用者",
+    "description": "専任のケアマネジャーが、利用者に最適なケアプランを作成。認定申請手続き代行も行う。",
+    "contact_info": {
+      "phone": "0235-25-4345 (福祉課)",
+      "fax": "0235-29-9231",
+      "email": null,
+      "url": null
+    },
+    "provider": "JA鶴岡",
+    "location": "〒997-0368 鶴岡市青龍寺字村下34-1 (げんき館2階 福祉課)"
+  },
+  {
+    "service_name": "多機能複合施設明日葉 (デイサービス)",
+    "category": "高齢者福祉, デイサービス",
+    "target_users": "自宅から通所して入浴、食事、機能訓練などを受けたい方",
+    "description": "利用者が自宅から通所し、入浴、食事、機能訓練などのサービスを受ける。利用者とその家族の心身の負担軽減、日々の喜びを実感できるよう支援。定員30名。",
+    "contact_info": {
+      "phone": "0234-23-1125",
+      "fax": "0234-28-9711",
+      "email": null,
+      "url": null
+    },
+    "provider": "社会福祉法人酒田福祉会",
+    "location": "〒998-0022 酒田市駅東2丁目3-6"
+  },
+  {
+    "service_name": "多機能複合施設明日葉 (小規模多機能ホーム)",
+    "category": "高齢者福祉, 在宅介護支援",
+    "target_users": "支援や介護が必要な方",
+    "description": "「通い」を中心に「訪問」「泊まり」を必要に応じて組み合わせ、自宅での生活継続を支援。登録定員25名、通い定員15名、泊まり定員9名。",
+    "contact_info": {
+      "phone": "0234-23-1125",
+      "fax": "0234-28-9711",
+      "email": null,
+      "url": null
+    },
+    "provider": "社会福祉法人酒田福祉会",
+    "location": "〒998-0022 酒田市駅東2丁目3-6"
+  },
+  {
+    "service_name": "多機能複合施設明日葉 (有料老人ホーム)",
+    "category": "高齢者福祉, 入所施設",
+    "target_users": "高齢者",
+    "description": "生活支援サービス付きの高齢者向け居住施設。居室で生活しながら介護保険サービスを利用可能。全22室個室。介護専門スタッフが24時間常駐。",
+    "contact_info": {
+      "phone": "0234-23-1125",
+      "fax": "0234-28-9711",
+      "email": null,
+      "url": null
+    },
+    "provider": "社会福祉法人酒田福祉会",
+    "location": "〒998-0022 酒田市駅東2丁目3-6"
+  },
+  {
+    "service_name": "特別養護老人ホームグランパ・グランマ",
+    "category": "高齢者福祉, 入所施設",
+    "target_users": "介護が必要な高齢者",
+    "description": "ユニット型指定地域密着型介護老人福祉施設およびユニット型指定短期入所生活介護事業。定員29名（介護）、10名（短期入所）。全室個室。",
+    "contact_info": {
+      "phone": "0234-31-8255",
+      "fax": "0234-31-8455",
+      "email": null,
+      "url": null
+    },
+    "provider": "社会福祉法人酒田福祉会",
+    "location": "〒998-0864 酒田市新橋3丁目1-1"
+  },
+  {
+    "service_name": "福祉総合相談窓口 (酒田市)",
+    "category": "相談支援, 総合福祉",
+    "target_users": "福祉に関するどこに相談したらよいか分からない困りごとや複数の困りごとを抱える市民、その家族や周囲の方",
+    "description": "福祉に関する困りごとを受け止め、適切な部署や支援機関へ繋ぐ。複数の困りごとや制度の狭間の課題を抱える方の相談について、各支援機関が連携して適切な支援が行えるよう、情報共有・連携しながら問題解決に向けて支援。",
+    "contact_info": {
+      "phone": "0234-26-5731, 0234-26-5424 (福祉総合相談係)",
+      "fax": "0234-26-5796",
+      "email": "fukushi@city.sakata.lg.jp",
+      "url": null
+    },
+    "provider": "酒田市 健康福祉部 地域福祉課",
+    "location": "〒998-8540 酒田市本町二丁目2-45 (市役所1階13番窓口)"
+  },
+  {
+    "service_name": "地域包括支援センター (酒田市)",
+    "category": "高齢者福祉, 相談支援",
+    "target_users": "高齢者",
+    "description": "高齢者が住みなれた地域で安心して生活が継続できるよう、福祉・保健・介護の総合的な窓口。",
+    "contact_info": {
+      "phone": "0234-26-5731",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "酒田市",
+    "location": "酒田市内 (10箇所)"
+  },
+  {
+    "service_name": "こども家庭センター「ぎゅっと」",
+    "category": "子育て支援, 相談支援",
+    "target_users": "全ての妊産婦、子育て世帯、子ども",
+    "description": "児童福祉、母子保健、発達支援の各部門が情報を共有し、妊娠期から子育て期まで一体的な相談支援を行う。社会福祉士、保健師、助産師、公認心理師などの専門職が対応。",
+    "contact_info": {
+      "phone": "0234-26-5731",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "酒田市",
+    "location": "酒田市"
+  },
+  {
+    "service_name": "子育て支援センター (酒田市)",
+    "category": "子育て支援, 地域交流",
+    "target_users": "親子 (子育て中の親子)",
+    "description": "親子でふれあいながら遊んだり、同じように子育て中の親子と交流できる。子育てに関する相談や育児講座も開催。",
+    "contact_info": {
+      "phone": "0234-26-5731",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "酒田市",
+    "location": "酒田市"
+  },
+  {
+    "service_name": "基幹相談支援センター (酒田市)",
+    "category": "障がい福祉, 相談支援",
+    "target_users": "障がいのある方やその家族",
+    "description": "障がいのある方やその家族が、住み慣れた地域で安心して生活できるよう、相談支援専門員、社会福祉士などの専門の資格を持った職員が、様々な困りごと、心配ごとなどの相談に応じて支援を行う。",
+    "contact_info": {
+      "phone": "0234-26-5733",
+      "fax": "0234-23-2258",
+      "email": null,
+      "url": null
+    },
+    "provider": "酒田市",
+    "location": "酒田市"
+  },
+  {
+    "service_name": "地域活動支援センター (酒田市)",
+    "category": "障がい福祉, 日中活動",
+    "target_users": "在宅の障がい者",
+    "description": "在宅の障がい者が通所して、創作的活動、生産活動、社会生活への適応のために必要な訓練等のサービスが受けられる。",
+    "contact_info": {
+      "phone": "0234-26-5733",
+      "fax": "0234-23-2258",
+      "email": null,
+      "url": null
+    },
+    "provider": "酒田市",
+    "location": "酒田市"
+  },
+  {
+    "service_name": "自立支援医療 (更生医療, 育成医療, 精神通院医療)",
+    "category": "障がい福祉, 医療費助成",
+    "target_users": "心身の障がいを除去・軽減するための医療を必要とする方",
+    "description": "医療費の自己負担額を軽減する公費負担医療制度。所得に応じて負担上限月額が設定される。",
+    "contact_info": {
+      "phone": "0234-26-5733",
+      "fax": "0234-23-2258",
+      "email": null,
+      "url": null
+    },
+    "provider": "酒田市",
+    "location": "酒田市"
+  },
+  {
+    "service_name": "精神障がい者保健福祉手帳 (金山町)",
+    "category": "障がい福祉, 手帳交付",
+    "target_users": "精神障がい者",
+    "description": "精神障がい者のための手帳交付制度。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "特別障害者手当・障害児福祉手当・福祉手当制度 (金山町)",
+    "category": "障がい福祉, 手当支給",
+    "target_users": "特別障害者、障害児",
+    "description": "障がい者や障がい児への手当支給制度。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "障がい福祉サービス (金山町)",
+    "category": "障がい福祉",
+    "target_users": "障がい者",
+    "description": "障がい者向けの各種福祉サービス。具体的なサービス内容は不明。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "福祉タクシー事業 (金山町)",
+    "category": "障がい福祉, 移動支援",
+    "target_users": "障がい者",
+    "description": "障がい者向けのタクシー利用支援。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "人工透析交通費助成事業 (金山町)",
+    "category": "障がい福祉, 医療費助成",
+    "target_users": "人工透析を受ける方",
+    "description": "人工透析を受ける方の交通費助成。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "障害者紙おむつ支給事業 (金山町)",
+    "category": "障がい福祉, 日常生活支援",
+    "target_users": "障がい者",
+    "description": "障がい者への紙おむつ支給。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "在宅酸素療法支援事業 (金山町)",
+    "category": "障がい福祉, 医療支援",
+    "target_users": "在宅酸素療法を受ける方",
+    "description": "在宅酸素療法を受ける方への支援。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "重度障害者介護者激励金支給事業 (金山町)",
+    "category": "障がい福祉, 介護支援",
+    "target_users": "重度障害者の介護者",
+    "description": "重度障害者の介護者への激励金支給。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "日常生活用具給付事業 (金山町)",
+    "category": "障がい福祉, 日常生活支援",
+    "target_users": "障がい者",
+    "description": "障がい者への日常生活用具給付。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "金山町",
+    "location": "金山町"
+  },
+  {
+    "service_name": "生活困窮者自立支援制度 (全体)",
+    "category": "生活支援, 総合支援",
+    "target_users": "経済的に困窮し、最低限度の生活を維持することができなくなるおそれのある者",
+    "description": "生活保護に至る前の段階で、就労、住居、家計などの課題を抱える方々に対し、個々の状況に応じた支援プランを作成し、自立に向けた支援を行う制度。",
+    "contact_info": {
+      "phone": "023-630-2334",
+      "fax": "023-632-8176",
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県",
+    "location": "〒990-8570 山形市松波二丁目8番1号"
+  },
+  {
+    "service_name": "自立相談支援事業 (山形県)",
+    "category": "生活支援, 相談支援",
+    "target_users": "生活に困りごとや不安を抱えている方",
+    "description": "地域の相談窓口で支援員が相談を受け、相談者と共に必要な支援を検討し、具体的な支援プランを作成。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県 (各地域の自立相談支援機関)",
+    "location": "山形県内各地域"
+  },
+  {
+    "service_name": "住居確保給付金の支給 (山形県)",
+    "category": "生活支援, 住居支援",
+    "target_users": "離職などにより住居を失った方、または失うおそれの高い方",
+    "description": "就職活動を条件に一定期間、家賃相当額が支給される。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県 (各地域の自立相談支援機関)",
+    "location": "山形県内各地域"
+  },
+  {
+    "service_name": "就労準備支援事業 (山形県)",
+    "category": "生活支援, 就労支援",
+    "target_users": "直ちに就労が困難な方 (社会との関わりに不安がある、コミュニケーションがうまくとれないなど)",
+    "description": "6ヶ月から1年のプログラムに沿って、一般就労に向けた基礎能力を養う支援や就労機会の提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県 (各地域の自立相談支援機関)",
+    "location": "山形県内各地域"
+  },
+  {
+    "service_name": "家計改善支援事業 (山形県)",
+    "category": "生活支援, 金銭管理支援",
+    "target_users": "家計状況に課題を抱える方",
+    "description": "家計状況の「見える化」と根本的な課題の把握を行い、相談者が自ら家計を管理できるよう、状況に応じた支援計画の作成、相談支援、関係機関への連携、必要に応じた貸付のあっせんなどにより、早期の生活再生を支援。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県 (各地域の自立相談支援機関)",
+    "location": "山形県内各地域"
+  },
+  {
+    "service_name": "就労訓練事業 (山形県)",
+    "category": "生活支援, 就労支援",
+    "target_users": "直ちに一般就労が難しい方",
+    "description": "その方に合った作業機会を提供しながら、個別の就労支援プログラムに基づき、中・長期的に一般就労に向けた支援を実施する「中間的就労」。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県 (各地域の自立相談支援機関)",
+    "location": "山形県内各地域"
+  },
+  {
+    "service_name": "生活困窮世帯の子どもの学習・生活支援事業 (山形県)",
+    "category": "生活支援, 子育て支援",
+    "target_users": "生活困窮世帯の子どもと保護者",
+    "description": "子どもの学習支援に加え、日常的な生活習慣、仲間と出会い活動できる居場所づくり、進学に関する支援、高校進学者の退学防止に関する支援など、子どもと保護者の双方に必要な支援。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県 (各地域の自立相談支援機関)",
+    "location": "山形県内各地域"
+  },
+  {
+    "service_name": "一時生活支援事業 (山形県)",
+    "category": "生活支援, 住居支援",
+    "target_users": "住居を持たない方、またはネットカフェなどの不安定な住居形態にある方",
+    "description": "一定期間、宿泊場所や衣食が提供される。退所後の生活に向けて、就労支援などの自立支援も行う。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形県 (各地域の自立相談支援機関)",
+    "location": "山形県内各地域"
+  },
+  {
+    "service_name": "就労継続支援B型事業 (段ボール組み立て, 椎茸栽培・加工, お弁当製造販売など)",
+    "category": "障がい福祉, 就労支援",
+    "target_users": "現時点で通常の事業所に雇用されることが困難な障がいのある方",
+    "description": "利用者の意向を尊重し、多様な福祉サービスを総合的に提供することで、利用者が個人の尊厳を保持しつつ、地域社会において自立した生活を営むことができるように支援。生産された物品の販売や廃棄物処理業による収益を利用者の工賃にあてる。",
+    "contact_info": {
+      "phone": "0234-31-8335",
+      "fax": "0234-31-7321",
+      "email": null,
+      "url": null
+    },
+    "provider": "NPO法人ホールド すまいるらんど",
+    "location": "〒998-0875 山形県酒田市東町1丁目20−15"
+  },
+  {
+    "service_name": "空き家のご紹介と各種相談 (移住支援)",
+    "category": "住居支援, 移住支援",
+    "target_users": "遊佐町への移住を希望する方",
+    "description": "遊佐町に移住を希望する方の様々な相談に対応。空き家バンク登録物件を案内。",
+    "contact_info": {
+      "phone": "0234-43-6941",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "NPO法人いなか暮らし遊佐応援団",
+    "location": "飽海郡遊佐町遊佐字広表6-1 創業支援センター内"
+  },
+  {
+    "service_name": "空き家管理サービス (遊佐町)",
+    "category": "住居支援",
+    "target_users": "遊佐町の「空き家バンク」に登録されている空き家のオーナー",
+    "description": "空き家バンク登録物件を対象とした「空き家管理事業（通風、掃除など）」を実施。",
+    "contact_info": {
+      "phone": "0234-43-6941",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "NPO法人いなか暮らし遊佐応援団",
+    "location": "飽海郡遊佐町遊佐字広表6-1 創業支援センター内"
+  },
+  {
+    "service_name": "遊佐での暮らしなんでも相談窓口",
+    "category": "相談支援, 移住支援",
+    "target_users": "移住者、近隣住民",
+    "description": "移住後の悩み、移住後の暮らしについての相談、また、近隣住民からの各種相談を受け付ける。",
+    "contact_info": {
+      "phone": "0234-43-6941",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "NPO法人いなか暮らし遊佐応援団",
+    "location": "飽海郡遊佐町遊佐字広表6-1 創業支援センター内"
+  },
+  {
+    "service_name": "住宅確保要配慮者居住支援 (住まい探し支援, 債務保証支援, つながる見守りサービス)",
+    "category": "住居支援, 生活支援",
+    "target_users": "山形市内在住で、住宅を確保することが困難な生活困窮者・高齢者・障害者・外国人・刑余者など",
+    "description": "住宅確保要配慮者の民間賃貸住宅等への円滑な入居を促進するため、賃貸住宅への入居に係る住宅情報の提供や相談・見守りなどの生活支援等を実施。",
+    "contact_info": {
+      "phone": "023-666-7077",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "一般社団法人山形県地域包括支援センター等協議会",
+    "location": "〒990-0063 山形市山家町2-7-17-2F"
+  },
+  {
+    "service_name": "グループホームさくらんぼの丘南陽",
+    "category": "障がい福祉, 共同生活援助, 金銭管理支援",
+    "target_users": "障がい者訓練等給付受給者及びグループホーム利用認定者 (心に病をお持ちの方)",
+    "description": "居室・食事等の提供を受け、自立支援・社会参加等の援助を仰ぎ、共同で生活をする地域型グループホーム。食事援助、日常生活関連動作、健康・服薬・金銭管理、指定医通院、緊急時の応急対策の支援。定員13名。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "NPO法人置賜ひまわり会",
+    "location": "〒992-0472 山形県南陽市宮内3196-1"
+  },
+  {
+    "service_name": "就労支援 (犯罪者等)",
+    "category": "就労支援, 社会復帰支援",
+    "target_users": "刑務所出所者等 (犯罪者など)",
+    "description": "再犯のない社会を作るために、山形県内の経済界の協力により犯罪者などに就労支援を行い、安全な社会づくりに貢献する組織。協力事業主の開拓や刑務所出所者等の就労支援を通して、地域社会の治安の確保に協力。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "特定非営利活動法人 山形県就労支援事業者機構",
+    "location": "山形県山形市大手町１－３２山形保護観察所内"
+  },
+  {
+    "service_name": "障がい者共同生活援助事業 (ポラリス)",
+    "category": "障がい福祉, 共同生活援助",
+    "target_users": "障がい者",
+    "description": "障がい者が地域の中で共に手を取り、歩んでいけるような共生社会を実現するために、総合的な福祉サービスを展開。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "障がい児者 相談支援事業 (福祉サポートセンター山形)",
+    "category": "障がい福祉, 相談支援",
+    "target_users": "障がい児や障がい者",
+    "description": "障がい児や障がい者の生活を支援するため、各種の福祉サービスを提供。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "障がい者居宅介護・重度訪問介護・同行援護・行動援護事業",
+    "category": "障がい福祉, 訪問介護",
+    "target_users": "障がい者",
+    "description": "障がい者の居宅での生活支援、重度訪問介護、外出時の同行援護、行動援護を提供。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "就労継続支援Ａ型事業 (福祉サポートセンター山形)",
+    "category": "障がい福祉, 就労支援",
+    "target_users": "障がい者",
+    "description": "障がい者の就労支援。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "就労継続支援Ｂ型事業 (福祉サポートセンター山形)",
+    "category": "障がい福祉, 就労支援",
+    "target_users": "障がい者",
+    "description": "障がい者の就労支援。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "就労移行支援事業 (福祉サポートセンター山形)",
+    "category": "障がい福祉, 就労支援",
+    "target_users": "障がい者",
+    "description": "障がい者の就労支援。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "日中一時支援（レスパイト）事業 (スマイル)",
+    "category": "障がい福祉, 短期入所",
+    "target_users": "障がい児者",
+    "description": "障がい児者の日中一時支援。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "居宅介護支援事業 (福祉サポートセンター山形)",
+    "category": "高齢者福祉, 相談支援",
+    "target_users": "高齢者",
+    "description": "高齢者の居宅介護支援。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "訪問介護事業 (どんぐり)",
+    "category": "高齢者福祉, 訪問介護",
+    "target_users": "高齢者",
+    "description": "高齢者の訪問介護。",
+    "contact_info": {
+      "phone": "0233-29-4556",
+      "fax": "0233-29-5200",
+      "email": "fukusi@email.plala.or.jp",
+      "url": null
+    },
+    "provider": "福祉サポートセンター山形",
+    "location": "〒996-0027 山形県新庄市本町６番１１号"
+  },
+  {
+    "service_name": "就労継続支援事業（B型） (NPO法人あゆむ会)",
+    "category": "障がい福祉, 就労支援",
+    "target_users": "現時点で通常の事業所に雇用されることが困難な障がいのある方",
+    "description": "生産活動（作業）などの機会の提供、知識および能力の向上のために必要な訓練と支援を行うサービス。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "NPO法人あゆむ会",
+    "location": "不明"
+  },
+  {
+    "service_name": "グループホーム（共同生活援助） (NPO法人あゆむ会)",
+    "category": "障がい福祉, 共同生活援助",
+    "target_users": "障がい者",
+    "description": "障がい者の共同生活援助。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "NPO法人あゆむ会",
+    "location": "不明"
+  },
+  {
+    "service_name": "まごころ給食サービス",
+    "category": "弁当・食材の配達",
+    "target_users": "おおむね65歳以上の一人暮らし・高齢者世帯・障がい者世帯で、担当地区民生委員が必要と認めた方",
+    "description": "社会福祉協議会が提供する給食サービス。奇数週はボランティアによる手作り弁当、偶数週は仕出し弁当。",
+    "contact_info": {
+      "phone": "0238-43-5888",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "社会福祉協議会",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "COOP せいきょう",
+    "category": "弁当・食材の配達",
+    "target_users": null,
+    "description": "夕食用冷蔵弁当を平日配達。1食から注文可能。冷凍おかずや日用品の注文も可能。",
+    "contact_info": {
+      "phone": "0800-800-6265",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "COOP せいきょう",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "ワタミの宅食",
+    "category": "弁当・食材の配達",
+    "target_users": null,
+    "description": "夕食用の冷蔵弁当を平日のみ、1週間単位で配達。冷凍おかずや「みまもりサービス」も提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "ワタミ",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "JA",
+    "category": "弁当・食材の配達",
+    "target_users": null,
+    "description": "食材を月・水・金、または火・木・土のコースで配達。冷凍おかずや乳製品の追加注文も可能。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "JA",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "すし海道",
+    "category": "弁当・食材の配達",
+    "target_users": null,
+    "description": "寿司の出前サービス。1,500円以上から配達可能。市内全域に対応。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "すし海道",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "大竹精肉店",
+    "category": "弁当・食材の配達",
+    "target_users": null,
+    "description": "惣菜や肉類を扱っており、午前中の注文で16:30までに配達。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "大竹精肉店",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "移動スーパー とくし丸",
+    "category": "弁当・食材の配達",
+    "target_users": null,
+    "description": "軽トラックで自宅を訪問し、食品や日用品を販売。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "とくし丸",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "南陽市生活支援を考える会",
+    "category": "移動支援",
+    "target_users": "要支援者やチェックリストに該当する方",
+    "description": "通いの場への移動を支援。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "南陽市生活支援を考える会",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "山形コアラ",
+    "category": "移動支援",
+    "target_users": "介護保険介護タクシーはケアマネジャーのプランに基づき利用。その他の方は福祉タクシーを利用",
+    "description": "介護保険介護タクシーと、介護保険が適用されない介護タクシーを提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形コアラ",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "あんず福祉タクシー",
+    "category": "移動支援",
+    "target_users": "すべての方",
+    "description": "要介護認定の有無に関わらず、すべての方が利用できる福祉タクシー。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "あんず福祉タクシー",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "たすけあいの会（生協）",
+    "category": "生活支援（介護保険外サービス）",
+    "target_users": null,
+    "description": "掃除、買い物、家事などの家事支援サービスを提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "たすけあいの会（生協）",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "山形コアラ",
+    "category": "生活支援（介護保険外サービス）",
+    "target_users": null,
+    "description": "ゴミ出し、掃除、買い物、病院付き添いなどの家事支援や、雪片づけも実施。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "山形コアラ",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "シルバー人材センター",
+    "category": "生活支援（介護保険外サービス）",
+    "target_users": null,
+    "description": "掃除、洗濯、話し相手などの家事支援から、草刈りや除雪・雪下ろしなどの外作業まで、幅広いサービスを提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "シルバー人材センター",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "ほのぼのケアサービス",
+    "category": "生活支援（介護保険外サービス）",
+    "target_users": null,
+    "description": "生活援助（買い物、調理、掃除など）や身体介護（食事、入浴、排泄介助など）を実施。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "ほのぼのケアサービス",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "フク菊丸応援隊",
+    "category": "生活支援（介護保険外サービス）",
+    "target_users": null,
+    "description": "ゴミ出し、草むしり、除雪などのサービスを提供。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "フク菊丸応援隊",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "緊急通報システム",
+    "category": "高齢者の安全サポート",
+    "target_users": "65歳以上の一人暮らしの方・65歳以上の方のみの世帯・身体障がい者のみの世帯・65歳以上と障がい者のみの世帯",
+    "description": "急に具合が悪くなった場合に、救急車の手配や緊急連絡先への連絡をしてくれるシステム。",
+    "contact_info": {
+      "phone": "0238-40-0610",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "南陽市 福祉課",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "家さかえっぺ登録",
+    "category": "高齢者の安全サポート",
+    "target_users": "在宅で生活している概ね65歳以上で、認知症等により徘徊の恐れがある方",
+    "description": "高齢者の情報を市に登録することで、行方不明になった際の早期発見・保護に繋げる支援事業。",
+    "contact_info": {
+      "phone": "0238-40-0610",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "南陽市 福祉課",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "郵便局のみまもりサービス",
+    "category": "高齢者の安全サポート",
+    "target_users": null,
+    "description": "郵便局員が直接訪問し、訪問状況を指定先に報告するサービス。",
+    "contact_info": {
+      "phone": "0120-23-28-86",
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "郵便局",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "ほのぼのケアサービス 福祉用具",
+    "category": "福祉用具の専門店",
+    "target_users": null,
+    "description": "福祉用具の専門店。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "ほのぼのケアサービス",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "ウエルランド いいづか",
+    "category": "福祉用具の専門店",
+    "target_users": null,
+    "description": "福祉用具の専門店。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "ウエルランド",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "ヘルズ",
+    "category": "福祉用具の専門店",
+    "target_users": null,
+    "description": "福祉用具の専門店。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "ヘルズ",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "サン十字 南陽営業所",
+    "category": "福祉用具の専門店",
+    "target_users": null,
+    "description": "福祉用具の専門店。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "サン十字",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "悠々くらし会",
+    "category": "福祉用具の専門店",
+    "target_users": null,
+    "description": "福祉用具の専門店。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "悠々くらし会",
+    "location": "山形県南陽市"
+  },
+  {
+    "service_name": "さふらん",
+    "category": "福祉用具の専門店",
+    "target_users": null,
+    "description": "福祉用具の専門店。",
+    "contact_info": {
+      "phone": null,
+      "fax": null,
+      "email": null,
+      "url": null
+    },
+    "provider": "さふらん",
+    "location": "山形県南陽市"
+  },
+  {
+"service_name": "くらしのたすけあいの会（生協）",
+"category": "配食サービス",
+"target_users": "組合員",
+"description": "夕食（おかずのみ又は弁当）を配達。事前に組合員に加入する必要があります。",
+"contact_info": {
+"phone": "080-0800-6265",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "くらしのたすけあいの会（生協）",
+"location": "新庄市"
+},
+{
+"service_name": "おくやまストアー",
+"category": "配食サービス",
+"target_users": null,
+"description": "昼食弁当を配達。配達エリアは市内。",
+"contact_info": {
+"phone": "0233-29-2321",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "おくやまストアー",
+"location": "新庄市"
+},
+{
+"service_name": "福原鮮魚店",
+"category": "配食サービス",
+"target_users": "高齢者向け惣菜も販売",
+"description": "お惣菜各種と弁当を販売。3,000円以上で市内配送無料。高齢者向けの惣菜も販売中。",
+"contact_info": {
+"phone": "0233-23-2812",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "福原鮮魚店",
+"location": "新庄市"
+},
+{
+"service_name": "ヨシケイ",
+"category": "配食サービス",
+"target_users": "糖尿病、高血圧症、高脂血症の方",
+"description": "糖尿病、高血圧症、高脂血症の方向け食材など、幅広いラインナップを提供。2食入りや3食入りコースがある。",
+"contact_info": {
+"phone": "0233-22-7323",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "ヨシケイ",
+"location": "新庄市"
+},
+{
+"service_name": "日東ベスト",
+"category": "配食サービス",
+"target_users": null,
+"description": "冷凍食品をカタログから選択して注文。嚥下困難食など、食形態が豊富。",
+"contact_info": {
+"phone": "0120-917-549",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "日東ベスト",
+"location": "新庄市"
+},
+{
+"service_name": "かいせい食堂",
+"category": "配食サービス",
+"target_users": "かいせい訪問介護・訪問入浴などの利用者",
+"description": "各種弁当を提供。毎週木曜は治療食も取り扱い。",
+"contact_info": {
+"phone": "0233-29-2912",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "かいせい",
+"location": "新庄市"
+},
+{
+"service_name": "食楽膳",
+"category": "配食サービス",
+"target_users": null,
+"description": "冷凍タイプの調理済惣菜。電子レンジで温めるだけ。注文合計5,500円以上で送料無料。",
+"contact_info": {
+"phone": "0120-640-407",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "食楽膳",
+"location": "新庄市"
+},
+{
+"service_name": "福祉サポートセンター山形",
+"category": "移送サービス(福祉有償運送事業所)",
+"target_users": "新庄市社会福祉協議会もみの木訪問介護事業所の利用者および付き添いの方、要介護認定を受けている方、身体障がい者手帳又は療育手帳をお持ちの方",
+"description": "通院、同行援護などを支援。保有台数3台（車いす対応車1台）。",
+"contact_info": {
+"phone": "0233-22-5790",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "くらしのたすけあいの会（生協）",
+"category": "移送サービス(福祉有償運送事業所)",
+"target_users": "新庄市在住の要介護認定者、障がい手帳所有者（たすけあいの会の会員になる必要があります）",
+"description": "通院送迎などを支援。保有台数4台（車いす対応車3台）。",
+"contact_info": {
+"phone": "0233-22-8893",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "くらしのたすけあいの会（生協）",
+"location": "新庄市"
+},
+{
+"service_name": "新庄タクシー",
+"category": "移送サービス(一般乗用旅客)",
+"target_users": null,
+"description": "一般タクシーサービス。車いす対応車1台、ストレッチャーあり。県内外に対応。",
+"contact_info": {
+"phone": "0233-22-3955",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄タクシー",
+"location": "新庄市"
+},
+{
+"service_name": "介護タクシー「もがみ」",
+"category": "移送サービス(一般乗用旅客)",
+"target_users": null,
+"description": "一般タクシーサービス。男性2人体制、重度の方は受け入れ困難。吸引器あり。",
+"contact_info": {
+"phone": "0233-35-2721",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "介護タクシー「もがみ」",
+"location": "新庄市"
+},
+{
+"service_name": "かなエール・タクシー",
+"category": "移送サービス(一般乗用旅客)",
+"target_users": null,
+"description": "各種、付き添い・同行サービスも対応可能。保有台数4台（車いす対応車4台）。",
+"contact_info": {
+"phone": "0237-85-1147",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "かなエール・タクシー",
+"location": "新庄市"
+},
+{
+"service_name": "カイセイ",
+"category": "移送サービス(一般乗用旅客)",
+"target_users": "新庄市、鮭川村、真室川町、舟形町に在住の要介護認定者、障がい手帳所有者",
+"description": "事業所を出発した時点から料金が発生。介護保険利用時は料金が加算されます。",
+"contact_info": {
+"phone": "0233-29-2912",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "カイセイ",
+"location": "新庄市"
+},
+{
+"service_name": "もみの木 訪問介護事業所",
+"category": "訪問サービス（介護保険外）",
+"target_users": "もみの木訪問介護事業所を利用している方",
+"description": "身体介護、通院介助、外出付き添い、家事援助、買い物などを提供。安否・服薬確認も実施。",
+"contact_info": {
+"phone": "0233-22-5790",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "もみの木 訪問介護事業所",
+"location": "新庄市"
+},
+{
+"service_name": "(有) ケアワーク新庄",
+"category": "訪問サービス（介護保険外）",
+"target_users": null,
+"description": "通院介助・在宅家事援助・在宅介護支援など。日勤・夜勤・住み込み対応可（料金別途）。",
+"contact_info": {
+"phone": "0233-22-2018",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "(有) ケアワーク新庄",
+"location": "新庄市"
+},
+{
+"service_name": "ヘルパーステーション さんのほり 新庄徳洲会介護センター",
+"category": "訪問サービス（介護保険外）",
+"target_users": "徳洲会病院入院中の患者",
+"description": "通院介助・家事援助、身体介護（入浴介助等）、徳洲会病院入院中の患者を対象とした洗濯サービスを提供。",
+"contact_info": {
+"phone": "0233-28-9371, 0233-28-1808",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄徳洲会介護センター",
+"location": "新庄市"
+},
+{
+"service_name": "くらしのたすけあいの会（生協）",
+"category": "生活支援（介護保険外）",
+"target_users": "会員",
+"description": "家事全般・通院援助などを提供。利用時は事前に会員に登録し、利用券を購入する必要があります。",
+"contact_info": {
+"phone": "0233-22-8893",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "くらしのたすけあいの会（生協）",
+"location": "新庄市"
+},
+{
+"service_name": "シルバー人材センター",
+"category": "生活支援（介護保険外）",
+"target_users": null,
+"description": "家事手伝い、病人の付き添い、雪囲い、屋根雪下ろし・除雪など様々なサービスを提供。",
+"contact_info": {
+"phone": "0233-22-3065",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "シルバー人材センター",
+"location": "新庄市"
+},
+{
+"service_name": "どんぐり",
+"category": "生活支援（介護保険外）",
+"target_users": null,
+"description": "家事全般・通院援助などを提供。30分ごとに料金が加算されます。",
+"contact_info": {
+"phone": "0233-29-4556",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "どんぐり",
+"location": "新庄市"
+},
+{
+"service_name": "カイセイ 訪問介護事業所",
+"category": "生活支援（介護保険外）",
+"target_users": "どなたでも利用可能（一部サービスはカイセイ訪問介護事業所を利用している方が対象）",
+"description": "身体介護、家事援助、付き添い、買い物、安否確認、服薬確認、ゴミ出しなどを提供。",
+"contact_info": {
+"phone": "0233-29-2912",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "カイセイ",
+"location": "新庄市"
+},
+{
+"service_name": "ニチイケアセンター",
+"category": "生活支援（介護保険外）",
+"target_users": "子どもから高齢者・障がい者まで幅広く対応",
+"description": "期間限定で契約を結び、プランを組んでサービスを提供。料金はプランの組み合わせにより異なります。",
+"contact_info": {
+"phone": "0120-212-295, 0233-28-0050",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "ニチイケアセンター",
+"location": "新庄市"
+},
+{
+"service_name": "訪問介護事業所 すまいる",
+"category": "生活支援（介護保険外）",
+"target_users": "訪問介護事業所すまいるを利用している要支援・要介護者",
+"description": "24時間対応。家事全般、除雪作業、通院や入院、銀行などの付き添い、身の回りのお世話、散歩やお話相手などを提供。安否確認やゴミ出し、服薬確認も実施。",
+"contact_info": {
+"phone": "0233-32-1300",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "訪問介護事業所 すまいる",
+"location": "新庄市"
+},
+{
+"service_name": "訪問看護ステーションアーユス新庄",
+"category": "訪問看護事業所（独自サービス）",
+"target_users": null,
+"description": "自費訪問看護、経管栄養、導尿、清潔援助、吸引、バイタルチェックなど。介護保険額に準ずる10割負担。",
+"contact_info": {
+"phone": "0233-77-4418",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "訪問看護ステーションアーユス新庄",
+"location": "新庄市"
+},
+{
+"service_name": "新庄徳洲会訪問看護ステーション",
+"category": "訪問看護事業所（独自サービス）",
+"target_users": "人工呼吸器利用など医療依存度の高い方",
+"description": "医療依存度の高い方への訪問看護。訪問看護の長時間利用や緊急時訪問サービスあり。",
+"contact_info": {
+"phone": "0233-29-4607",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄徳洲会訪問看護ステーション",
+"location": "新庄市"
+},
+{
+"service_name": "訪問看護ステーション新庄",
+"category": "訪問看護事業所（独自サービス）",
+"target_users": null,
+"description": "看護師が月1回自宅訪問し、健康状態や生活状況の確認、電話相談、受診支援を行う。",
+"contact_info": {
+"phone": "0233-28-7330",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "訪問看護ステーション新庄",
+"location": "新庄市"
+},
+{
+"service_name": "訪問看護ステーション コティエ",
+"category": "訪問看護事業所（医療保険）",
+"target_users": null,
+"description": "健康観察・相談、生活指導、服薬管理など、精神科訪問看護を提供。精神科医師からの指示書が必要。",
+"contact_info": {
+"phone": "0233-32-0542",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "訪問看護ステーション コティエ",
+"location": "新庄市"
+},
+{
+"service_name": "認定栄養ケア・ステーション D-june（だじゅね）",
+"category": "訪問栄養指導事業所（認定栄養ケアステーション）",
+"target_users": null,
+"description": "栄養相談・特定保健指導、訪問栄養指導、給食献立作成指導、ワンコイン栄養相談（1回500円）などを実施。",
+"contact_info": {
+"phone": "090-4551-4790",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "日本栄養士会",
+"location": "新庄市"
+},
+{
+"service_name": "ほし薬局栄養ケアステーション「Hi-to!」",
+"category": "訪問栄養指導事業所（認定栄養ケアステーション）",
+"target_users": null,
+"description": "食、栄養相談（訪問型）、検診後の食事指導、外来栄養指導、給食献立作成などを提供。",
+"contact_info": {
+"phone": "0233-28-8693",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "ほし薬局",
+"location": "新庄市"
+},
+{
+"service_name": "（公社）山形県栄養士会 栄養ケアステーション 栄養ケアもがみ D-nya（だーにゃ）",
+"category": "訪問栄養指導事業所（認定栄養ケアステーション）",
+"target_users": "食事等でお困りの方、栄養についてご質問のある方",
+"description": "栄養相談・栄養指導・調理実習（幼時から高齢者対象）、在宅訪問栄養指導、給食献立作成などを提供。",
+"contact_info": {
+"phone": "080-1817-7019",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "（公社）山形県栄養士会",
+"location": "新庄市"
+},
+{
+"service_name": "ほし薬局",
+"category": "訪問服薬管理指導事業所",
+"target_users": "認知症、緩和ケアなどの専門性を必要とする方から、飲み忘れの支援まで幅広く",
+"description": "無菌調剤、介護用品販売、医療材料支給。在宅対応24時間可能。在宅訪問実績（年間）1,106件。",
+"contact_info": {
+"phone": "0233-28-8693",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "ほし薬局",
+"location": "新庄市"
+},
+{
+"service_name": "アイン薬局新庄店",
+"category": "訪問服薬管理指導事業所",
+"target_users": null,
+"description": "医療材料支給（特定保健医療材料含む）。24時間オンコール態勢あり。在宅訪問実績（年間）5件。",
+"contact_info": {
+"phone": "0233-28-8150",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "アイン薬局新庄店",
+"location": "新庄市"
+},
+{
+"service_name": "おおてまち薬局",
+"category": "訪問服薬管理指導事業所",
+"target_users": null,
+"description": "無菌調剤、医療材料支給（特定保健医療材料含む）。24時間オンコール態勢あり。在宅訪問実績（年間）1件。",
+"contact_info": {
+"phone": "0233-32-1981",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "おおてまち薬局",
+"location": "新庄市"
+},
+{
+"service_name": "かねざわ薬局",
+"category": "訪問服薬管理指導事業所",
+"target_users": null,
+"description": "無菌調剤、介護用品販売、医療材料支給（特定保健医療材料含む）。24時間オンコール態勢あり。在宅訪問実績（年間）15件。",
+"contact_info": {
+"phone": "0233-29-7300",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "かねざわ薬局",
+"location": "新庄市"
+},
+{
+"service_name": "かんきょう",
+"category": "福祉用具サービス（電動ベッド）",
+"target_users": "介護保険申請中の方、事業対象者、要支援1・2、要介護1",
+"description": "電動ベッド、マットレス、サイドレール、ベットパット、防水シーツをレンタル。月額料金1,350円。",
+"contact_info": {
+"phone": "0237-43-0294",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "かんきょう",
+"location": "新庄市"
+},
+{
+"service_name": "蔵王サプライズ",
+"category": "福祉用具サービス（電動ベッド）",
+"target_users": "要支援1・2、要介護1",
+"description": "電動ベッド、マットレス、サイドレール、ベットパット、防水シーツをレンタル。月額料金1,300円。",
+"contact_info": {
+"phone": "0233-32-0036",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "蔵王サプライズ",
+"location": "新庄市"
+},
+{
+"service_name": "シープ",
+"category": "福祉用具サービス（電動ベッド）",
+"target_users": "介護保険申請中の方、事業対象者、要支援1・2、要介護1",
+"description": "電動ベッド、マットレス、サイドレール、ベットパット、防水シーツをレンタル。月額料金1,300円〜1,500円。",
+"contact_info": {
+"phone": "0233-22-1199",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "シープ",
+"location": "新庄市"
+},
+{
+"service_name": "多田木工",
+"category": "福祉用具サービス（電動ベッド）",
+"target_users": "要支援1・2、要介護1",
+"description": "電動ベッド、マットレス、サイドレール、ベットパット、防水シーツをレンタル。月額料金1,600円。",
+"contact_info": {
+"phone": "023-653-5629",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "多田木工",
+"location": "新庄市"
+},
+{
+"service_name": "はっぴぃーアシスト",
+"category": "福祉用具サービス（電動ベッド）",
+"target_users": "介護保険申請中の方、事業対象者、要支援1・2、要介護1",
+"description": "電動ベッド、マットレス、サイドレール、ベットパット、防水シーツをレンタル。月額料金1,500円。",
+"contact_info": {
+"phone": "0237-72-2080",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "はっぴぃーアシスト",
+"location": "新庄市"
+},
+{
+"service_name": "ぱれっと",
+"category": "福祉用具サービス（電動ベッド）",
+"target_users": "介護保険申請中の方、事業対象者、要支援1・2、要介護1",
+"description": "電動ベッド、マットレス、サイドレール、ベットパット、防水シーツをレンタル。月額料金1,300円〜。",
+"contact_info": {
+"phone": "0233-25-2231",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "ぱれっと",
+"location": "新庄市"
+},
+{
+"service_name": "かんきょう",
+"category": "福祉用具サービス（車いす）",
+"target_users": "介護保険申請中の方、要支援1〜要介護1",
+"description": "カタログから車いすを選択してレンタル。カタログ記載単価の0.5倍の月額料金。",
+"contact_info": {
+"phone": "0237-43-0294",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "かんきょう",
+"location": "新庄市"
+},
+{
+"service_name": "蔵王サプライズ",
+"category": "福祉用具サービス（車いす）",
+"target_users": "介護保険申請中の方、要支援1〜要介護1",
+"description": "介助式、自走式から選択可能。月額料金800円。",
+"contact_info": {
+"phone": "0233-32-0036",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "蔵王サプライズ",
+"location": "新庄市"
+},
+{
+"service_name": "シープ",
+"category": "福祉用具サービス（車いす）",
+"target_users": "介護保険申請中の方、事業対象者〜要介護1",
+"description": "自走式が中心で、介助式は要相談。月額料金800円。",
+"contact_info": {
+"phone": "0233-22-1199",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "シープ",
+"location": "新庄市"
+},
+{
+"service_name": "はっぴぃーアシスト",
+"category": "福祉用具サービス（車いす）",
+"target_users": "介護保険申請中の方、事業対象者〜要介護1",
+"description": "介助式、自走式から選択可能。月額料金3,000円。",
+"contact_info": {
+"phone": "0237-72-2080",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "はっぴぃーアシスト",
+"location": "新庄市"
+},
+{
+"service_name": "ぱれっと",
+"category": "福祉用具サービス（車いす）",
+"target_users": "介護保険申請中の方、要支援1〜要介護1",
+"description": "介助式、自走式から選択可能。月額料金2,500円〜3,000円。",
+"contact_info": {
+"phone": "0233-25-2231",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "ぱれっと",
+"location": "新庄市"
+},
+{
+"service_name": "老人福祉センター",
+"category": "福祉用具サービス（車いす）",
+"target_users": "すべての方（要介護2〜5の方は7日間まで）",
+"description": "車いすの無料貸し出し。貸出期間は1ヶ月。印鑑を持参して申請が必要。",
+"contact_info": {
+"phone": "0233-23-3077",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "老人福祉センター",
+"location": "新庄市"
+},
+{
+"service_name": "新庄市役所 成人福祉課",
+"category": "福祉用具サービス（車いす）",
+"target_users": "すべての方",
+"description": "車いすの無料貸し出し。貸出期間は1週間。印鑑持参で即日貸し出し可能。",
+"contact_info": {
+"phone": "0233-22-2111",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市役所",
+"location": "新庄市"
+},
+{
+"service_name": "地域ふれあいサロン",
+"category": "新庄市社会福祉協議会事業",
+"target_users": "65歳以上の方",
+"description": "地域の公民館等を活用し、高齢者が少人数で気軽に集まり、語らいや趣味活動など楽しい時間を過ごす場所。",
+"contact_info": {
+"phone": "0233-22-5797",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "いっぷくオレンジカフェ",
+"category": "新庄市社会福祉協議会事業",
+"target_users": "認知症に関心のある方",
+"description": "気軽な雰囲気で認知症について学んだり、認知症を話題に交流できる場所。",
+"contact_info": {
+"phone": "0233-28-0330",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市地域包括支援センター",
+"location": "新庄市"
+},
+{
+"service_name": "愛のひと声運動",
+"category": "新庄市社会福祉協議会事業",
+"target_users": "独居高齢者等",
+"description": "安否確認のため、ひと声をかけながら、乳酸飲料を月・水・金の回数制で無料配布する。",
+"contact_info": {
+"phone": "0233-22-5797",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "訪問理美容ボランティア「チョキボラ」",
+"category": "新庄市社会福祉協議会事業",
+"target_users": "外出が困難な高齢者または身体障がい者",
+"description": "理美容師が自宅を訪問しカットを行う。1回1,500円。",
+"contact_info": {
+"phone": "0233-22-5797",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "無料法律相談",
+"category": "新庄市社会福祉協議会事業",
+"target_users": "新庄市在住の方",
+"description": "多重債務・離婚調停・財産分与・土地問題等の各種相談が可能。毎月第3週木曜日13:30〜16:00に開催（要予約）。",
+"contact_info": {
+"phone": "0233-22-5797",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "福祉サービス利用援助事業",
+"category": "新庄市社会福祉協議会事業",
+"target_users": "判断能力の低下した、高齢者・知的障がい者・精神障がい者",
+"description": "福祉サービスの利用援助、日常的な金銭管理、書類などの預かりサービス。利用料1回あたり1,500円。",
+"contact_info": {
+"phone": "0233-22-5797",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "生活福祉資金",
+"category": "新庄市社会福祉協議会事業",
+"target_users": "低所得者世帯、高齢者世帯、身体・知的・精神障がい者世帯",
+"description": "資金の貸付を行うことにより、経済的自立及び生活意欲の助長促進を図ることを目的とした貸付制度。",
+"contact_info": {
+"phone": "0233-22-5797",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "緊急通報システム（やすらぎ電話）",
+"category": "新庄市成人福祉課事業",
+"target_users": "一人暮らしの高齢者等",
+"description": "一人暮らし等の高齢者からの急病及び健康相談について民間の受信センターが受け、状況に応じて対応。使用料は220円/月（税別）。",
+"contact_info": {
+"phone": "0233-29-5809",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市成人福祉課",
+"location": "新庄市"
+},
+{
+"service_name": "除雪サービス",
+"category": "新庄市成人福祉課事業",
+"target_users": "本人及び生計中心者の納めるべき所得税がない世帯で、自力での除雪が困難な方",
+"description": "屋根の雪下ろしや玄関前の除雪を行う。屋根の雪下ろしは年3回まで（費用1割を本人負担）。玄関前雪払いは月8時間まで（費用1割を本人負担）。",
+"contact_info": {
+"phone": "0233-29-5809",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市成人福祉課",
+"location": "新庄市"
+},
+{
+"service_name": "紙おむつの支給",
+"category": "新庄市成人福祉課事業",
+"target_users": "本人及び生計中心者の納めるべき所得税がなく、かつ要介護3・4・5のいずれかを受けた方、又は同程度の状態の方",
+"description": "低所得者世帯であって、寝たきりや認知症のため常時失禁状態にある方に紙おむつを宅配。",
+"contact_info": {
+"phone": "0233-29-5809",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市成人福祉課",
+"location": "新庄市"
+},
+{
+"service_name": "成年後見制度利用支援",
+"category": "新庄市成人福祉課事業",
+"target_users": "要支援者または配偶者及び二親等以内の家族が審判請求を行う見込みがない者のうち、市長が必要と認めた者",
+"description": "判断能力が不十分な認知症高齢者などで、成年後見の審判請求が困難な方に対し、補完したり、経費の助成を行う。",
+"contact_info": {
+"phone": "0233-29-5809",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市成人福祉課",
+"location": "新庄市"
+},
+{
+"service_name": "安心見守り事前登録",
+"category": "新庄市成人福祉課事業",
+"target_users": "認知症などにより徘徊や迷子になる心配のある高齢者",
+"description": "高齢者の情報を市に事前登録し、行方不明になった時に警察や関係機関と共有し、早期発見に繋げる。",
+"contact_info": {
+"phone": "0233-29-5809",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市成人福祉課",
+"location": "新庄市"
+},
+{
+"service_name": "生活自立支援センター最上",
+"category": "相談機関",
+"target_users": "生活や仕事に関する困り事がある方",
+"description": null,
+"contact_info": {
+"phone": "0233-32-1585",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "生活自立支援センター最上",
+"location": "新庄市"
+},
+{
+"service_name": "新庄市地域包括支援センター",
+"category": "相談機関",
+"target_users": "高齢者",
+"description": "高齢者の保健・医療・福祉・介護等の総合的な相談窓口。",
+"contact_info": {
+"phone": "0233-28-0330",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市地域包括支援センター",
+"location": "新庄市"
+},
+{
+"service_name": "新庄市健康課",
+"category": "相談機関",
+"target_users": null,
+"description": "精神科医師または臨床心理士による心の健康相談、ひきこもり・アルコール相談、暮らしの悩み相談（司法書士による）など。",
+"contact_info": {
+"phone": "0233-29-5791",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市健康課",
+"location": "新庄市"
+},
+{
+"service_name": "最上保健所",
+"category": "相談機関",
+"target_users": null,
+"description": "精神科医師または臨床心理士による心の健康相談、ひきこもり・アルコール相談など。",
+"contact_info": {
+"phone": "0233-29-1266",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "最上保健所",
+"location": "新庄市"
+},
+{
+"service_name": "県精神保健福祉センター",
+"category": "相談機関",
+"target_users": null,
+"description": "心の健康相談。",
+"contact_info": {
+"phone": "023-631-7060",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "県精神保健福祉センター",
+"location": "山形県"
+},
+{
+"service_name": "山形いのちの電話",
+"category": "相談機関",
+"target_users": null,
+"description": "心の健康相談。年中無休で対応。",
+"contact_info": {
+"phone": "023-645-4343",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "山形いのちの電話",
+"location": "山形県"
+},
+{
+"service_name": "県警察本部少年課",
+"category": "相談機関",
+"target_users": "少年",
+"description": "少年の非行や事件、その他の悩みに関する相談。土日祝祭日、夜間も対応。",
+"contact_info": {
+"phone": "023-642-1777",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "県警察本部少年課",
+"location": "山形県"
+},
+{
+"service_name": "新庄市成人福祉課",
+"category": "相談機関",
+"target_users": "介護など高齢者に関する相談、生活保護に関する相談",
+"description": "介護など高齢者に関する相談、生活保護に関する相談窓口。",
+"contact_info": {
+"phone": "0233-29-5809, 0233-29-5808",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市成人福祉課",
+"location": "新庄市"
+},
+{
+"service_name": "最上障がい者就業生活支援センター",
+"category": "相談機関",
+"target_users": "障がい者",
+"description": "障がい者の就労や生活に関する相談窓口。",
+"contact_info": {
+"phone": "0233-23-4528",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "最上障がい者就業生活支援センター",
+"location": "新庄市"
+},
+{
+"service_name": "新庄市社会福祉協議会",
+"category": "相談機関",
+"target_users": null,
+"description": "福祉に関する心配事や悩み事相談、無料法律相談など。",
+"contact_info": {
+"phone": "0233-22-5797",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市社会福祉協議会",
+"location": "新庄市"
+},
+{
+"service_name": "県警察本部生活環境課",
+"category": "相談機関",
+"target_users": null,
+"description": "悪質商法に関する相談。24時間対応。",
+"contact_info": {
+"phone": "023-642-4477",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "県警察本部生活環境課",
+"location": "山形県"
+},
+{
+"service_name": "新庄市消費生活センター（市市民課）",
+"category": "相談機関",
+"target_users": null,
+"description": "消費生活トラブルに関する相談窓口。",
+"contact_info": {
+"phone": "0233-22-2121",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "新庄市消費生活センター",
+"location": "新庄市"
+},
+{
+"service_name": "日本賃金業協会山形県支部",
+"category": "相談機関",
+"target_users": null,
+"description": "賃金業務に関する相談・苦情・紛争解決・貸付自粛申告の受付。",
+"contact_info": {
+"phone": "0570-051-051",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "日本賃金業協会山形県支部",
+"location": "山形県"
+},
+{
+"service_name": "山形県司法書士会",
+"category": "相談機関",
+"target_users": null,
+"description": "司法書士による無料相談窓口。",
+"contact_info": {
+"phone": "023-642-3434",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "山形県司法書士会",
+"location": "山形県"
+},
+{
+"service_name": "山形県弁護士会法律センター",
+"category": "相談機関",
+"target_users": null,
+"description": "法律相談全般。",
+"contact_info": {
+"phone": "023-635-3648",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "山形県弁護士会",
+"location": "山形県"
+},
+{
+"service_name": "法テラス山形",
+"category": "相談機関",
+"target_users": null,
+"description": "法トラブルに関する情報提供など。",
+"contact_info": {
+"phone": "050-3383-5544",
+"fax": null,
+"email": null,
+"url": null
+},
+"provider": "法テラス",
+"location": "山形県"
+}
+]
