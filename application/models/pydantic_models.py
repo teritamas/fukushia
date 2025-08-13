@@ -56,3 +56,62 @@ class AssessmentMappingRequest(BaseModel):
 
 class SupportPlanRequest(BaseModel):
     assessment_data: Dict[str, Any]
+
+
+# --- Social Resource Management Models ---
+class ResourceBase(BaseModel):
+    service_name: str
+    category: Optional[str] = None
+    target_users: Optional[str] = None
+    description: Optional[str] = None
+    eligibility: Optional[str] = None
+    application_process: Optional[str] = None
+    cost: Optional[str] = None
+    provider: Optional[str] = None
+    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_fax: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_url: Optional[str] = None
+    keywords: Optional[List[str]] = []
+    last_verified_at: Optional[float] = None
+
+class ResourceCreate(ResourceBase):
+    pass
+
+class ResourceUpdate(BaseModel):
+    service_name: Optional[str] = None
+    category: Optional[str] = None
+    target_users: Optional[str] = None
+    description: Optional[str] = None
+    eligibility: Optional[str] = None
+    application_process: Optional[str] = None
+    cost: Optional[str] = None
+    provider: Optional[str] = None
+    location: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_fax: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_url: Optional[str] = None
+    keywords: Optional[List[str]] = None
+    last_verified_at: Optional[float] = None
+
+class Resource(ResourceBase):
+    id: str
+
+
+# --- Resource Memo Models ---
+class ResourceMemoBase(BaseModel):
+    resource_id: str
+    content: str
+
+class ResourceMemoCreate(ResourceMemoBase):
+    pass
+
+class ResourceMemoUpdate(BaseModel):
+    content: str
+
+class ResourceMemo(ResourceMemoBase):
+    id: str
+    created_at: float
+    updated_at: float
