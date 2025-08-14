@@ -1,4 +1,19 @@
-// 期限ラベルを返す関数
+import React, { useEffect, useMemo, useState } from "react";
+import MemoList, { Note as SharedNote, TodoItem as SharedTodo } from "./MemoList";
+import { db } from "../firebase";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  Timestamp,
+  updateDoc,
+} from "firebase/firestore";
+
+// Local shapes matching Firestore payloads we use here
 type DueDateObj = { toDate: () => Date };
 type TodoItem = {
   id: string;
@@ -6,6 +21,7 @@ type TodoItem = {
   dueDate: string | DueDateObj | null;
   isCompleted: boolean;
 };
+
 type Note = {
   id: string;
   clientName: string;
@@ -14,139 +30,44 @@ type Note = {
   todoItems: TodoItem[];
   timestamp: DueDateObj;
 };
-function getDueDateLabel(
-  dueDateObj: DueDateObj | null,
-  isCompleted: boolean = false
-): { label: string; className: string; icon: string } {
-  if (!dueDateObj || !dueDateObj.toDate)
-    return { label: "-", className: "", icon: "" };
-  const due = dueDateObj.toDate();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffDays = Math.floor(
-    (due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  );
-  if (isCompleted) {
-    // 完了タスクは強調しない
-    return { label: due.toLocaleDateString(), className: "", icon: "" };
-  }
-  if (diffDays < 0) {
-    return {
-      label: `${due.toLocaleDateString()}（期限切れ）`,
-      className: "text-red-600 font-bold",
-      icon: "⏰",
-    };
-  } else if (diffDays <= 2) {
-    return {
-      label: `${due.toLocaleDateString()}（期限間近）`,
-      className: "text-orange-500 font-bold",
-      icon: "⚠️",
-    };
-  } else {
-    return { label: due.toLocaleDateString(), className: "", icon: "" };
-  }
-}
-import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
 
-// .env.localからAPP_ID, USER_IDを取得
 const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
 const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
 
-// Firestoreコレクションパス生成関数
-function getCollectionPath(
-  app_id: string,
-  user_id: string,
-  type: "clients" | "notes"
-) {
+function getCollectionPath(app_id: string, user_id: string, type: "clients" | "notes") {
   return `artifacts/${app_id}/users/${user_id}/${type}`;
 }
 
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  Timestamp,
-  updateDoc,
-  doc,
-  deleteDoc,
-} from "firebase/firestore";
-
 export default function MemoTaskManager() {
-  // メモ表示フィルタ: all, incomplete, complete
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "incomplete" | "complete"
-  >("all");
-  // タスク内容変更
-  const handleTaskChange = (
-    id: string,
-    field: string,
-    value: string | boolean
-  ) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
-    );
-  };
-  // メモ削除
-  const handleDeleteNote = async (noteId: string) => {
-    await deleteDoc(
-      doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId)
-    );
-    setNotes((prev) => prev.filter((n) => n.id !== noteId));
-  };
+  // filters
+  const [filter, setFilter] = useState<"all" | "incomplete" | "complete">("all");
 
-  // タスク完了状態切替
-  const handleToggleTask = async (
-    noteId: string,
-    taskId: string,
-    isCompleted: boolean
-  ) => {
-    const note = notes.find((n) => n.id === noteId);
-    if (!note) return;
-    const updatedTodoItems = (note.todoItems || []).map((t: TodoItem) =>
-      t.id === taskId ? { ...t, isCompleted } : t
-    );
-    await updateDoc(
-      doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId),
-      {
-        todoItems: updatedTodoItems,
-      }
-    );
-    setNotes((prev) =>
-      prev.map((n) =>
-        n.id === noteId ? { ...n, todoItems: updatedTodoItems } : n
-      )
-    );
-  };
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [editMemoContent, setEditMemoContent] = useState("");
-  const [editSpeaker, setEditSpeaker] = useState("");
+  // create form state
   const [clients, setClients] = useState<string[]>([]);
   const [selectedClient, setSelectedClient] = useState("");
   const [speaker, setSpeaker] = useState("");
   const [memoContent, setMemoContent] = useState("");
-  const [tasks, setTasks] = useState([
+  const [tasks, setTasks] = useState<Array<{ id: string; text: string; dueDate: string; isCompleted: boolean }>>([
     { id: "initial", text: "", dueDate: "", isCompleted: false },
   ]);
-  const [notes, setNotes] = useState<Note[]>([]);
 
-  // クライアント一覧取得
+  // list + edit state
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [editing, setEditing] = useState<{ id: string; speaker: string; content: string } | null>(null);
+
+  // load clients
   useEffect(() => {
-    if (!USER_ID) return;
-    const fetchClients = async () => {
+    const run = async () => {
       const ref = collection(db, getCollectionPath(APP_ID, USER_ID, "clients"));
       const snap = await getDocs(ref);
-      setClients(snap.docs.map((doc) => doc.data().name));
+      setClients(snap.docs.map((d) => d.data().name).filter(Boolean));
     };
-    fetchClients();
+    run();
   }, []);
 
-  // メモ一覧取得
+  // load notes
   useEffect(() => {
-    if (!USER_ID) return;
-    const fetchNotes = async () => {
+    const run = async () => {
       const ref = collection(db, getCollectionPath(APP_ID, USER_ID, "notes"));
       const q = query(ref, orderBy("timestamp", "desc"));
       const snap = await getDocs(q);
@@ -156,41 +77,44 @@ export default function MemoTaskManager() {
           clientName: doc.data().clientName ?? "",
           speaker: doc.data().speaker ?? "",
           content: doc.data().content ?? "",
-          todoItems: doc.data().todoItems ?? [],
+          todoItems: (doc.data().todoItems ?? []) as TodoItem[],
           timestamp: doc.data().timestamp ?? { toDate: () => new Date() },
         }))
       );
     };
-    fetchNotes();
+    run();
   }, []);
 
-  // 支援者追加
+  // form helpers
+  const handleTaskChange = (id: string, field: "text" | "dueDate", value: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
+  };
+  const addTaskField = () => setTasks((p) => [...p, { id: String(Date.now()), text: "", dueDate: "", isCompleted: false }]);
+  const removeTaskField = (id: string) => setTasks((p) => p.filter((t) => t.id !== id));
 
-  // メモ保存
+  const canSave = selectedClient && (memoContent.trim() || tasks.some((t) => t.text.trim()));
+
   const handleSaveMemo = async () => {
-    if (
-      !selectedClient ||
-      (!memoContent.trim() && tasks.every((t) => !t.text.trim()))
-    )
-      return;
-    const todoItems = tasks
+    if (!canSave) return;
+    const todoItems: TodoItem[] = tasks
       .filter((t) => t.text.trim())
       .map((t) => ({
-        ...t,
+        id: t.id,
+        text: t.text.trim(),
         dueDate: t.dueDate ? Timestamp.fromDate(new Date(t.dueDate)) : null,
+        isCompleted: false,
       }));
-    const docRef = await addDoc(
-      collection(db, getCollectionPath(APP_ID, USER_ID, "notes")),
-      {
-        clientName: selectedClient,
-        speaker: speaker.trim(),
-        content: memoContent.trim(),
-        todoItems,
-        timestamp: Timestamp.now(),
-      }
-    );
-    // 追加したメモを即時反映
-    setNotes((prev) => [
+
+    const ref = collection(db, getCollectionPath(APP_ID, USER_ID, "notes"));
+    const docRef = await addDoc(ref, {
+      clientName: selectedClient,
+      speaker: speaker.trim(),
+      content: memoContent.trim(),
+      todoItems,
+      timestamp: Timestamp.now(),
+    });
+
+    setNotes((p) => [
       {
         id: docRef.id,
         clientName: selectedClient,
@@ -199,34 +123,64 @@ export default function MemoTaskManager() {
         todoItems,
         timestamp: { toDate: () => new Date() },
       },
-      ...prev,
+      ...p,
     ]);
     setMemoContent("");
     setSpeaker("");
     setTasks([{ id: "initial", text: "", dueDate: "", isCompleted: false }]);
   };
 
-  // タスク追加・削除
-  const addTaskField = () =>
-    setTasks((prev) => [
-      ...prev,
-      { id: Date.now().toString(), text: "", dueDate: "", isCompleted: false },
-    ]);
-  const removeTaskField = (id: string) =>
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+  const handleDeleteNote = async (noteId: string) => {
+    const ok = typeof window === "undefined" ? true : window.confirm("このメモを削除してもよろしいですか？");
+    if (!ok) return;
+    await deleteDoc(doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId));
+    setNotes((p) => p.filter((n) => n.id !== noteId));
+  };
 
-  // タスク内容変更
+  const handleToggleTask = async (noteId: string, taskId: string, isCompleted: boolean) => {
+    const note = notes.find((n) => n.id === noteId);
+    if (!note) return;
+    const todoItems = (note.todoItems || []).map((t) => (t.id === taskId ? { ...t, isCompleted } : t));
+    await updateDoc(doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId), { todoItems });
+    setNotes((p) => p.map((n) => (n.id === noteId ? { ...n, todoItems } : n)));
+  };
+
+  const filteredNotes = useMemo(() => {
+    return notes.filter((n) => {
+      if (filter === "incomplete") return (n.todoItems || []).some((t) => !t.isCompleted);
+      if (filter === "complete") return (n.todoItems || []).length > 0 && (n.todoItems || []).every((t) => t.isCompleted);
+      return true;
+    });
+  }, [notes, filter]);
+
+  const sharedNotes: SharedNote[] = useMemo(() => {
+    return filteredNotes.map((n) => ({
+      id: n.id,
+      clientName: n.clientName,
+      speaker: n.speaker,
+      content: n.content,
+      timestamp: { seconds: Math.floor(n.timestamp?.toDate?.().getTime?.() / 1000) },
+      todoItems: (n.todoItems || []).map<SharedTodo>((t) => ({
+        id: t.id,
+        text: t.text,
+        dueDate:
+          typeof t.dueDate === "string"
+            ? t.dueDate
+            : t.dueDate
+            ? { seconds: Math.floor(t.dueDate.toDate().getTime() / 1000) }
+            : null,
+        isCompleted: t.isCompleted,
+      })),
+    }));
+  }, [filteredNotes]);
+
   return (
     <div>
-      {/* メモ・タスク登録フォーム */}
+      {/* Create form */}
       <div className="mb-6 p-4 border rounded bg-gray-50">
         <div className="mb-2">
-          <label className="mr-2">支援者:</label>
-          <select
-            className="border rounded px-2 py-1"
-            value={selectedClient}
-            onChange={(e) => setSelectedClient(e.target.value)}
-          >
+          <label className="mr-2">支援対象者:</label>
+          <select className="border rounded px-2 py-1" value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)}>
             <option value="">選択してください</option>
             {clients.map((c) => (
               <option key={c} value={c}>
@@ -235,338 +189,115 @@ export default function MemoTaskManager() {
             ))}
           </select>
         </div>
+
         <div className="mb-2">
-          <label className="mr-2">発言者:</label>
-          <input
-            className="border rounded px-2 py-1"
-            value={speaker}
-            onChange={(e) => setSpeaker(e.target.value)}
-            placeholder="発言者名"
-            style={{ marginRight: "0.5rem" }}
-          />
-          <button
-            type="button"
-            className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300"
-            onClick={() => setSpeaker("本人")}
-          >
-            本人
-          </button>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-700 w-14">発言者</label>
+            <input
+              className="border rounded px-2 py-1 text-sm flex-1"
+              value={speaker}
+              onChange={(e) => setSpeaker(e.target.value)}
+              placeholder="例: 本人 / 家族"
+            />
+            <div className="flex items-center gap-1">
+              <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setSpeaker("本人")}>
+                本人
+              </button>
+              <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setSpeaker("家族")}>
+                家族
+              </button>
+            </div>
+          </div>
+          <p className="mt-1 text-[11px] text-gray-500">誰の発言かを明記してください（例: 本人 / 家族）。</p>
         </div>
+
         <div className="mb-2">
           <label className="mr-2">メモ内容:</label>
-          <textarea
-            className="border rounded px-2 py-1 w-full"
-            value={memoContent}
-            onChange={(e) => setMemoContent(e.target.value)}
-            placeholder="メモ内容"
-          />
+          <textarea className="border rounded px-2 py-1 w-full" value={memoContent} onChange={(e) => setMemoContent(e.target.value)} placeholder="メモ内容" />
         </div>
+
         <div className="mb-2">
           <label className="mr-2">タスク:</label>
           {tasks.map((task, idx) => (
             <div key={task.id} className="flex items-center gap-2 mb-1">
-              <input
-                className="border rounded px-2 py-1"
-                value={task.text}
-                onChange={(e) =>
-                  handleTaskChange(task.id, "text", e.target.value)
-                }
-                placeholder={`タスク${idx + 1}`}
-              />
-              <input
-                type="date"
-                className="border rounded px-2 py-1"
-                value={task.dueDate}
-                onChange={(e) =>
-                  handleTaskChange(task.id, "dueDate", e.target.value)
-                }
-              />
-              <button
-                className="text-red-500 text-xs"
-                onClick={() => removeTaskField(task.id)}
-                disabled={tasks.length === 1}
-              >
+              <input className="border rounded px-2 py-1" value={task.text} onChange={(e) => handleTaskChange(task.id, "text", e.target.value)} placeholder={`タスク${idx + 1}`} />
+              <input type="date" className="border rounded px-2 py-1" value={task.dueDate} onChange={(e) => handleTaskChange(task.id, "dueDate", e.target.value)} />
+              <button className="text-red-500 text-xs" onClick={() => removeTaskField(task.id)} disabled={tasks.length === 1}>
                 削除
               </button>
             </div>
           ))}
-          <button
-            className="text-blue-500 text-xs underline"
-            onClick={addTaskField}
-          >
+          <button className="text-blue-500 text-xs underline" onClick={addTaskField}>
             ＋タスク追加
           </button>
         </div>
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={handleSaveMemo}
-          disabled={
-            !selectedClient ||
-            (!memoContent.trim() && tasks.every((t) => !t.text.trim()))
-          }
-        >
+
+        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleSaveMemo} disabled={!canSave}>
           保存
         </button>
       </div>
+
       <h2 className="text-xl font-bold mb-2">登録済みメモ</h2>
-      {/* メモ表示フィルタ切り替えボタン */}
+      {/* filters */}
       <div className="mb-4 flex gap-2">
-        <button
-          className={`px-3 py-1 rounded ${
-            filterStatus === "all" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setFilterStatus("all")}
-        >
+        <button className={`px-3 py-1 rounded ${filter === "all" ? "bg-blue-500 text-white" : "bg-gray-200"}`} onClick={() => setFilter("all")}>
           すべて
         </button>
-        <button
-          className={`px-3 py-1 rounded ${
-            filterStatus === "incomplete"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200"
-          }`}
-          onClick={() => setFilterStatus("incomplete")}
-        >
+        <button className={`px-3 py-1 rounded ${filter === "incomplete" ? "bg-blue-500 text-white" : "bg-gray-200"}`} onClick={() => setFilter("incomplete")}>
           未完了タスクあり
         </button>
-        <button
-          className={`px-3 py-1 rounded ${
-            filterStatus === "complete"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-200"
-          }`}
-          onClick={() => setFilterStatus("complete")}
-        >
+        <button className={`px-3 py-1 rounded ${filter === "complete" ? "bg-blue-500 text-white" : "bg-gray-200"}`} onClick={() => setFilter("complete")}>
           完了タスクのみ
         </button>
       </div>
-      {notes.length === 0 ? (
-        <div>メモがありません。</div>
-      ) : (
-        // フィルタ適用
-        notes
-          .filter((n: Note) => {
-            if (filterStatus === "incomplete") {
-              return (n.todoItems || []).some((t: TodoItem) => !t.isCompleted);
-            } else if (filterStatus === "complete") {
-              return (
-                (n.todoItems || []).length > 0 &&
-                (n.todoItems || []).every((t: TodoItem) => t.isCompleted)
-              );
-            }
-            return true;
-          })
-          .map((note: Note) => (
-            <div key={note.id} className="">
-              {editingNoteId === note.id ? (
-                <div className="border rounded p-2 mb-3 bg-yellow-50">
-                  <div className="font-bold flex items-center gap-2">
-                    <span>{note.clientName}</span>
-                    <span className="text-xs text-gray-500">
-                      (
-                      {note.timestamp?.toDate?.().toLocaleDateString?.() || "-"}
-                      )
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={editSpeaker}
-                    onChange={(e) => setEditSpeaker(e.target.value)}
-                    placeholder="発言者"
-                    className="border px-2 py-1 rounded w-full mb-2"
-                  />
-                  <textarea
-                    value={editMemoContent}
-                    onChange={(e) => setEditMemoContent(e.target.value)}
-                    placeholder="メモ内容"
-                    className="border px-2 py-1 rounded w-full mb-2"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      className="bg-green-500 text-white px-3 py-1 rounded flex items-center gap-1"
-                      onClick={async () => {
-                        await updateDoc(
-                          doc(
-                            db,
-                            getCollectionPath(APP_ID, USER_ID, "notes"),
-                            note.id
-                          ),
-                          {
-                            speaker: editSpeaker,
-                            content: editMemoContent,
-                          }
-                        );
-                        setNotes((prev) =>
-                          prev.map((n) =>
-                            n.id === note.id
-                              ? {
-                                  ...n,
-                                  speaker: editSpeaker,
-                                  content: editMemoContent,
-                                }
-                              : n
-                          )
-                        );
-                        setEditingNoteId(null);
-                      }}
-                    >
-                      💾 保存
-                    </button>
-                    <button
-                      className="bg-gray-300 px-3 py-1 rounded flex items-center gap-1"
-                      onClick={() => setEditingNoteId(null)}
-                    >
-                      ❌ キャンセル
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="border rounded p-2 mb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="font-bold flex items-center gap-2">
-                      <span>{note.clientName}</span>
-                      <span className="text-xs text-gray-500">
-                        (
-                        {note.timestamp?.toDate?.().toLocaleDateString?.() ||
-                          "-"}
-                        )
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        className="text-blue-500 hover:bg-blue-100 rounded p-1"
-                        title="編集"
-                        onClick={() => {
-                          setEditingNoteId(note.id);
-                          setEditSpeaker(note.speaker || "");
-                          setEditMemoContent(note.content || "");
-                        }}
-                      >
-                        <span role="img" aria-label="edit">
-                          ✏️
-                        </span>
-                      </button>
-                      <button
-                        className="text-red-500 hover:bg-red-100 rounded p-1"
-                        title="削除"
-                        onClick={() => handleDeleteNote(note.id)}
-                      >
-                        <span role="img" aria-label="delete">
-                          🗑️
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                  {note.content && (
-                    <div className="mb-1">
-                      📝 {note.content}
-                      {note.speaker && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          （発言者: {note.speaker}）
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {/* タスク表示（未完了/完了） */}
-                  {(() => {
-                    const incompleteTasks = (note.todoItems || []).filter(
-                      (t: TodoItem) => !t.isCompleted
-                    );
-                    const completedTasks = (note.todoItems || []).filter(
-                      (t: TodoItem) => t.isCompleted
-                    );
-                    return (
-                      <>
-                        {incompleteTasks.length > 0 && (
-                          <div className="mt-2">
-                            <span className="font-bold flex items-center gap-1">
-                              ⏳ 未完了タスク:
-                            </span>
-                            {incompleteTasks.map((item: TodoItem) => (
-                              <div
-                                key={item.id}
-                                className="flex items-center gap-2 bg-yellow-50 py-1 px-2 rounded mb-1"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={item.isCompleted}
-                                  onChange={(e) =>
-                                    handleToggleTask(
-                                      note.id,
-                                      item.id,
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                                <span>{item.text}</span>
-                                {item.dueDate &&
-                                  (() => {
-                                    const due = getDueDateLabel(
-                                      typeof item.dueDate === "string"
-                                        ? null
-                                        : item.dueDate
-                                    );
-                                    return (
-                                      <span
-                                        className={`text-xs ml-1 ${due.className}`}
-                                      >
-                                        ({due.icon}期限: {due.label})
-                                      </span>
-                                    );
-                                  })()}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {completedTasks.length > 0 && (
-                          <div className="mt-2">
-                            <span className="font-bold flex items-center gap-1">
-                              ✅ 完了タスク:
-                            </span>
-                            {completedTasks.map((item: TodoItem) => (
-                              <div
-                                key={item.id}
-                                className="flex items-center gap-2 bg-green-50 py-1 px-2 rounded mb-1"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={item.isCompleted}
-                                  onChange={(e) =>
-                                    handleToggleTask(
-                                      note.id,
-                                      item.id,
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                                <span className="line-through text-gray-400">
-                                  {item.text}
-                                </span>
-                                {item.dueDate &&
-                                  (() => {
-                                    const due = getDueDateLabel(
-                                      typeof item.dueDate === "string"
-                                        ? null
-                                        : item.dueDate,
-                                      true
-                                    );
-                                    return (
-                                      <span className={`text-xs ml-1`}>
-                                        期限: {due.label}
-                                      </span>
-                                    );
-                                  })()}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
+
+      <MemoList
+        notes={sharedNotes}
+        onToggleTask={handleToggleTask}
+        onEditNote={(note) => setEditing({ id: note.id, speaker: note.speaker || "", content: note.content || "" })}
+        onDeleteNote={handleDeleteNote}
+      />
+
+      {/* simple inline edit modal */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setEditing(null)} />
+          <div className="relative bg-white rounded shadow-lg p-4 w-[480px] max-w-[90vw]">
+            <h3 className="font-semibold mb-3">メモを編集</h3>
+            <div className="mb-2">
+              <label className="text-sm text-gray-700">発言者</label>
+              <div className="flex items-center gap-2 mt-1">
+                <input className="border rounded px-2 py-1 text-sm flex-1" value={editing.speaker} onChange={(e) => setEditing({ ...editing, speaker: e.target.value })} />
+                <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setEditing({ ...editing, speaker: "本人" })}>
+                  本人
+                </button>
+                <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setEditing({ ...editing, speaker: "家族" })}>
+                  家族
+                </button>
+              </div>
             </div>
-          ))
+            <div className="mb-4">
+              <label className="text-sm text-gray-700">メモ内容</label>
+              <textarea className="border rounded px-2 py-1 w-full mt-1" rows={4} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1 rounded bg-gray-200" onClick={() => setEditing(null)}>
+                キャンセル
+              </button>
+              <button
+                className="px-3 py-1 rounded bg-blue-600 text-white"
+                onClick={async () => {
+                  const { id, speaker, content } = editing;
+                  await updateDoc(doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), id), { speaker, content });
+                  setNotes((p) => p.map((n) => (n.id === id ? { ...n, speaker, content } : n)));
+                  setEditing(null);
+                }}
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

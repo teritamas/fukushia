@@ -1,24 +1,29 @@
 import { useState, useEffect, useMemo } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, addDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, addDoc, Timestamp, deleteDoc } from "firebase/firestore";
 import ReportGenerator from "./ReportGenerator";
 import ClientResources, { AssessmentDataShape } from "./ClientResources";
+import MemoList, { Note as SharedNote } from "./MemoList";
 
 interface ClientDetailProps { selectedClient: string; }
 export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   type TodoItem = {
+  id?: string;
     text: string;
-    dueDate?: { seconds: number } | string;
+  dueDate?: { seconds: number } | string | Timestamp | null;
     isCompleted?: boolean;
   };
-  type Note = {
+  type LocalNote = {
+    id?: string;
+    clientName?: string;
     speaker?: string;
     content?: string;
     timestamp?: { seconds: number };
     todoItems?: TodoItem[];
   };
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<LocalNote[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState<{ id: string; speaker: string; content: string } | null>(null);
 
   // アセスメントと支援計画の状態
   type AssessmentItemDetail = {
@@ -47,6 +52,8 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const [editableSupportPlan, setEditableSupportPlan] = useState<string>("");
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
   const [assessmentsError, setAssessmentsError] = useState<string | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
 
   // メモ / TODO 入力用 draft state
   type TodoDraft = { id: string; text: string; dueDate: string };
@@ -68,7 +75,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       isCompleted: false
     }));
     try {
-      await addDoc(collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`), {
+      const docRef = await addDoc(collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`), {
         clientName: selectedClient,
         speaker: speaker.trim(),
         content: memoContent.trim(),
@@ -82,7 +89,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         dueDate: t.dueDate ? { seconds: Math.floor((t.dueDate as Timestamp).seconds ?? Date.now()/1000) } : undefined,
         isCompleted: t.isCompleted
       }));
-      setNotes(prev => [{ speaker: speaker.trim(), content: memoContent.trim(), todoItems: noteTodoItems, timestamp: { seconds: Math.floor(Date.now()/1000) } }, ...prev]);
+      setNotes(prev => [{ id: docRef.id, clientName: selectedClient, speaker: speaker.trim(), content: memoContent.trim(), todoItems: noteTodoItems, timestamp: { seconds: Math.floor(Date.now()/1000) } }, ...prev]);
       setSpeaker("");
       setMemoContent("");
       setTodos([{ id: 'initial', text: '', dueDate: '' }]);
@@ -92,11 +99,36 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     }
   };
 
-  // 支援計画生成用
-  const [planLoading, setPlanLoading] = useState<boolean>(false);
-  const [planError, setPlanError] = useState<string | null>(null);
+  // メモの削除
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      const ok = typeof window === 'undefined' ? true : window.confirm('このメモを削除してもよろしいですか？');
+      if (!ok) return;
+      const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+      const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+      await deleteDoc(doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId));
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+    } catch (e) {
+      console.error(e);
+      alert('メモの削除に失敗しました');
+    }
+  };
 
-  // --- Simplify assessment structure for downstream suggestion component ---
+  // タスクの完了切替
+  const handleToggleTask = async (noteId: string, taskId: string, isCompleted: boolean) => {
+    try {
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+  const updated = (note.todoItems || []).map((t) => t?.id === taskId ? { ...t, isCompleted } : t);
+      const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+      const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+      await updateDoc(doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId), { todoItems: updated });
+      setNotes(prev => prev.map(n => n.id === noteId ? { ...n, todoItems: updated } : n));
+    } catch (e) {
+      console.error(e);
+      alert('タスクの更新に失敗しました');
+    }
+  };
   const simplifiedAssessment: AssessmentDataShape | null = useMemo(() => {
     if (!assessmentPlan || !assessmentPlan.assessment) return null;
     type SimplifiedCategory = Record<string, string | Record<string, string>>;
@@ -227,7 +259,9 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       );
       const q = query(notesRef, where("clientName", "==", selectedClient));
       const snap = await getDocs(q);
-      setNotes(snap.docs.map((doc) => doc.data() as Note));
+      setNotes(
+        snap.docs.map((doc) => ({ id: doc.id, clientName: selectedClient, ...(doc.data() as LocalNote) }))
+      );
       setLoading(false);
     };
 
@@ -277,10 +311,16 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         </h2>
         {/* メモ / TODO 入力フォーム */}
         <div className="mb-6 p-4 border rounded bg-gray-50">
-          <div className="mb-2 flex items-center gap-2">
-            <label className="text-sm text-gray-700 w-14">発言者</label>
-            <input value={speaker} onChange={e=>setSpeaker(e.target.value)} placeholder="例: 本人 / 家族" className="flex-1 border rounded px-2 py-1 text-sm" />
-            <button type="button" onClick={()=>setSpeaker('本人')} className="text-xs px-2 py-1 bg-gray-200 rounded">本人</button>
+          <div className="mb-2">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-700 w-14">発言者</label>
+              <input value={speaker} onChange={e=>setSpeaker(e.target.value)} placeholder="例: 本人 / 家族 / その他関係者" className="flex-1 border rounded px-2 py-1 text-sm" />
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={()=>setSpeaker('本人')} className="text-xs px-2 py-1 bg-gray-200 rounded">本人</button>
+                <button type="button" onClick={()=>setSpeaker('家族')} className="text-xs px-2 py-1 bg-gray-200 rounded">家族</button>
+              </div>
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500">誰の発言かを明記してください（例: 本人 / 家族 / その他関係者）。</p>
           </div>
           <div className="mb-2">
             <label className="text-sm text-gray-700 block mb-1">メモ内容</label>
@@ -309,106 +349,75 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
             <h3 className="text-lg font-semibold mb-2">
               {selectedClient} さんのメモ一覧
             </h3>
-            {notes.length === 0 ? (
-              <p>メモがありません。</p>
-            ) : (
-              <div className="grid gap-4">
-                {notes.map((note, idx) => {
-                  let dateStr = "";
-                  if (
-                    note.timestamp &&
-                    typeof note.timestamp === "object" &&
-                    note.timestamp.seconds
-                  ) {
-                    dateStr = new Date(
-                      note.timestamp.seconds * 1000
-                    ).toLocaleString();
-                  }
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-gray-50 rounded-lg shadow p-4 border border-gray-200"
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-500">{dateStr}</span>
-                        <span className="text-xs bg-blue-100 text-blue-700 rounded px-2 py-1">
-                          発言者: {note.speaker || "-"}
-                        </span>
-                      </div>
-                      <div className="mb-2">
-                        <span className="font-bold">内容:</span>
-                        <div className="ml-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded whitespace-pre-line text-gray-800 font-medium">
-                          {note.content || (
-                            <span className="text-gray-400">(内容なし)</span>
-                          )}
-                        </div>
-                      </div>
-                      {note.todoItems && note.todoItems.length > 0 && (
-                        <div className="mt-2">
-                          <span className="font-bold">やることリスト:</span>
-                          <ul className="pl-0 mt-1">
-                            {note.todoItems.map((item: TodoItem, i: number) => {
-                              let dueDateStr = "";
-                              if (
-                                item.dueDate &&
-                                typeof item.dueDate === "object" &&
-                                item.dueDate.seconds
-                              ) {
-                                dueDateStr = new Date(
-                                  item.dueDate.seconds * 1000
-                                ).toLocaleDateString();
-                              } else if (typeof item.dueDate === "string") {
-                                dueDateStr = item.dueDate;
-                              }
-                              const isCompleted = item.isCompleted;
-                              return (
-                                <li
-                                  key={i}
-                                  className={`flex items-center gap-2 py-1 border-b last:border-b-0 ${
-                                    isCompleted ? "bg-green-50" : "bg-yellow-50"
-                                  }`}
-                                >
-                                  <span
-                                    className={`inline-block w-5 ${
-                                      isCompleted
-                                        ? "text-green-500"
-                                        : "text-yellow-500"
-                                    }`}
-                                  >
-                                    {isCompleted ? "✔️" : "⏳"}
-                                  </span>
-                                  <span
-                                    className={`flex-1 ${
-                                      isCompleted
-                                        ? "line-through text-gray-400"
-                                        : "text-gray-900"
-                                    }`}
-                                  >
-                                    {item.text}
-                                  </span>
-                                  {dueDateStr && (
-                                    <span className="text-xs text-gray-500">
-                                      (期限: {dueDateStr})
-                                    </span>
-                                  )}
-                                  <span
-                                    className={`text-xs ml-2 px-2 py-0.5 rounded ${
-                                      isCompleted
-                                        ? "bg-green-200 text-green-800"
-                                        : "bg-yellow-200 text-yellow-800"
-                                    }`}
-                                  >
-                                    {isCompleted ? "完了" : "未完了"}
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      )}
+            <MemoList
+              notes={(notes as LocalNote[]).map((n, i) => ({
+                id: String(n.id ?? i),
+                clientName: selectedClient,
+                speaker: n.speaker,
+                content: n.content,
+                timestamp: n.timestamp,
+                todoItems: (n.todoItems || []).map((t) => ({
+                  id: t?.id,
+                  text: t?.text,
+                  dueDate:
+                    typeof t?.dueDate === 'string'
+                      ? t.dueDate
+                      : (typeof t?.dueDate === 'object' && t?.dueDate && 'seconds' in t.dueDate)
+                        ? { seconds: (t.dueDate as { seconds: number }).seconds }
+                        : null,
+                  isCompleted: t?.isCompleted,
+                })),
+              })) as SharedNote[]}
+              onToggleTask={handleToggleTask}
+              onEditNote={(note) => setEditing({ id: note.id, speaker: note.speaker || "", content: note.content || "" })}
+              onDeleteNote={(noteId) => handleDeleteNote(noteId)}
+            />
+
+            {editing && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/30" onClick={() => setEditing(null)} />
+                <div className="relative bg-white rounded shadow-lg p-4 w-[480px] max-w-[90vw]">
+                  <h3 className="font-semibold mb-3">メモを編集</h3>
+                  <div className="mb-2">
+                    <label className="text-sm text-gray-700">発言者</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input className="border rounded px-2 py-1 text-sm flex-1" value={editing.speaker} onChange={(e) => setEditing({ ...editing, speaker: e.target.value })} />
+                      <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setEditing({ ...editing, speaker: "本人" })}>
+                        本人
+                      </button>
+                      <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setEditing({ ...editing, speaker: "家族" })}>
+                        家族
+                      </button>
                     </div>
-                  );
-                })}
+                  </div>
+                  <div className="mb-4">
+                    <label className="text-sm text-gray-700">メモ内容</label>
+                    <textarea className="border rounded px-2 py-1 w-full mt-1" rows={4} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button className="px-3 py-1 rounded bg-gray-200" onClick={() => setEditing(null)}>
+                      キャンセル
+                    </button>
+                    <button
+                      className="px-3 py-1 rounded bg-blue-600 text-white"
+                      onClick={async () => {
+                        try {
+                          const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+                          const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+                          const { id, speaker, content } = editing;
+                          await updateDoc(doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, id), { speaker, content });
+                          setNotes((p) => p.map((n) => (n.id === id ? { ...n, speaker, content } : n)));
+                          setEditing(null);
+                        } catch (e) {
+                          console.error(e);
+                          alert('メモの更新に失敗しました');
+                        }
+                      }}
+                    >
+                      保存
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
