@@ -139,7 +139,7 @@ export default function ClientWorkspace() {
                         const changed = changedKeys.has(label);
                         // 交互の薄グレー背景を行単位（2カラムで1行扱い）で適用
                         const rowIndex = Math.floor(idx / 2);
-                        const rowBg = changed ? 'bg-yellow-50' : (rowIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white');
+                        const rowBg = getRowBackgroundColor(changed, rowIndex);
                         return (
                           <div key={label} className={rowBg}>
                             <div className="flex">

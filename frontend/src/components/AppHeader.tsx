@@ -76,7 +76,24 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
             >
               <button
                 type="button"
+              onMouseEnter={()=> setMenuOpen(true)}
+              onMouseLeave={()=> setMenuOpen(false)}
+            >
+              <button
+                type="button"
+                tabIndex={0}
+                aria-haspopup="listbox"
+                aria-expanded={menuOpen}
                 onClick={()=> { onChange('clients'); setMenuOpen(v=>!v); }}
+                onKeyDown={e => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    setMenuOpen(true);
+                    setFocusedIndex(0);
+                  } else if (e.key === "Escape") {
+                    setMenuOpen(false);
+                  }
+                }}
                 className={`flex items-center gap-2 rounded border px-3 py-1.5 text-sm min-w-[200px] justify-between ${active==='clients' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700'}`}
               >
                 <span className="truncate max-w-[160px]">{currentClient?.name || (loadingClients ? '読み込み中...' : '支援対象者を選択')}</span>
@@ -104,9 +121,8 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     <div className="my-1 border-t" />
                     <button
                       onClick={()=> onSelect('__add__')}
-                      className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50">
-                      新しい支援対象者を追加
-                    </button>
+                      className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50"
+                    >新しい支援対象者を追加</button>
                   </div>
                 </div>
               )}
