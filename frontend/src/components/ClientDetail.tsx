@@ -204,8 +204,6 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     }
   };
 
-  // 支援者一覧取得は上位コンポーネントに移動済み
-
   // 支援者選択時にその人のメモと最新のアセスメントを取得
   useEffect(() => {
     if (!selectedClient) {
@@ -277,7 +275,6 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         <h2 className="text-xl font-bold mb-4 text-blue-900">
           日々の活動メモ入力
         </h2>
-  {/* 支援者選択 UI は上部 ClientWorkspace に統合 */}
         {/* メモ / TODO 入力フォーム */}
         <div className="mb-6 p-4 border rounded bg-gray-50">
           <div className="mb-2 flex items-center gap-2">
@@ -417,31 +414,9 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           </div>
         )}
       </div>
-      {/* 右カラム: AI提案・情報整理 */}
+  {/* 右カラム: 情報・生成セクション（順序変更） */}
   <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
-        <div className="bg-purple-50 border-l-4 border-purple-400 rounded-xl shadow p-4">
-          <h3 className="font-bold text-purple-700 mb-2">
-            活動報告書・支払い報告書生成
-          </h3>
-          <p className="text-sm text-gray-700 mb-2">
-            選択中の支援対象者のメモに基づき、報告書を生成します。
-          </p>
-          <ReportGenerator
-            selectedClient={selectedClient}
-            memos={notes.map((n) => ({
-              ...n,
-              content: n.content ?? "",
-              timestamp:
-                n.timestamp?.seconds !== undefined
-                  ? {
-                      toDate: () =>
-                        new Date((n.timestamp?.seconds ?? 0) * 1000),
-                    }
-                  : undefined,
-            }))}
-          />
-        </div>
-  <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
+    <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
           <h3 className="font-bold text-yellow-700 mb-2">
             アセスメントと支援計画
           </h3>
@@ -527,9 +502,34 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
               )}
             </>
           )}
-  </div>
-  {/* ClientResources: pass simplified assessment for suggestions (may be null if no data) */}
-  <ClientResources clientName={selectedClient || null} hasAssessmentPlan={!!assessmentPlan} assessmentData={simplifiedAssessment} />
+        </div>
+        {/* ClientResources: pass simplified assessment for suggestions (may be null if no data) */}
+        <div className="bg-white rounded-xl shadow p-0">
+          <ClientResources clientName={selectedClient || null} hasAssessmentPlan={!!assessmentPlan} assessmentData={simplifiedAssessment} />
+        </div>
+        <div className="bg-purple-50 border-l-4 border-purple-400 rounded-xl shadow p-4">
+          <h3 className="font-bold text-purple-700 mb-2">
+            活動報告書・支払い報告書生成
+          </h3>
+          <p className="text-sm text-gray-700 mb-2">
+            選択中の支援対象者のメモに基づき、報告書を生成します。
+          </p>
+          <ReportGenerator
+            selectedClient={selectedClient}
+            hasAssessment={!!assessmentPlan}
+            memos={notes.map((n) => ({
+              ...n,
+              content: n.content ?? "",
+              timestamp:
+                n.timestamp?.seconds !== undefined
+                  ? {
+                      toDate: () =>
+                        new Date((n.timestamp?.seconds ?? 0) * 1000),
+                    }
+                  : undefined,
+            }))}
+          />
+        </div>
       </div>
     </div>
   );

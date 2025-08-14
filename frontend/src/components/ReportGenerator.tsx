@@ -8,15 +8,18 @@ type Memo = {
 interface ReportGeneratorProps {
   selectedClient: string;
   memos: Memo[];
+  hasAssessment?: boolean;
 }
 
 export default function ReportGenerator({
   selectedClient,
   memos,
+  hasAssessment = false,
 }: ReportGeneratorProps) {
   const [report, setReport] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const canGenerate = !!selectedClient && memos.length > 0 && !!hasAssessment && !loading;
 
   const handleGenerateReport = async () => {
     setLoading(true);
@@ -65,13 +68,20 @@ export default function ReportGenerator({
 
   return (
     <div className="my-4">
-      <button
-        className="bg-purple-600 text-white px-4 py-2 rounded"
-        onClick={handleGenerateReport}
-        disabled={loading || !selectedClient || memos.length === 0}
-      >
-        活動報告書を生成
-      </button>
+      {canGenerate && (
+        <button
+          className="bg-purple-600 text-white px-4 py-2 rounded"
+          onClick={handleGenerateReport}
+        >
+          活動報告書を生成
+        </button>
+      )}
+      {(!hasAssessment || memos.length === 0) && (
+        <p className="mt-2 text-xs text-gray-600">
+          {memos.length === 0 ? 'メモがありません。' : ''}
+          {!hasAssessment ? (memos.length === 0 ? ' アセスメントも必要です。' : 'アセスメントがありません。') : ''}
+        </p>
+      )}
       {loading && <p>生成中...</p>}
       {error && <p className="text-red-500">{error}</p>}
       {report && (
