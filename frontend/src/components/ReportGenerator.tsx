@@ -20,6 +20,7 @@ export default function ReportGenerator({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canGenerate = !!selectedClient && memos.length > 0 && !!hasAssessment && !loading;
+  const showWarning = !hasAssessment || memos.length === 0;
 
   const handleGenerateReport = async () => {
     setLoading(true);
