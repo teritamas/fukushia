@@ -121,7 +121,91 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     <div className="my-1 border-t" />
                     <button
                       onClick={()=> onSelect('__add__')}
+                  role="listbox"
+                  tabIndex={-1}
+                  ref={dropdownMenuRef}
+                  onMouseEnter={()=> setMenuOpen(true)}
+                  onMouseLeave={()=> setMenuOpen(false)}
+                  onKeyDown={e => {
+                    const items = Array.from(dropdownMenuRef.current?.querySelectorAll('[role="option"]') || []);
+                    const activeIndex = items.findIndex(el => el === document.activeElement);
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      const next = items[activeIndex+1] || items[0];
+                      (next as HTMLElement).focus();
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      const prev = items[activeIndex-1] || items[items.length-1];
+                      (prev as HTMLElement).focus();
+                    } else if (e.key === "Escape") {
+                      setMenuOpen(false);
+                      dropdownButtonRef.current?.focus();
+                    }
+                  }}
+                >
+                  <div className="max-h-[50vh] overflow-auto py-1">
+                    {clients.length === 0 && !loadingClients && (
+                      <div className="px-3 py-2 text-xs text-gray-500">支援対象者がいません</div>
+                    )}
+                    {clients.map((c, idx) => (
+                      <button
+                        key={c.id}
+                        onClick={()=> { onSelect(c.id); setMenuOpen(false); dropdownButtonRef.current?.focus(); }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                        role="option"
+                        tabIndex={0}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onSelect(c.id);
+                            setMenuOpen(false);
+                            dropdownButtonRef.current?.focus();
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            const items = Array.from(dropdownMenuRef.current?.querySelectorAll('[role="option"]') || []);
+                            const next = items[idx+1] || items[0];
+                            (next as HTMLElement).focus();
+                          } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            const items = Array.from(dropdownMenuRef.current?.querySelectorAll('[role="option"]') || []);
+                            const prev = items[idx-1] || items[items.length-1];
+                            (prev as HTMLElement).focus();
+                          } else if (e.key === "Escape") {
+                            setMenuOpen(false);
+                            dropdownButtonRef.current?.focus();
+                          }
+                        }}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                    <div className="my-1 border-t" />
+                    <button
+                      onClick={()=> { onSelect('__add__'); setMenuOpen(false); dropdownButtonRef.current?.focus(); }}
                       className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50"
+                      role="option"
+                      tabIndex={0}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelect('__add__');
+                          setMenuOpen(false);
+                          dropdownButtonRef.current?.focus();
+                        } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                          const items = Array.from(dropdownMenuRef.current?.querySelectorAll('[role="option"]') || []);
+                          const idx = items.findIndex(el => el === document.activeElement);
+                          if (e.key === "ArrowUp") {
+                            const prev = items[idx-1] || items[items.length-1];
+                            (prev as HTMLElement).focus();
+                          } else {
+                            const next = items[idx+1] || items[0];
+                            (next as HTMLElement).focus();
+                          }
+                        } else if (e.key === "Escape") {
+                          setMenuOpen(false);
+                          dropdownButtonRef.current?.focus();
+                        }
+                      }}
                     >新しい支援対象者を追加</button>
                   </div>
                 </div>
