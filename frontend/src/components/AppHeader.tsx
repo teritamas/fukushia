@@ -104,8 +104,9 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     <div className="my-1 border-t" />
                     <button
                       onClick={()=> onSelect('__add__')}
-                      className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50"
-                    >新しい支援対象者を追加</button>
+                      className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50">
+                      新しい支援対象者を追加
+                    </button>
                   </div>
                 </div>
               )}
