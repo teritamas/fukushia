@@ -11,19 +11,25 @@ export default function Page() {
   const [currentClient, setCurrentClient] = useState<ClientData | null>(null);
   const [assessmentEditSignal, setAssessmentEditSignal] = useState(0);
   const [assessmentEditTarget, setAssessmentEditTarget] = useState<{ category?: string; form?: string } | null>(null);
+  const [homeNavSignal, setHomeNavSignal] = useState(0);
   const requestAssessmentEdit = (target?: { category?: string; form?: string }) => {
     setAssessmentEditTarget(target || null);
     setAssessmentEditSignal(s => s + 1);
     // Switch to assessment tab immediately
     setSelectedTab('clients'); // ensure in workspace
   };
+  const requestGoToBasicInfo = () => {
+    // Ensure workspace is active, then signal inner tab to go to basic info
+    setSelectedTab('clients');
+    setHomeNavSignal(s => s + 1);
+  };
 
   return (
-  <ClientContext.Provider value={{ currentClient, setCurrentClient, assessmentEditSignal, assessmentEditTarget, requestAssessmentEdit }}>
-      <div className="min-h-screen flex flex-col bg-gray-50">
+  <ClientContext.Provider value={{ currentClient, setCurrentClient, assessmentEditSignal, assessmentEditTarget, requestAssessmentEdit, homeNavSignal, requestGoToBasicInfo }}>
+      <div className="min-h-screen flex flex-col bg-gray-100">
         <AppHeader active={selectedTab} onChange={setSelectedTab} />
         <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 py-6">
-          <div className="bg-white rounded shadow p-6">
+          <div className="surface card-shadow border border-gray-100 p-6">
             {selectedTab === "clients" && <ClientWorkspace />}
             {selectedTab === "notes" && <MemoTaskManager />}
             {selectedTab === "resources" && <ResourceManager />}

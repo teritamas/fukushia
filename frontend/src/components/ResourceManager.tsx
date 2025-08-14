@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from 'react';
+import ResourceDetailCard from './resource/ResourceDetailCard';
+import type { ResourceRecord } from './resource/types';
 
 interface Resource {
   id?: string;
@@ -304,49 +306,49 @@ export default function ResourceManager() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">社会資源・制度管理</h2>
+      <h2 className="text-2xl font-semibold tracking-tight section-title">社会資源・制度管理</h2>
       {error && <div className="text-red-600 text-sm">{error}</div>}
       {/* 検索バー (常時表示) */}
-      <div className="flex flex-wrap gap-2 items-center bg-white border rounded p-3">
+      <div className="surface card-shadow border border-gray-100 p-3 sm:p-4 flex flex-wrap gap-2 items-center">
         <input
-          className="border p-2 rounded flex-1 min-w-[240px]"
+          className="ginput flex-1 min-w-[240px]"
           placeholder="検索キーワード (資源＋メモ全文 / スペースAND)"
           value={searchQuery}
           onChange={e=>setSearchQuery(e.target.value)}
           onKeyDown={e=>{ if(e.key==='Enter') handleSearch(); }}
         />
-        <button onClick={handleSearch} disabled={searching} className="border px-4 py-2 rounded bg-white hover:bg-gray-50 disabled:opacity-50 text-sm">検索</button>
+        <button onClick={handleSearch} disabled={searching} className="gbtn primary disabled:opacity-60 text-sm">検索</button>
         {searchMode && (
-          <button onClick={()=>{ setSearchQuery(''); setSearchMode(false); fetchResources(); }} className="text-xs text-blue-600 underline">クリア</button>
+          <button onClick={()=>{ setSearchQuery(''); setSearchMode(false); fetchResources(); }} className="gbtn text h-9">クリア</button>
         )}
         <button
           onClick={()=>setShowEditor(s=>!s)}
-          className="ml-auto text-xs px-3 py-2 rounded border bg-gray-100 hover:bg-gray-200"
+          className="ml-auto gbtn tonal text-xs"
         >{showEditor ? 'フォームを閉じる' : '追加/編集フォームを開く'}</button>
       </div>
       {showEditor && (
-      <div className="bg-white border rounded p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <input className="border p-2 rounded" placeholder="サービス名 *" value={form.service_name} onChange={e=>handleChange('service_name', e.target.value)} />
-          <input className="border p-2 rounded" placeholder="カテゴリ" value={form.category||''} onChange={e=>handleChange('category', e.target.value)} />
-          <input className="border p-2 rounded" placeholder="対象" value={form.target_users||''} onChange={e=>handleChange('target_users', e.target.value)} />
-          <input className="border p-2 rounded" placeholder="提供主体" value={form.provider||''} onChange={e=>handleChange('provider', e.target.value)} />
-          <input className="border p-2 rounded" placeholder="所在地" value={form.location||''} onChange={e=>handleChange('location', e.target.value)} />
-          <input className="border p-2 rounded" placeholder="費用" value={form.cost||''} onChange={e=>handleChange('cost', e.target.value)} />
-          <input className="border p-2 rounded" placeholder="電話" value={form.contact_phone||''} onChange={e=>handleChange('contact_phone', e.target.value)} />
-          <input className="border p-2 rounded" placeholder="URL" value={form.contact_url||''} onChange={e=>handleChange('contact_url', e.target.value)} />
-          <input className="border p-2 rounded col-span-2" placeholder="キーワード (空白/カンマ区切り)" value={(form.keywords||[]).join(' ')} onChange={e=>handleChange('keywords', e.target.value)} />
-          <textarea className="border p-2 rounded col-span-2" placeholder="概要 / 説明" rows={3} value={form.description||''} onChange={e=>handleChange('description', e.target.value)} />
-          <textarea className="border p-2 rounded col-span-2" placeholder="利用条件" rows={2} value={form.eligibility||''} onChange={e=>handleChange('eligibility', e.target.value)} />
-          <textarea className="border p-2 rounded col-span-2" placeholder="申請手続き" rows={2} value={form.application_process||''} onChange={e=>handleChange('application_process', e.target.value)} />
+      <div className="surface card-shadow border border-gray-100 rounded-lg p-4 sm:p-5 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <input className="ginput" placeholder="サービス名 *" value={form.service_name} onChange={e=>handleChange('service_name', e.target.value)} />
+          <input className="ginput" placeholder="カテゴリ" value={form.category||''} onChange={e=>handleChange('category', e.target.value)} />
+          <input className="ginput" placeholder="対象" value={form.target_users||''} onChange={e=>handleChange('target_users', e.target.value)} />
+          <input className="ginput" placeholder="提供主体" value={form.provider||''} onChange={e=>handleChange('provider', e.target.value)} />
+          <input className="ginput" placeholder="所在地" value={form.location||''} onChange={e=>handleChange('location', e.target.value)} />
+          <input className="ginput" placeholder="費用" value={form.cost||''} onChange={e=>handleChange('cost', e.target.value)} />
+          <input className="ginput" placeholder="電話" value={form.contact_phone||''} onChange={e=>handleChange('contact_phone', e.target.value)} />
+          <input className="ginput" placeholder="URL" value={form.contact_url||''} onChange={e=>handleChange('contact_url', e.target.value)} />
+          <input className="ginput sm:col-span-2" placeholder="キーワード (空白/カンマ区切り)" value={(form.keywords||[]).join(' ')} onChange={e=>handleChange('keywords', e.target.value)} />
+          <textarea className="rounded-lg border border-gray-200 p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="概要 / 説明" rows={3} value={form.description||''} onChange={e=>handleChange('description', e.target.value)} />
+          <textarea className="rounded-lg border border-gray-200 p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="利用条件" rows={2} value={form.eligibility||''} onChange={e=>handleChange('eligibility', e.target.value)} />
+          <textarea className="rounded-lg border border-gray-200 p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="申請手続き" rows={2} value={form.application_process||''} onChange={e=>handleChange('application_process', e.target.value)} />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={handleSubmit} disabled={!form.service_name.trim() || actionLoading} className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-blue-300">
+        <div className="flex gap-2 flex-wrap items-center">
+          <button onClick={handleSubmit} disabled={!form.service_name.trim() || actionLoading} className="gbtn primary disabled:opacity-60">
             {editingId ? '更新' : '追加'}
           </button>
-          <button onClick={()=>{ setForm({ ...emptyResource }); setEditingId(null); }} className="border px-4 py-2 rounded" disabled={actionLoading}>リセット</button>
-          <button onClick={()=>handleImportLocal(false)} disabled={actionLoading} className="bg-gray-600 text-white px-4 py-2 rounded disabled:bg-gray-300">Import</button>
-          <button onClick={()=>handleImportLocal(true)} disabled={actionLoading} className="bg-red-600 text-white px-4 py-2 rounded disabled:bg-red-300">Import上書き</button>
+          <button onClick={()=>{ setForm({ ...emptyResource }); setEditingId(null); }} className="gbtn" disabled={actionLoading}>リセット</button>
+          <button onClick={()=>handleImportLocal(false)} disabled={actionLoading} className="gbtn tonal disabled:opacity-60">Import</button>
+          <button onClick={()=>handleImportLocal(true)} disabled={actionLoading} className="gbtn disabled:opacity-60 bg-red-600 text-white border-transparent hover:bg-red-700">Import上書き</button>
           { (actionLoading || resourcesLoading) && <span className="text-xs text-gray-500 self-center">処理中...</span> }
         </div>
         {importResult && (
@@ -368,98 +370,126 @@ export default function ResourceManager() {
       </div>
       )}
       <div>
-        <h3 className="font-semibold mb-2">登録済み ({resources.length})</h3>
-  {resourcesLoading ? <div>読込中...</div> : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {resources.map(r => {
-              const typeBadge = /制度/.test(`${r.category||''} ${r.service_name||''}`) ? '制度' : 'サービス';
-              const badgeColor = typeBadge === '制度' ? 'bg-purple-600' : 'bg-emerald-600';
-              return (
-                <div
-                  key={r.id}
-                  className="border rounded p-3 bg-white shadow-sm space-y-1 cursor-pointer hover:border-blue-400 transition"
-                  onClick={()=> setDetailResource(r)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-bold text-sm leading-snug break-words flex-1">{r.service_name}</div>
-                    <span className={`text-[10px] text-white px-2 py-0.5 rounded ${badgeColor}`}>{typeBadge}</span>
-                  </div>
-                  <div className="text-[11px] text-gray-600 line-clamp-1">{r.category}</div>
-                  <div className="text-xs line-clamp-3 whitespace-pre-wrap min-h-[2.5rem]">{r.description}</div>
-                  <div className="text-[10px] text-gray-500 truncate">{(r.keywords||[]).join(', ')}</div>
-                  {r.last_verified_at && <div className="text-[10px] text-gray-400">確認:{new Date(r.last_verified_at*1000).toLocaleDateString()}</div>}
-                  <div className="flex gap-2 pt-1" onClick={e=>e.stopPropagation()}>
-                    <button onClick={()=>handleEdit(r)} className="text-blue-600 text-xs">編集</button>
-                    <button onClick={()=>handleDelete(r.id)} className="text-red-600 text-xs">削除</button>
-                    <button onClick={()=>{ setDetailResource(r); }} className="text-green-600 text-xs">メモ</button>
-                  </div>
-                </div>
-              );
-            })}
+        <h3 className="font-semibold mb-2 section-title">登録済み ({resources.length})</h3>
+  {resourcesLoading ? (
+    <div className="grid md:grid-cols-2 gap-4">
+      {[...Array(4)].map((_,i)=>(
+        <div key={i} className="surface card-shadow border border-gray-100 rounded-lg p-3 space-y-2 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-2/3 mb-2" />
+          <div className="h-3 bg-gray-100 rounded w-1/3 mb-1" />
+          <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
+          <div className="h-3 bg-gray-100 rounded w-full mb-1" />
+          <div className="h-3 bg-gray-100 rounded w-3/4 mb-1" />
+          <div className="flex gap-2 pt-1">
+            <div className="h-7 w-12 bg-gray-200 rounded" />
+            <div className="h-7 w-12 bg-gray-200 rounded" />
+            <div className="h-7 w-12 bg-gray-200 rounded" />
           </div>
-        )}
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="grid md:grid-cols-2 gap-4">
+      {resources.map(r => {
+        const typeBadge = /制度/.test(`${r.category||''} ${r.service_name||''}`) ? '制度' : 'サービス';
+        return (
+          <div
+            key={r.id}
+            className="surface card-shadow border border-gray-100 rounded-lg p-3 space-y-1 cursor-pointer hover-scale"
+            onClick={()=> setDetailResource(r)}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-bold text-sm leading-snug break-words flex-1">{r.service_name}</div>
+              <span className={`chip ${typeBadge==='制度' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>{typeBadge}</span>
+            </div>
+            <div className="text-[11px] text-gray-600 line-clamp-1">{r.category}</div>
+            <div className="text-xs line-clamp-3 whitespace-pre-wrap min-h-[2.5rem]">{r.description}</div>
+            <div className="text-[10px] text-gray-500 truncate">{(r.keywords||[]).join(', ')}</div>
+            {r.last_verified_at && <div className="text-[10px] text-gray-400">確認:{new Date(r.last_verified_at*1000).toLocaleDateString()}</div>}
+            <div className="flex gap-2 pt-1" onClick={e=>e.stopPropagation()}>
+              <button onClick={()=>handleEdit(r)} className="text-xs text-blue-600 hover:underline">編集</button>
+              <button onClick={()=>handleDelete(r.id)} className="text-xs text-red-600 hover:underline">削除</button>
+              <button onClick={()=>{ setDetailResource(r); }} className="text-xs text-emerald-600 hover:underline">メモ</button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
       </div>
       {detailResource && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 p-4" onClick={()=>setDetailResource(null)}>
-          <div className="bg-white max-w-lg w-full rounded shadow-lg p-5 relative" onClick={e=>e.stopPropagation()}>
-            <button className="absolute top-2 right-2 text-gray-500 hover:text-black text-sm" onClick={()=>setDetailResource(null)}>✕</button>
-            <div className="flex items-start gap-2 mb-2">
-              <h4 className="font-semibold text-base flex-1 break-words">{detailResource.service_name}</h4>
-              <span className={`text-[10px] text-white px-2 py-0.5 rounded ${ /制度/.test(`${detailResource.category||''} ${detailResource.service_name||''}`) ? 'bg-purple-600' : 'bg-emerald-600' }`}>
-                {/制度/.test(`${detailResource.category||''} ${detailResource.service_name||''}`) ? '制度' : 'サービス'}
-              </span>
-            </div>
-            <dl className="space-y-1 text-xs">
-              <dt className="font-semibold">カテゴリ</dt><dd className="mb-1 break-words">{detailResource.category||'-'}</dd>
-              <dt className="font-semibold">対象</dt><dd className="mb-1 break-words whitespace-pre-wrap">{detailResource.target_users||'-'}</dd>
-              <dt className="font-semibold">概要</dt><dd className="mb-1 break-words whitespace-pre-wrap">{detailResource.description||'-'}</dd>
-              <dt className="font-semibold">利用条件</dt><dd className="mb-1 break-words whitespace-pre-wrap">{detailResource.eligibility||'-'}</dd>
-              <dt className="font-semibold">申請手続き</dt><dd className="mb-1 break-words whitespace-pre-wrap">{detailResource.application_process||'-'}</dd>
-              <dt className="font-semibold">費用</dt><dd className="mb-1 break-words">{detailResource.cost||'-'}</dd>
-              <dt className="font-semibold">提供主体</dt><dd className="mb-1 break-words">{detailResource.provider||'-'}</dd>
-              <dt className="font-semibold">所在地</dt><dd className="mb-1 break-words">{detailResource.location||'-'}</dd>
-              <dt className="font-semibold">連絡先</dt><dd className="mb-1 break-words">{[detailResource.contact_phone, detailResource.contact_email, detailResource.contact_url].filter(Boolean).join(' / ')||'-'}</dd>
-              <dt className="font-semibold">キーワード</dt><dd className="mb-1 break-words">{(detailResource.keywords||[]).join(', ')||'-'}</dd>
-              {detailResource.last_verified_at && <><dt className="font-semibold">確認日</dt><dd className="mb-1">{new Date(detailResource.last_verified_at*1000).toLocaleString()}</dd></>}
-            </dl>
-            <div className="mt-4 border-t pt-3">
-              <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">メモ
-                {memoLoading[detailResource.id!] && <span className="text-[10px] text-gray-500">読み込み中...</span>}
-              </h5>
-              <div className="flex gap-2 mb-2">
-                <textarea
-                  className="border rounded p-2 text-xs flex-1 h-20"
-                  placeholder="メモを入力..."
-                  value={newDetailMemoContent}
-                  onChange={e=>setNewDetailMemoContent(e.target.value)}
-                />
-                <button
-                  onClick={addMemoInDetail}
-                  disabled={!newDetailMemoContent.trim()}
-                  className="text-xs h-fit px-3 py-1 rounded bg-green-600 text-white disabled:bg-green-300"
-                >追加</button>
+        <div className="fixed inset-0 z-[1000] flex items-start sm:items-center justify-center bg-black/40 p-4" onClick={()=>setDetailResource(null)}>
+          <div onClick={e=>e.stopPropagation()} className="relative">
+            {memoLoading[detailResource.id!] ? (
+              <div className="surface card-shadow rounded-xl border border-gray-100 p-5 max-w-lg w-full animate-pulse">
+                <div className="h-5 bg-gray-200 rounded w-1/3 mb-4" />
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-100 rounded w-2/3" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-2/3" />
+                </div>
+                <div className="mt-4 pt-3">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2" />
+                  <div className="h-20 bg-gray-100 rounded mb-2" />
+                  <div className="h-8 bg-gray-100 rounded mb-2" />
+                  <div className="h-8 bg-gray-100 rounded mb-2" />
+                </div>
+                <div className="mt-4 pt-3 flex justify-end gap-2">
+                  <div className="h-8 w-20 bg-gray-200 rounded" />
+                  <div className="h-8 w-20 bg-gray-200 rounded" />
+                </div>
               </div>
-              <div className="max-h-48 overflow-auto pr-1">
-                <ul className="space-y-1">
-                  {(memos[detailResource.id!]||[]).map(m => (
-                    <li key={m.id} className="text-xs border rounded p-2 flex justify-between gap-2 items-start">
-                      <span className="whitespace-pre-wrap flex-1">{m.content}</span>
-                      <div className="flex gap-1 shrink-0">
-                        <button onClick={()=>updateMemo(m)} className="text-blue-500">編</button>
-                        <button onClick={()=>deleteMemo(m)} className="text-red-500">✕</button>
-                      </div>
-                    </li>
-                  ))}
-                  {(memos[detailResource.id!]||[]).length === 0 && !memoLoading[detailResource.id!] && (
-                    <li className="text-[11px] text-gray-400">メモなし</li>
-                  )}
-                </ul>
+            ) : (
+              <ResourceDetailCard
+                resource={detailResource as unknown as ResourceRecord}
+                loading={memoLoading[detailResource.id!]}
+                error={error}
+                onClose={()=>setDetailResource(null)}
+                footer={
+                  <>
+                    <button className="gbtn text" onClick={()=>setDetailResource(null)}>閉じる</button>
+                    <button className="gbtn primary" onClick={()=>{handleEdit(detailResource); setShowEditor(true); setDetailResource(null);}}>編集する</button>
+                  </>
+                }
+              >
+              <div className="pt-3">
+                <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">メモ
+                  {memoLoading[detailResource.id!] && <span className="text-[10px] text-gray-500">読み込み中...</span>}
+                </h5>
+                <div className="flex gap-2 mb-2">
+                  <textarea
+                    className="rounded-lg border border-gray-200 p-2 text-xs flex-1 h-20 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    placeholder="メモを入力..."
+                    value={newDetailMemoContent}
+                    onChange={e=>setNewDetailMemoContent(e.target.value)}
+                  />
+                  <button
+                    onClick={addMemoInDetail}
+                    disabled={!newDetailMemoContent.trim()}
+                    className="gbtn primary text-xs h-9"
+                  >追加</button>
+                </div>
+                <div className="max-h-48 overflow-auto pr-1">
+                  <ul className="space-y-1">
+                    {(memos[detailResource.id!]||[]).map(m => (
+                      <li key={m.id} className="text-xs border border-gray-200 rounded p-2 flex justify-between gap-2 items-start bg-white">
+                        <span className="whitespace-pre-wrap flex-1">{m.content}</span>
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={()=>updateMemo(m)} className="text-blue-500">編</button>
+                          <button onClick={()=>deleteMemo(m)} className="text-red-500">✕</button>
+                        </div>
+                      </li>
+                    ))}
+                    {(memos[detailResource.id!]||[]).length === 0 && !memoLoading[detailResource.id!] && (
+                      <li className="text-[11px] text-gray-400">メモなし</li>
+                    )}
+                  </ul>
+                </div>
               </div>
-            </div>
-            <div className="mt-4 flex gap-2 justify-end">
-              <button className="text-xs px-3 py-1 rounded border" onClick={()=>setDetailResource(null)}>閉じる</button>
-              <button className="text-xs px-3 py-1 rounded bg-blue-600 text-white" onClick={()=>{handleEdit(detailResource); setShowEditor(true); setDetailResource(null);}}>編集する</button>
-            </div>
+              </ResourceDetailCard>
+            )}
           </div>
         </div>
       )}

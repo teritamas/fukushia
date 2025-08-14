@@ -14,6 +14,8 @@ export interface ClientContextValue {
 	assessmentEditSignal: number; // increments when an external edit request is fired
 	assessmentEditTarget: { category?: string; form?: string } | null;
 	requestAssessmentEdit: (target?: { category?: string; form?: string }) => void;
+	homeNavSignal: number; // increments when user clicks Dashboard title to go home (basic info)
+	requestGoToBasicInfo: () => void;
 }
 
 export const ClientContext = createContext<ClientContextValue | undefined>(undefined);
@@ -26,7 +28,9 @@ export function useClientContext(): ClientContextValue {
 		setCurrentClient: () => {}, 
 		assessmentEditSignal: 0, 
 		assessmentEditTarget: null,
-		requestAssessmentEdit: () => {},
+	requestAssessmentEdit: () => {},
+	homeNavSignal: 0,
+	requestGoToBasicInfo: () => {},
 	};
 	}
 	return ctx;

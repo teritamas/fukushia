@@ -46,7 +46,7 @@ const MemoList: React.FC<MemoListProps> = ({ notes, onToggleTask, onEditNote, on
   }
 
   return (
-    <div className="grid gap-4">
+  <div className="grid gap-4">
       {notes.map((note) => {
         const dateStr = note.timestamp?.seconds
           ? new Date(note.timestamp.seconds * 1000).toLocaleString()
@@ -56,24 +56,24 @@ const MemoList: React.FC<MemoListProps> = ({ notes, onToggleTask, onEditNote, on
         const completedTasks = (note.todoItems || []).filter((t) => t.isCompleted);
 
         return (
-          <div key={note.id} className="border rounded p-2 mb-3">
+      <div key={note.id} className="surface p-3 mb-2">
             <div className="flex items-center justify-between">
               <div className="font-bold flex items-center gap-2">
-                <span>{note.clientName}</span>
+        <span>{note.clientName}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-gray-500">{dateStr || "-"}</span>
                 {onEditNote && onDeleteNote && (
                    <div className="flex gap-2">
                     <button
-                      className="text-blue-500 hover:bg-blue-100 rounded p-1"
+          className="text-[var(--brand-600)] hover:bg-[#e8f0fe] rounded p-1"
                       title="編集"
                       onClick={() => onEditNote(note)}
                     >
                       <span role="img" aria-label="edit">✏️</span>
                     </button>
                     <button
-                      className="text-red-500 hover:bg-red-100 rounded p-1"
+          className="text-red-500 hover:bg-red-100 rounded p-1"
                       title="削除"
                       onClick={() => onDeleteNote(note.id)}
                     >
@@ -86,7 +86,7 @@ const MemoList: React.FC<MemoListProps> = ({ notes, onToggleTask, onEditNote, on
 
             {note.speaker && (
               <div className="mt-1">
-                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+        <span className="chip">
                   👤 発言者: {note.speaker}
                 </span>
               </div>
@@ -100,7 +100,7 @@ const MemoList: React.FC<MemoListProps> = ({ notes, onToggleTask, onEditNote, on
               <div className="mt-2">
                 <span className="text-sm text-gray-600 flex items-center gap-1">⏳ 未完了タスク:</span>
                 {incompleteTasks.map((item, i) => (
-                  <div key={item.id || `in-${i}`} className="flex items-center gap-2 bg-yellow-50 py-1 px-2 rounded mb-1">
+                  <div key={item.id || `in-${i}`} className="flex items-center gap-2 bg-yellow-50/70 py-1 px-2 rounded mb-1">
                     {onToggleTask && item.id && (
                        <input
                         type="checkbox"

@@ -317,16 +317,16 @@ export default function AssessmentAssistant() {
     return (
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">保存済みアセスメント{existingVersion ? ` (v${existingVersion})` : ''}</h2>
+          <h2 className="text-2xl font-semibold section-title">保存済みアセスメント{existingVersion ? ` (v${existingVersion})` : ''}</h2>
           <div className="flex gap-2">
             {existingDocId && (
-              <button onClick={()=> setShowHistory(s=>!s)} className="text-xs px-3 py-1 rounded border bg-white hover:bg-gray-50">{showHistory? '履歴を隠す' : '変更履歴'}</button>
+              <button onClick={()=> setShowHistory(s=>!s)} className="gbtn text text-xs h-8">{showHistory? '履歴を隠す' : '変更履歴'}</button>
             )}
-            {!editing && <button onClick={startEdit} className="text-xs px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700">編集</button>}
+            {!editing && <button onClick={startEdit} className="gbtn primary text-xs h-8">編集</button>}
             {editing && (
               <>
-                <button disabled={savingEdit} onClick={saveEdits} className="text-xs px-3 py-1 rounded bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50">{savingEdit? '保存中...' : '変更を保存'}</button>
-                <button disabled={savingEdit} onClick={cancelEdit} className="text-xs px-3 py-1 rounded border bg-white hover:bg-gray-50 disabled:opacity-50">キャンセル</button>
+                <button disabled={savingEdit} onClick={saveEdits} className="gbtn primary text-xs h-8 disabled:opacity-60">{savingEdit? '保存中...' : '変更を保存'}</button>
+                <button disabled={savingEdit} onClick={cancelEdit} className="gbtn text text-xs h-8 disabled:opacity-60">キャンセル</button>
               </>
             )}
           </div>
@@ -339,27 +339,27 @@ export default function AssessmentAssistant() {
         {existingError && <p className="text-xs text-red-500">{existingError}</p>}
 
         {showHistory && (
-          <div className="mb-6 border rounded bg-white p-4 text-xs max-h-64 overflow-auto">
+          <div className="mb-6 surface card-shadow border border-gray-100 rounded-lg p-4 text-xs max-h-64 overflow-auto">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-gray-700 text-sm">変更履歴</h3>
+              <h3 className="font-semibold text-sm section-title">変更履歴</h3>
               {historyLoading && <span className="text-gray-400 text-[10px]">更新中...</span>}
             </div>
             {historyError && <p className="text-red-500">{historyError}</p>}
             {!historyLoading && history.length === 0 && <p className="text-gray-400 italic">履歴がありません</p>}
             <ul className="space-y-2">
               {history.map(h => (
-                <li key={h.id} className="border rounded p-2 bg-gray-50">
-                  <div className="flex flex-wrap gap-x-2 gap-y-1">
-                    <span className="font-medium text-gray-700">{h.path}</span>
-                    <span className="text-gray-400">{h.createdAt?.seconds ? new Date(h.createdAt.seconds*1000).toLocaleString('ja-JP') : ''}</span>
-                    <span className="text-gray-500">by {h.userId}</span>
+                <li key={h.id} className="surface border border-gray-100 rounded p-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-gray-800">{h.path}</span>
+                    <span className="chip text-[10px]">{h.createdAt?.seconds ? new Date(h.createdAt.seconds*1000).toLocaleString('ja-JP') : ''}</span>
+                    <span className="text-gray-500 text-[11px]">by データを更新した人の名前</span>
                   </div>
-                  <div className="mt-1 grid grid-cols-2 gap-2">
-                    <div className="bg-white border rounded p-1">
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="rounded border border-gray-200 bg-white p-2">
                       <p className="text-[10px] text-gray-400 mb-0.5">旧</p>
                       <div className="whitespace-pre-wrap break-words max-h-24 overflow-auto">{h.oldValue || '—'}</div>
                     </div>
-                    <div className="bg-white border rounded p-1">
+                    <div className="rounded border border-gray-200 bg-white p-2">
                       <p className="text-[10px] text-gray-400 mb-0.5">新</p>
                       <div className="whitespace-pre-wrap break-words max-h-24 overflow-auto">{h.newValue || '—'}</div>
                     </div>
@@ -371,17 +371,17 @@ export default function AssessmentAssistant() {
         )}
 
         {!existingLoading && !existingError && displayData && (
-          <div className="space-y-10">
+          <div className="space-y-6">
             {Object.entries(displayData)
               .sort((a,b)=>{
                 const order = (name:string)=>{ if (name.startsWith('様式1')) return 0; if (name.startsWith('様式2')) return 1; return 10; };
                 const oa = order(a[0]); const ob = order(b[0]); if (oa!==ob) return oa-ob; return a[0].localeCompare(b[0], 'ja'); })
               .map(([form, categories]) => (
-              <div key={form} className="border rounded bg-white shadow-sm p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">{form}</h3>
+              <div key={form} className="surface card-shadow border border-gray-100 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-bold text-gray-800 section-title">{form}</h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(categories as Record<string, string | Record<string, string>>).map(([category, value]) => (
                     <div key={category} className="text-sm flex flex-col" data-assessment-category={category}>
                       <p className="font-semibold text-gray-700 mb-1">{category}</p>
@@ -390,22 +390,22 @@ export default function AssessmentAssistant() {
                           <textarea
                             value={editBuffer[`${form}|${category}`] ?? value ?? ''}
                             onChange={(e)=> handleEditedChange(form, category, null, e.target.value)}
-                            className="border rounded p-2 text-sm w-full"
+                            className="rounded-lg border border-gray-200 p-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-200"
                             rows={3}
                           />
                         ) : (
-                          <div className="bg-gray-50 border rounded p-2 whitespace-pre-wrap leading-relaxed text-gray-800 min-h-[3rem]">{value || '—'}</div>
+                          <div className="bg-gray-50 border border-gray-200 rounded p-2 whitespace-pre-wrap leading-relaxed text-gray-800 min-h-[3rem]">{value || '—'}</div>
                         )
                       ) : (
                         <div className="space-y-3">
                           {Object.entries(value as Record<string,string>).map(([sub, subVal]) => (
-                            <div key={sub} className="border rounded bg-gray-50 p-2">
+                            <div key={sub} className="border border-gray-200 rounded bg-gray-50 p-2">
                               <p className="text-[11px] font-semibold text-gray-500 mb-1">{sub}</p>
                               {editing ? (
                                 <textarea
                                   value={editBuffer[`${form}|${category}|${sub}`] ?? subVal ?? ''}
                                   onChange={(e)=> handleEditedChange(form, category, sub, e.target.value)}
-                                  className="border rounded p-1 w-full text-[12px]"
+                                  className="rounded-lg border border-gray-200 p-1 w-full text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-200"
                                   rows={2}
                                 />
                               ) : (
@@ -429,21 +429,21 @@ export default function AssessmentAssistant() {
   return (
     <div>
       {!showCreation && (
-        <div className="mb-6 border rounded p-6 bg-gray-50 text-center space-y-4">
-          <h2 className="text-lg font-semibold text-gray-800">保存されたアセスメントはありません</h2>
+        <div className="mb-6 surface card-shadow border border-gray-100 rounded-lg p-6 text-center space-y-4">
+          <h2 className="text-lg font-semibold section-title">保存されたアセスメントはありません</h2>
           <p className="text-sm text-gray-600">初回アセスメントを作成してください。AI が面談記録を解析して各項目へ自動整理します。</p>
           <div>
             <button
               onClick={()=> setShowCreation(true)}
               disabled={!currentClient}
-              className="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white text-sm shadow inline-flex items-center gap-1"
+              className="gbtn primary text-sm disabled:opacity-60"
             >
               {currentClient ? 'AIでアセスメントを作成' : '支援者を選択してください'}
             </button>
           </div>
         </div>
       )}
-      {showCreation && <h2 className="text-xl font-semibold mb-4">面談記録からアセスメント項目を自動入力</h2>}
+      {showCreation && <h2 className="text-2xl font-semibold mb-4 section-title">面談記録からアセスメント項目を自動入力</h2>}
       <div className="mb-4">
         {currentClient ? (
           <div className="text-sm text-gray-700">対象支援者: <span className="font-semibold">{currentClient.name}</span></div>
@@ -470,12 +470,12 @@ export default function AssessmentAssistant() {
             value={script}
             onChange={(e) => setScript(e.target.value)}
             rows={15}
-            className="w-full border p-2 rounded"
+            className="w-full rounded-lg border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-blue-200"
             placeholder="ここに面談記録を貼り付けてください..."
           />
         </div>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded mb-4 hover:bg-blue-600 disabled:bg-blue-300"
+          className="gbtn primary mb-4 disabled:opacity-60"
           onClick={handleMapAssessment}
           disabled={mappingLoading || !currentClient}
         >
@@ -485,11 +485,11 @@ export default function AssessmentAssistant() {
 
   {mappedResult ? (
           // 結果表示・編集UI
-          <div className="grid grid-cols-2 gap-8 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
             {/* 左側：元のスクリプト */}
             <div>
-              <h3 className="text-lg font-bold mb-2">元の面談記録</h3>
-              <div className="bg-gray-50 rounded p-4 h-full overflow-auto text-sm">
+              <h3 className="text-lg font-bold mb-2 section-title">元の面談記録</h3>
+              <div className="surface card-shadow border border-gray-100 rounded p-4 h-full overflow-auto text-sm">
                 <pre className="whitespace-pre-wrap">{script}</pre>
               </div>
             </div>
@@ -497,18 +497,18 @@ export default function AssessmentAssistant() {
             {/* 右側：編集可能なアセスメント項目 */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-bold">AIによるアセスメント（編集可能）</h3>
+                <h3 className="text-lg font-bold section-title">AIによるアセスメント（編集可能）</h3>
                 <button
                   onClick={handleSaveAssessment}
-                  className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600"
+                  className="gbtn primary"
                 >
                   この内容で保存
                 </button>
               </div>
               <div className="space-y-6">
                 {Object.entries(mappedResult).map(([form, categories]) => (
-                  <div key={form}>
-                    <h4 className="text-md font-bold text-gray-700 border-b-2 border-gray-200 pb-1 mb-2">{form}</h4>
+                  <div key={form} className="surface card-shadow border border-gray-100 rounded-lg p-4">
+                    <h4 className="text-md font-bold text-gray-800 section-title mb-2">{form}</h4>
                     <div className="space-y-4">
                       {Object.entries(categories as Record<string, string | Record<string, string>>).map(([category, value]) => (
                         <div key={category}>
@@ -517,7 +517,7 @@ export default function AssessmentAssistant() {
                             <textarea
                               value={value}
                               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleResultChange(form, category, null, e.target.value)}
-                              className="w-full border p-2 rounded mt-1 text-sm"
+                              className="w-full rounded-lg border border-gray-200 p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
                               rows={3}
                             />
                           ) : (
@@ -528,7 +528,7 @@ export default function AssessmentAssistant() {
                                   <textarea
                                     value={subValue as string}
                                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleResultChange(form, category, subCategory, e.target.value)}
-                                    className="w-full border p-2 rounded mt-1 text-sm"
+                                    className="w-full rounded-lg border border-gray-200 p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
                                     rows={2}
                                   />
                                 </div>
@@ -545,7 +545,7 @@ export default function AssessmentAssistant() {
           </div>
         ) : (
           // 初期表示（自動整理前）
-          <div className="bg-gray-100 rounded p-4 mt-4">
+          <div className="surface card-shadow border border-gray-100 rounded p-4 mt-4">
             <p className="text-center text-gray-500">
               上記に面談記録を入力し、「アセスメント項目へ反映」ボタンを押してください。
             </p>

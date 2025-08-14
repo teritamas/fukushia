@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAdvancedSuggestions, AdvancedSuggestedResource } from '../lib/advancedSuggestions';
 import { db } from '../firebase';
+import ResourceSuggestionCard from './resource/ResourceSuggestionCard';
+import ResourceDetailCard from './resource/ResourceDetailCard';
 import { collection, addDoc, deleteDoc, doc, getDocs, query, where, updateDoc, serverTimestamp, DocumentData } from 'firebase/firestore';
 
 interface ResourceUsageDoc {
@@ -66,6 +68,11 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
   const [detailData, setDetailData] = useState<ResourceRecord | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  // Memo states for detail modal
+  interface ResourceMemo { id?: string; resource_id: string; content: string; created_at?: number; updated_at?: number; }
+  const [memos, setMemos] = useState<Record<string, ResourceMemo[]>>({});
+  const [memoLoading, setMemoLoading] = useState<Record<string, boolean>>({});
+  const [newDetailMemoContent, setNewDetailMemoContent] = useState('');
 
   const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || 'default-app-id';
   const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || 'test-user';
@@ -241,6 +248,65 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
 
   const closeDetail = () => { setDetailId(null); setDetailData(null); setDetailLoading(false); setDetailError(null); };
 
+  // Fetch memos for a resource
+  const fetchMemos = async (resourceId: string) => {
+    setMemoLoading(prev=>({...prev, [resourceId]: true}));
+    try {
+      const res = await fetch(`${API_BASE}/resources/${resourceId}/memos`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || 'メモ取得失敗');
+      setMemos(prev=>({...prev, [resourceId]: data as ResourceMemo[]}));
+    } catch(e: unknown) {
+      setError(e instanceof Error ? e.message : 'メモ取得失敗');
+    } finally { setMemoLoading(prev=>({...prev, [resourceId]: false})); }
+  };
+
+  // When opening detail, load memos if not loaded
+  useEffect(()=>{
+    if (detailId && !memos[detailId]) fetchMemos(detailId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailId]);
+
+  const addMemoInDetail = async () => {
+    if (!detailId) return;
+    const content = newDetailMemoContent.trim();
+    if (!content) return;
+    try {
+      const res = await fetch(`${API_BASE}/resources/${detailId}/memos`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resource_id: detailId, content })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || 'メモ追加失敗');
+      setNewDetailMemoContent('');
+      fetchMemos(detailId);
+    } catch(e: unknown) { setError(e instanceof Error ? e.message : 'メモ追加失敗'); }
+  };
+
+  const updateMemo = async (memo: ResourceMemo) => {
+    const newContent = prompt('メモを編集', memo.content);
+    if (newContent == null) return;
+    try {
+      const res = await fetch(`${API_BASE}/resources/memos/${memo.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: newContent })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || 'メモ更新失敗');
+      fetchMemos(memo.resource_id);
+    } catch(e: unknown) { setError(e instanceof Error ? e.message : 'メモ更新失敗'); }
+  };
+
+  const deleteMemo = async (memo: ResourceMemo) => {
+    if (!confirm('メモを削除しますか？')) return;
+    try {
+      const res = await fetch(`${API_BASE}/resources/memos/${memo.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.detail || 'メモ削除失敗');
+      }
+      fetchMemos(memo.resource_id);
+    } catch(e: unknown) { setError(e instanceof Error ? e.message : 'メモ削除失敗'); }
+  };
+
   const toggleStatus = async (u: ResourceUsageDoc) => {
     setTogglingIds(prev=>({...prev, [u.id]: true}));
     try {
@@ -263,27 +329,37 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
   };
 
   return (
-    <div className="bg-sky-50 border-l-4 border-sky-400 rounded-xl shadow p-4 space-y-5">
-      <h3 className="font-bold text-sky-700 mb-2">社会資源・制度の提案と利用状況</h3>
+    <div className="surface card-shadow border border-gray-100 rounded-xl p-4 sm:p-5 space-y-5">
+      <h3 className="font-bold section-title mb-2">社会資源・制度の提案と利用状況</h3>
       {error && <div className="text-xs text-red-600">{error}</div>}
       {!clientName && <p className="text-xs text-gray-500">支援対象者を選択してください。</p>}
       {clientName && (
         <>
           <div>
             <h4 className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">利用中の社会資源・制度 {loadingUsage && <span className="text-[10px] text-gray-400">読込中...</span>}</h4>
-            {usages.length === 0 && !loadingUsage && <p className="text-xs text-gray-500">まだ登録されていません。</p>}
+            {loadingUsage ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_,i)=>(
+                  <div key={i} className="surface card-shadow border border-gray-100 rounded-lg p-3 animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-2/3 mb-2" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
+                    <div className="h-3 bg-gray-100 rounded w-3/4 mb-1" />
+                  </div>
+                ))}
+              </div>
+            ) : usages.length === 0 && <p className="text-xs text-gray-500">まだ登録されていません。</p>}
             <ul className="flex flex-col gap-2">
               {usages.map(u=> (
-                <li key={u.id} className="bg-white border rounded p-2 flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+                <li key={u.id} className="surface border border-gray-100 rounded-lg p-2 flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
                   <div className="flex-1 flex items-center gap-2">
-                    <button onClick={()=> openDetail(u.resourceId)} className="font-semibold mr-1 underline decoration-dotted hover:text-sky-700 text-left">
+                    <button onClick={()=> openDetail(u.resourceId)} className="font-semibold mr-1 underline decoration-dotted hover:text-[var(--brand-600)] text-left">
                       {u.serviceName}
                     </button>
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] text-white ${u.status==='active' ? 'bg-emerald-600' : 'bg-gray-500'}`}>{u.status==='active' ? '利用中' : '終了'}</span>
+                    <span className={`chip ${u.status==='active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{u.status==='active' ? '利用中' : '終了'}</span>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={()=>toggleStatus(u)} disabled={togglingIds[u.id]} className="px-2 py-0.5 rounded border bg-white hover:bg-gray-50 disabled:opacity-40">{u.status==='active' ? '終了' : '再開'}</button>
-                    <button onClick={()=>removeUsage(u)} disabled={removingIds[u.id]} className="px-2 py-0.5 rounded border border-red-300 bg-white text-red-600 hover:bg-red-50 disabled:opacity-40">削除</button>
+                    <button onClick={()=>toggleStatus(u)} disabled={togglingIds[u.id]} className="gbtn text text-[11px] h-8">{u.status==='active' ? '終了' : '再開'}</button>
+                    <button onClick={()=>removeUsage(u)} disabled={removingIds[u.id]} className="gbtn text text-[11px] h-8 text-red-600">削除</button>
                   </div>
                 </li>
               ))}
@@ -296,12 +372,22 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
                 <div className="text-[11px] text-red-600 flex flex-col gap-1">
                   <span>AI提案の取得に失敗しました（ネットワークまたはサーバエラー）。</span>
                   <div className="flex items-center gap-2">
-                    <button onClick={retryAdvanced} className="px-2 py-0.5 text-[11px] rounded bg-red-600 text-white hover:bg-red-700">再試行</button>
+                    <button onClick={retryAdvanced} className="gbtn primary text-[11px] h-8 bg-red-600 hover:bg-red-700">再試行</button>
                     <span className="text-[10px] text-gray-500">フォールバック: キーワード一致のみを表示</span>
                   </div>
                 </div>
               )}
-              {!advFailed && adv && adv.length === 0 && suggestions.length === 0 && !advLoading && (
+              {(loadingResources || advLoading) ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_,i)=>(
+                    <div key={i} className="surface card-shadow border border-gray-100 rounded-lg p-3 animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-2/3 mb-2" />
+                      <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
+                      <div className="h-3 bg-gray-100 rounded w-3/4 mb-1" />
+                    </div>
+                  ))}
+                </div>
+              ) : (!advFailed && adv && adv.length === 0 && suggestions.length === 0) && (
                 <p className="text-[11px] text-gray-500">現在のアセスメント内容から提案できる社会資源・制度は見つかりませんでした。記述を具体化するか関連キーワードを追加してください。</p>
               )}
               <ul className="space-y-2">
@@ -309,48 +395,25 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
                   const already = existingIds.has(a.resource_id);
                   const r = resources.find(r=> r.id === a.resource_id);
                   return (
-                    <li key={a.resource_id} className="bg-white border rounded p-3 text-xs flex flex-col gap-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <button onClick={()=>openDetail(a.resource_id)} className="font-semibold leading-snug break-words text-left underline decoration-dotted hover:text-sky-700">
-                          {a.service_name}<span className="ml-1 text-[10px] text-indigo-600">AI</span>
-                        </button>
-                        {!already && r && <button onClick={()=>addUsage(r)} disabled={addingIds[a.resource_id]} className="text-[11px] px-2 py-0.5 rounded bg-blue-600 text-white disabled:bg-blue-300">追加</button>}
-                        {already && <span className="text-[10px] text-gray-400">登録済</span>}
-                      </div>
-                      <div className="text-[11px] text-gray-600 line-clamp-2">{a.excerpt}</div>
-                      <div className="text-[10px] text-gray-500">一致:{a.matched_keywords.slice(0,5).join(', ')}</div>
-                      <div className="text-[10px] text-gray-400 flex items-center gap-1">
-                        <span>スコア:{a.score}</span>
-                        <div className="relative group inline-flex items-center">
-                          <span
-                            className="inline-flex items-center justify-center w-3 h-3 text-[9px] font-semibold text-white bg-gray-500 rounded-full cursor-help hover:bg-gray-600 transition"
-                          >?</span>
-                          <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 absolute left-1/2 -translate-x-1/2 top-full mt-1 w-60 max-w-xs z-20">
-                            <div className="relative bg-gray-900 text-white text-[10px] leading-snug rounded-lg shadow-lg p-2 space-y-1">
-                              <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-gray-900"></div>
-                              <p className="font-semibold text-[10px] tracking-wide">スコア算出ロジック</p>
-                              <p><span className="font-mono">0.7×AI類似度</span> + <span className="font-mono">0.3×キーワード一致数</span></p>
-                              <p className="opacity-80">AI類似度: 要約/原文埋め込みと資源埋め込みのコサイン (0～1)</p>
-                              <p className="opacity-80">キーワード一致数: 資源 keywords と要約トークンの重複数 (最大12)</p>
-                              <p className="opacity-70">同点時はキーワード一致数が多い方を優先表示。</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
+                    <ResourceSuggestionCard
+                      key={a.resource_id}
+                      resource={r || { id: a.resource_id, service_name: a.service_name, description: a.excerpt } as ResourceRecord}
+                      meta={{ badge: 'AI', matched: a.matched_keywords, score: a.score, alreadyUsed: already }}
+                      onOpenDetail={openDetail}
+                      onAdd={r ? addUsage : undefined}
+                      addDisabled={addingIds[a.resource_id] || already}
+                    />
                   );
                 })}
                 {(!adv || adv.length===0) && suggestions.map(s => (
-                  <li key={s.resource.id} className="bg-white border rounded p-3 text-xs flex flex-col gap-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <button onClick={()=> s.resource.id && openDetail(s.resource.id)} className="font-semibold leading-snug break-words text-left underline decoration-dotted hover:text-sky-700">
-                        {s.resource.service_name}
-                      </button>
-                      <button onClick={()=>addUsage(s.resource)} disabled={addingIds[s.resource.id!]} className="text-[11px] px-2 py-0.5 rounded bg-blue-600 text-white disabled:bg-blue-300">追加</button>
-                    </div>
-                    <div className="text-[11px] text-gray-600 line-clamp-2">{s.resource.description}</div>
-                    <div className="text-[10px] text-gray-500">キーワード:{s.matched.slice(0,5).join(', ')}{s.matched.length>5 && '…'}</div>
-                  </li>
+                  <ResourceSuggestionCard
+                    key={s.resource.id}
+                    resource={s.resource}
+                    meta={{ matched: s.matched }}
+                    onOpenDetail={(id)=> openDetail(id)}
+                    onAdd={(res)=> addUsage(res)}
+                    addDisabled={addingIds[s.resource.id!]}
+                  />
                 ))}
               </ul>
             </div>
@@ -367,48 +430,63 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
         </>
       )}
       {detailId && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center p-4 sm:p-8">
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeDetail}></div>
-          <div className="relative z-10 w-full max-w-lg bg-white rounded-lg shadow-xl border border-gray-200 p-5 overflow-y-auto max-h-full space-y-3 text-xs">
-            <div className="flex items-center justify-between">
-              <h4 className="font-bold text-sky-700 text-sm">社会資源・制度詳細</h4>
-              <button onClick={closeDetail} className="text-gray-500 hover:text-gray-700 text-sm">×</button>
-            </div>
-            {detailLoading && <p className="text-gray-500">読込中...</p>}
-            {detailError && <p className="text-red-600">{detailError}</p>}
-            {!detailLoading && !detailError && detailData && (
-              <div className="space-y-2">
-                <div>
-                  <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">名称</div>
-                  <div className="text-sm font-semibold">{detailData.service_name}</div>
+        <div className="fixed inset-0 z-[1000] flex items-start sm:items-center justify-center bg-black/40 p-4" onClick={closeDetail}>
+          <div onClick={(e)=> e.stopPropagation()} className="relative">
+            {detailLoading ? (
+              <div className="surface card-shadow rounded-xl border border-gray-100 p-5 max-w-lg w-full animate-pulse">
+                <div className="h-5 bg-gray-200 rounded w-1/3 mb-4" />
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-100 rounded w-2/3" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-2/3" />
                 </div>
-                {detailData.category && <div><span className="font-semibold text-gray-600 mr-1">分類:</span><span>{detailData.category}</span></div>}
-                {detailData.target_users && <div><span className="font-semibold text-gray-600 mr-1">対象:</span><span>{detailData.target_users}</span></div>}
-                {detailData.description && <div><span className="font-semibold text-gray-600 mr-1">概要:</span><span className="whitespace-pre-wrap break-words">{detailData.description}</span></div>}
-                {detailData.eligibility && <div><span className="font-semibold text-gray-600 mr-1">要件:</span><span className="whitespace-pre-wrap break-words">{detailData.eligibility}</span></div>}
-                {detailData.application_process && <div><span className="font-semibold text-gray-600 mr-1">手続:</span><span className="whitespace-pre-wrap break-words">{detailData.application_process}</span></div>}
-                {detailData.provider && <div><span className="font-semibold text-gray-600 mr-1">提供主体:</span><span>{detailData.provider}</span></div>}
-                {detailData.location && <div><span className="font-semibold text-gray-600 mr-1">地域/所在地:</span><span>{detailData.location}</span></div>}
-                {(detailData.contact_phone || detailData.contact_email || detailData.contact_url) && (
-                  <div className="space-y-1">
-                    <div className="font-semibold text-gray-600">連絡先</div>
-                    {detailData.contact_phone && <div>電話: {detailData.contact_phone}</div>}
-                    {detailData.contact_email && <div>メール: {detailData.contact_email}</div>}
-                    {detailData.contact_url && <div className="truncate">URL: <a href={detailData.contact_url} target="_blank" className="text-sky-600 underline break-all">{detailData.contact_url}</a></div>}
-                  </div>
-                )}
-                {detailData.keywords && detailData.keywords.length>0 && (
-                  <div>
-                    <span className="font-semibold text-gray-600 mr-1">キーワード:</span>
-                    <span className="flex flex-wrap gap-1">{detailData.keywords.slice(0,30).map((k:string)=> <span key={k} className="px-1 py-0.5 bg-sky-100 text-sky-700 rounded text-[10px]">{k}</span>)}</span>
-                  </div>
-                )}
-                {detailData.last_verified_at && <div className="text-[10px] text-gray-400">最終確認: {new Date(detailData.last_verified_at*1000).toLocaleDateString()}</div>}
+                <div className="mt-4 border-t pt-3">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2" />
+                  <div className="h-20 bg-gray-100 rounded mb-2" />
+                  <div className="h-8 bg-gray-100 rounded mb-2" />
+                  <div className="h-8 bg-gray-100 rounded mb-2" />
+                </div>
               </div>
+            ) : (
+              <ResourceDetailCard resource={detailData} loading={detailLoading} error={detailError} onClose={closeDetail}>
+                <div className="pt-3">
+                  <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">メモ
+                    {detailId && memoLoading[detailId] && <span className="text-[10px] text-gray-500">読み込み中...</span>}
+                  </h5>
+                  <div className="flex gap-2 mb-2">
+                    <textarea
+                      className="rounded-lg border border-gray-200 p-2 text-xs flex-1 h-20 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      placeholder="メモを入力..."
+                      value={newDetailMemoContent}
+                      onChange={e=>setNewDetailMemoContent(e.target.value)}
+                    />
+                    <button
+                      onClick={addMemoInDetail}
+                      disabled={!newDetailMemoContent.trim()}
+                      className="gbtn primary text-xs h-9"
+                    >追加</button>
+                  </div>
+                  <div className="max-h-48 overflow-auto pr-1">
+                    <ul className="space-y-1">
+                      {(detailId && memos[detailId] ? memos[detailId] : []).map(m => (
+                        <li key={m.id} className="text-xs border border-gray-200 rounded p-2 flex justify-between gap-2 items-start bg-white">
+                          <span className="whitespace-pre-wrap flex-1">{m.content}</span>
+                          <div className="flex gap-1 shrink-0">
+                            <button onClick={()=>updateMemo(m)} className="text-blue-500">編</button>
+                            <button onClick={()=>deleteMemo(m)} className="text-red-500">✕</button>
+                          </div>
+                        </li>
+                      ))}
+                      {detailId && (memos[detailId]?.length ?? 0) === 0 && !memoLoading[detailId] && (
+                        <li className="text-[11px] text-gray-400">メモなし</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </ResourceDetailCard>
             )}
-            <div className="pt-1 flex justify-end">
-              <button onClick={closeDetail} className="px-3 py-1 text-[11px] rounded bg-sky-600 text-white hover:bg-sky-700">閉じる</button>
-            </div>
           </div>
         </div>
       )}

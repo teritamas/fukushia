@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import ClientDetail from './ClientDetail';
 import AssessmentAssistant from './AssessmentAssistant';
 import { db } from '../firebase';
-import { collection, getDocs, query, where, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, getDocs, query, where, QueryDocumentSnapshot, DocumentData, orderBy } from 'firebase/firestore';
 import { useClientContext } from './ClientContext';
 
 // ClientWorkspace will become the central hub for managing a client.
@@ -16,7 +16,7 @@ const getRowBackgroundColor = (changed: boolean, rowIndex: number): string => {
 
 export default function ClientWorkspace() {
   const [activeTab, setActiveTab] = useState<'detail' | 'assessment'>('detail');
-  const { currentClient, setCurrentClient, requestAssessmentEdit } = useClientContext();
+  const { currentClient, setCurrentClient, requestAssessmentEdit, homeNavSignal } = useClientContext();
   // 個別基本情報はアセスメントの本人情報を参照
   const [personalInfo, setPersonalInfo] = useState<Record<string,string>>({});
   const [prevPersonalInfo, setPrevPersonalInfo] = useState<Record<string,string> | null>(null);
@@ -28,10 +28,11 @@ export default function ClientWorkspace() {
   const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || 'test-user';
 
   useEffect(() => {
-    const fetchClients = async () => {
+  const fetchClients = async () => {
       try {
-        const ref = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/clients`);
-        const snap = await getDocs(ref);
+    const ref = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/clients`);
+    const q = query(ref, orderBy('createdAt','asc'));
+    const snap = await getDocs(q);
         const list = snap.docs.map(d => ({ id: d.id, name: d.data().name, photoUrl: d.data().photoUrl, basicInfo: d.data().basicInfo }));
         if (!currentClient && list.length > 0) setCurrentClient(list[0]);
       } finally {
@@ -40,6 +41,11 @@ export default function ClientWorkspace() {
     };
     fetchClients();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When the global header signals "go home", ensure we show the basic info tab
+  useEffect(()=>{
+    setActiveTab('detail');
+  }, [homeNavSignal]);
 
   // 最新アセスメントから本人情報抽出
   useEffect(()=>{
@@ -112,7 +118,7 @@ export default function ClientWorkspace() {
 
   return (
     <div className="space-y-6">
-      <section className="bg-white border rounded-lg p-4 shadow-sm">
+      <section className="bg-white rounded-lg p-4 shadow-sm">
         {currentClient && (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
             <div className="flex items-center gap-4">

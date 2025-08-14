@@ -305,48 +305,48 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   return (
     <div className="flex flex-col md:flex-row gap-6 w-full p-4">
       {/* 左カラム: メモ入力・一覧 */}
-      <div className="flex-1 bg-white rounded-xl shadow-lg p-6 min-w-[320px]">
-        <h2 className="text-xl font-bold mb-4 text-blue-900">
+      <div className="flex-1 bg-white rounded-xl card-shadow border border-gray-100 p-6 min-w-[320px]">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800">
           日々の活動メモ入力
         </h2>
         {/* メモ / TODO 入力フォーム */}
-        <div className="mb-6 p-4 border rounded bg-gray-50">
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
           <div className="mb-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-700 w-14">発言者</label>
-              <input value={speaker} onChange={e=>setSpeaker(e.target.value)} placeholder="例: 本人 / 家族 / その他関係者" className="flex-1 border rounded px-2 py-1 text-sm" />
+              <label className="text-sm text-gray-700 w-16">発言者</label>
+              <input value={speaker} onChange={e=>setSpeaker(e.target.value)} placeholder="例: 本人 / 家族 / その他関係者" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
               <div className="flex items-center gap-1">
-                <button type="button" onClick={()=>setSpeaker('本人')} className="text-xs px-2 py-1 bg-gray-200 rounded">本人</button>
-                <button type="button" onClick={()=>setSpeaker('家族')} className="text-xs px-2 py-1 bg-gray-200 rounded">家族</button>
+                <button type="button" onClick={()=>setSpeaker('本人')} className="text-xs px-2 py-1 bg-gray-200 rounded-lg hover-scale">本人</button>
+                <button type="button" onClick={()=>setSpeaker('家族')} className="text-xs px-2 py-1 bg-gray-200 rounded-lg hover-scale">家族</button>
               </div>
             </div>
             <p className="mt-1 text-[11px] text-gray-500">誰の発言かを明記してください（例: 本人 / 家族 / その他関係者）。</p>
           </div>
           <div className="mb-2">
-            <label className="text-sm text-gray-700 block mb-1">メモ内容</label>
-            <textarea value={memoContent} onChange={e=>setMemoContent(e.target.value)} rows={3} className="w-full border rounded px-2 py-1 text-sm" placeholder="活動や気づき、課題など" />
+            <label className="text-sm font-medium text-gray-800 block mb-1">メモ内容</label>
+            <textarea value={memoContent} onChange={e=>setMemoContent(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="活動や気づき、課題など" />
           </div>
           <div className="mb-3">
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-sm font-medium text-gray-700">TODO（タスク化）</label>
-              <button type="button" onClick={addTodoField} className="text-xs text-blue-600 hover:underline">＋追加</button>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm font-medium text-gray-800">TODO（タスク化）</label>
+              <button type="button" onClick={addTodoField} className="text-xs text-[var(--brand-600)] hover:underline hover-scale">＋追加</button>
             </div>
             <div className="space-y-2">
               {todos.map((t,i)=>(
                 <div key={t.id} className="flex gap-2 items-center">
-                  <input value={t.text} onChange={e=>updateTodoField(t.id,'text',e.target.value)} placeholder={`タスク${i+1}`} className="flex-1 border rounded px-2 py-1 text-xs" />
-                  <input type="date" value={t.dueDate} onChange={e=>updateTodoField(t.id,'dueDate',e.target.value)} className="border rounded px-2 py-1 text-xs" />
-                  <button type="button" onClick={()=>removeTodoField(t.id)} disabled={todos.length===1} className="text-[10px] text-red-500 disabled:opacity-30">削除</button>
+                  <input value={t.text} onChange={e=>updateTodoField(t.id,'text',e.target.value)} placeholder={`タスク${i+1}`} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                  <input type="date" value={t.dueDate} onChange={e=>updateTodoField(t.id,'dueDate',e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                  <button type="button" onClick={()=>removeTodoField(t.id)} disabled={todos.length===1} className="text-[10px] text-red-500 disabled:opacity-30 hover-scale">削除</button>
                 </div>
               ))}
             </div>
           </div>
-          <button disabled={!selectedClient || (!memoContent.trim() && todos.every(t=>!t.text.trim()))} onClick={handleSaveClientNote} className="w-full bg-blue-600 disabled:bg-blue-300 text-white text-sm py-2 rounded">保存</button>
+          <button disabled={!selectedClient || (!memoContent.trim() && todos.every(t=>!t.text.trim()))} onClick={handleSaveClientNote} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm py-2 rounded-lg hover-scale">保存</button>
         </div>
         {loading && <p>読み込み中...</p>}
         {selectedClient && !loading && (
           <div>
-            <h3 className="text-lg font-semibold mb-2">
+            <h3 className="text-xl font-semibold mb-3">
               {selectedClient} さんのメモ一覧
             </h3>
             <MemoList
@@ -376,30 +376,30 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
             {editing && (
               <div className="fixed inset-0 z-50 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/30" onClick={() => setEditing(null)} />
-                <div className="relative bg-white rounded shadow-lg p-4 w-[480px] max-w-[90vw]">
+                <div className="relative bg-white rounded-lg card-shadow p-4 w-[480px] max-w-[90vw] border border-gray-100">
                   <h3 className="font-semibold mb-3">メモを編集</h3>
                   <div className="mb-2">
-                    <label className="text-sm text-gray-700">発言者</label>
+                    <label className="text-sm text-gray-800">発言者</label>
                     <div className="flex items-center gap-2 mt-1">
-                      <input className="border rounded px-2 py-1 text-sm flex-1" value={editing.speaker} onChange={(e) => setEditing({ ...editing, speaker: e.target.value })} />
-                      <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setEditing({ ...editing, speaker: "本人" })}>
+                      <input className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200" value={editing.speaker} onChange={(e) => setEditing({ ...editing, speaker: e.target.value })} />
+                      <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale" onClick={() => setEditing({ ...editing, speaker: "本人" })}>
                         本人
                       </button>
-                      <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setEditing({ ...editing, speaker: "家族" })}>
+                      <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale" onClick={() => setEditing({ ...editing, speaker: "家族" })}>
                         家族
                       </button>
                     </div>
                   </div>
                   <div className="mb-4">
-                    <label className="text-sm text-gray-700">メモ内容</label>
-                    <textarea className="border rounded px-2 py-1 w-full mt-1" rows={4} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
+                    <label className="text-sm text-gray-800">メモ内容</label>
+                    <textarea className="border border-gray-300 rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-blue-200" rows={4} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
                   </div>
                   <div className="flex justify-end gap-2">
-                    <button className="px-3 py-1 rounded bg-gray-200" onClick={() => setEditing(null)}>
+                    <button className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 hover-scale" onClick={() => setEditing(null)}>
                       キャンセル
                     </button>
                     <button
-                      className="px-3 py-1 rounded bg-blue-600 text-white"
+                      className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white hover-scale"
                       onClick={async () => {
                         try {
                           const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
@@ -425,7 +425,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       </div>
   {/* 右カラム: 情報・生成セクション（順序変更） */}
   <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
-    <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-xl shadow p-4">
+    <div className="bg-yellow-50 rounded-xl shadow p-4">
           <h3 className="font-bold text-yellow-700 mb-2">
             アセスメントと支援計画
           </h3>
@@ -492,7 +492,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                     <textarea
                       value={editableSupportPlan}
                       onChange={(e) => setEditableSupportPlan(e.target.value)}
-                      className="w-full border p-2 rounded mt-1 text-sm"
+                      className="w-full border border-gray-200 p-2 rounded mt-1 text-sm"
                       rows={15}
                       placeholder="ここに支援計画を入力・編集してください。"
                     />
@@ -516,7 +516,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         <div className="bg-white rounded-xl shadow p-0">
           <ClientResources clientName={selectedClient || null} hasAssessmentPlan={!!assessmentPlan} assessmentData={simplifiedAssessment} />
         </div>
-        <div className="bg-purple-50 border-l-4 border-purple-400 rounded-xl shadow p-4">
+        <div className="bg-purple-50 rounded-xl shadow p-4">
           <h3 className="font-bold text-purple-700 mb-2">
             活動報告書・支払い報告書生成
           </h3>
