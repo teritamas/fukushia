@@ -8,6 +8,12 @@ import { useClientContext } from './ClientContext';
 
 // ClientWorkspace will become the central hub for managing a client.
 // For now, it will just have tabs to switch between client details and assessment.
+// Row background helper: changed fields are highlighted; otherwise zebra per row
+const getRowBackgroundColor = (changed: boolean, rowIndex: number): string => {
+  if (changed) return 'bg-yellow-50';
+  return rowIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+};
+
 export default function ClientWorkspace() {
   const [activeTab, setActiveTab] = useState<'detail' | 'assessment'>('detail');
   const { currentClient, setCurrentClient, requestAssessmentEdit } = useClientContext();

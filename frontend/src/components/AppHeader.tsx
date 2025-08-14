@@ -46,6 +46,8 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
     if (id === '__add__') { setShowAdd(true); return; }
     const next = clients.find(c=> c.id === id) || null;
     setCurrentClient(next);
+  // Ensure the main view switches to ClientWorkspace just like clicking the header button
+  onChange('clients');
     setMenuOpen(false);
   };
 
@@ -58,11 +60,14 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
       const data: ClientData = { id: docRef.id, name: newName.trim(), photoUrl: newPhotoUrl.trim() || undefined };
       setClients(prev => [...prev, data]);
       setCurrentClient(data);
+  // After creating/selecting a new client, switch to ClientWorkspace
+  onChange('clients');
       setShowAdd(false);
       setNewName("");
       setNewPhotoUrl("");
     } finally { setAdding(false); }
   };
+
   return (
     <header className="w-full bg-white/80 backdrop-blur border-b sticky top-0 z-30 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center gap-3">
@@ -74,31 +79,25 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
               className="relative group"
               onMouseEnter={()=> setMenuOpen(true)}
             >
-              <button
-                type="button"
-              onMouseEnter={()=> setMenuOpen(true)}
-              onMouseLeave={()=> setMenuOpen(false)}
+            <button
+              type="button"     
+              tabIndex={0}
+              aria-haspopup="listbox"
+              aria-expanded={menuOpen}
+              onClick={()=> { onChange('clients'); setMenuOpen(v=>!v); }}
+              onKeyDown={e => {
+                if (e.key === " " || e.key === "Enter") {
+                  e.preventDefault();
+                  setMenuOpen(true);
+                } else if (e.key === "Escape") {
+                  setMenuOpen(false);
+                }
+              }}
+              className={`flex items-center gap-2 rounded border px-3 py-1.5 text-sm min-w-[200px] justify-between ${active==='clients' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700'}`}
             >
-              <button
-                type="button"
-                tabIndex={0}
-                aria-haspopup="listbox"
-                aria-expanded={menuOpen}
-                onClick={()=> { onChange('clients'); setMenuOpen(v=>!v); }}
-                onKeyDown={e => {
-                  if (e.key === " " || e.key === "Enter") {
-                    e.preventDefault();
-                    setMenuOpen(true);
-                    setFocusedIndex(0);
-                  } else if (e.key === "Escape") {
-                    setMenuOpen(false);
-                  }
-                }}
-                className={`flex items-center gap-2 rounded border px-3 py-1.5 text-sm min-w-[200px] justify-between ${active==='clients' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700'}`}
-              >
-                <span className="truncate max-w-[160px]">{currentClient?.name || (loadingClients ? '読み込み中...' : '支援対象者を選択')}</span>
-                <span className="text-xs opacity-80">▾</span>
-              </button>
+              <span className="truncate max-w-[160px]">{currentClient?.name || (loadingClients ? '読み込み中...' : '支援対象者を選択')}</span>
+              <span className="text-xs opacity-80">▾</span>
+            </button>
               {menuOpen && (
                 <div
                   className="absolute right-0 mt-0 w-[240px] rounded-md rounded-t-none border bg-white shadow-lg ring-1 ring-black/5 z-50"
@@ -122,12 +121,14 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     <button
                       onClick={()=> onSelect('__add__')}
                       className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50"
-                    >新しい支援対象者を追加</button>
+                    >
+                      新しい支援対象者を追加
+                    </button>
                   </div>
                 </div>
               )}
             </div>
-      {NAV_ITEMS.map(item => (
+            {NAV_ITEMS.map(item => (
             <button
               key={item.key}
               onClick={() => onChange(item.key)}
@@ -135,7 +136,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
             >
               {item.label}
             </button>
-          ))}
+            ))}
           </nav>
         </div>
         {/* 追加モーダル */}
