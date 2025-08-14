@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f0f2f5;
+  --surface: #ffffff;
+  --foreground: #1f2937; /* gray-800 */
+  --muted: #6b7280; /* gray-500 */
+  --brand: #1a73e8; /* Google Blue 600 */
+  --brand-600: #1a73e8;
+  --brand-700: #1558c0;
+  --ring: rgba(26, 115, 232, 0.35);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* Tailwind v4 will provide design tokens; using plain CSS vars here for broad compatibility */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -22,5 +23,82 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-noto-sans-jp), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  letter-spacing: 0.2px;
+}
+
+/* Subtle card surface and elevation */
+.surface {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* Requested: softer header shadow */
+.header-shadow {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* Requested: card shadow */
+.card-shadow {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+}
+
+/* Requested: hover-scale animation */
+.hover-scale { transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease; }
+.hover-scale:hover { transform: translateY(-1px) scale(1.01); }
+
+/* Google-ish button */
+.gbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: var(--surface);
+  color: var(--foreground);
+  transition: background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+.gbtn:hover { background: #f6f8fc; }
+.gbtn:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.gbtn.primary {
+  background: var(--brand-600);
+  color: white;
+  border-color: transparent;
+}
+.gbtn.primary:hover { background: var(--brand-700); }
+.gbtn.tonal { background: #e8f0fe; color: #174ea6; border-color: transparent; }
+.gbtn.tonal:hover { background: #d2e3fc; }
+.gbtn.text { border-color: transparent; background: transparent; color: var(--brand-600); }
+.gbtn.text:hover { background: #f6f8fc; }
+
+/* Chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #f1f3f4;
+  color: #374151;
+  font-size: 12px;
+}
+
+/* Input */
+.ginput {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: var(--surface);
+  padding: 0 12px;
+}
+.ginput:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+/* Section header */
+.section-title {
+  font-weight: 600;
+  color: #1f2937;
 }

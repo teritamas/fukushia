@@ -177,10 +177,10 @@ export default function MemoTaskManager() {
   return (
     <div>
       {/* Create form */}
-      <div className="mb-6 p-4 border rounded bg-gray-50">
+      <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
         <div className="mb-2">
-          <label className="mr-2">支援対象者:</label>
-          <select className="border rounded px-2 py-1" value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)}>
+          <label className="text-sm text-gray-700 mr-2">支援対象者</label>
+          <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)}>
             <option value="">選択してください</option>
             {clients.map((c) => (
               <option key={c} value={c}>
@@ -192,61 +192,63 @@ export default function MemoTaskManager() {
 
         <div className="mb-2">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-700 w-14">発言者</label>
+            <label className="text-sm text-gray-700 w-16">発言者</label>
             <input
-              className="border rounded px-2 py-1 text-sm flex-1"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200"
               value={speaker}
               onChange={(e) => setSpeaker(e.target.value)}
               placeholder="例: 本人 / 家族"
             />
             <div className="flex items-center gap-1">
-              <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setSpeaker("本人")}>
+              <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale" onClick={() => setSpeaker("本人")}>
                 本人
               </button>
-              <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setSpeaker("家族")}>
+              <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale" onClick={() => setSpeaker("家族")}>
                 家族
               </button>
             </div>
           </div>
-          <p className="mt-1 text-[11px] text-gray-500">誰の発言かを明記してください（例: 本人 / 家族）。</p>
+          <p className="mt-1 text-[11px] text-gray-500">誰の発言かを明記してください（例: 本人 / 家族 / その他関係者）。</p>
         </div>
 
         <div className="mb-2">
-          <label className="mr-2">メモ内容:</label>
-          <textarea className="border rounded px-2 py-1 w-full" value={memoContent} onChange={(e) => setMemoContent(e.target.value)} placeholder="メモ内容" />
+          <label className="text-sm font-medium text-gray-800 block mb-1">メモ内容</label>
+          <textarea className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" value={memoContent} onChange={(e) => setMemoContent(e.target.value)} placeholder="活動や気づき、課題など" />
         </div>
 
         <div className="mb-2">
-          <label className="mr-2">タスク:</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium text-gray-800">TODO（タスク化）</label>
+            <button className="text-[var(--brand-600)] text-xs hover:underline hover-scale" onClick={addTaskField}>
+              ＋追加
+            </button>
+          </div>
           {tasks.map((task, idx) => (
             <div key={task.id} className="flex items-center gap-2 mb-1">
-              <input className="border rounded px-2 py-1" value={task.text} onChange={(e) => handleTaskChange(task.id, "text", e.target.value)} placeholder={`タスク${idx + 1}`} />
-              <input type="date" className="border rounded px-2 py-1" value={task.dueDate} onChange={(e) => handleTaskChange(task.id, "dueDate", e.target.value)} />
-              <button className="text-red-500 text-xs" onClick={() => removeTaskField(task.id)} disabled={tasks.length === 1}>
+              <input className="border border-gray-300 rounded-lg px-3 py-2 text-xs flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200" value={task.text} onChange={(e) => handleTaskChange(task.id, "text", e.target.value)} placeholder={`タスク${idx + 1}`} />
+              <input type="date" className="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-200" value={task.dueDate} onChange={(e) => handleTaskChange(task.id, "dueDate", e.target.value)} />
+              <button className="text-red-500 text-[10px] hover-scale disabled:opacity-30" onClick={() => removeTaskField(task.id)} disabled={tasks.length === 1}>
                 削除
               </button>
             </div>
           ))}
-          <button className="text-blue-500 text-xs underline" onClick={addTaskField}>
-            ＋タスク追加
-          </button>
         </div>
 
-        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleSaveMemo} disabled={!canSave}>
+        <button className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg hover-scale" onClick={handleSaveMemo} disabled={!canSave}>
           保存
         </button>
       </div>
 
-      <h2 className="text-xl font-bold mb-2">登録済みメモ</h2>
+      <h2 className="text-2xl font-semibold mb-3 text-gray-800">登録済みメモ</h2>
       {/* filters */}
       <div className="mb-4 flex gap-2">
-        <button className={`px-3 py-1 rounded ${filter === "all" ? "bg-blue-500 text-white" : "bg-gray-200"}`} onClick={() => setFilter("all")}>
+        <button className={`px-3 py-1 rounded-full hover-scale ${filter === "all" ? "bg-blue-600 text-white" : "bg-gray-200"}`} onClick={() => setFilter("all")}>
           すべて
         </button>
-        <button className={`px-3 py-1 rounded ${filter === "incomplete" ? "bg-blue-500 text-white" : "bg-gray-200"}`} onClick={() => setFilter("incomplete")}>
+        <button className={`px-3 py-1 rounded-full hover-scale ${filter === "incomplete" ? "bg-blue-600 text-white" : "bg-gray-200"}`} onClick={() => setFilter("incomplete")}>
           未完了タスクあり
         </button>
-        <button className={`px-3 py-1 rounded ${filter === "complete" ? "bg-blue-500 text-white" : "bg-gray-200"}`} onClick={() => setFilter("complete")}>
+        <button className={`px-3 py-1 rounded-full hover-scale ${filter === "complete" ? "bg-blue-600 text-white" : "bg-gray-200"}`} onClick={() => setFilter("complete")}>
           完了タスクのみ
         </button>
       </div>
@@ -267,7 +269,7 @@ export default function MemoTaskManager() {
             <div className="mb-2">
               <label className="text-sm text-gray-700">発言者</label>
               <div className="flex items-center gap-2 mt-1">
-                <input className="border rounded px-2 py-1 text-sm flex-1" value={editing.speaker} onChange={(e) => setEditing({ ...editing, speaker: e.target.value })} />
+                <input className="border rounded px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200" value={editing.speaker} onChange={(e) => setEditing({ ...editing, speaker: e.target.value })} />
                 <button type="button" className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300" onClick={() => setEditing({ ...editing, speaker: "本人" })}>
                   本人
                 </button>
@@ -278,7 +280,7 @@ export default function MemoTaskManager() {
             </div>
             <div className="mb-4">
               <label className="text-sm text-gray-700">メモ内容</label>
-              <textarea className="border rounded px-2 py-1 w-full mt-1" rows={4} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
+              <textarea className="border rounded px-2 py-1 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-blue-200" rows={4} value={editing.content} onChange={(e) => setEditing({ ...editing, content: e.target.value })} />
             </div>
             <div className="flex justify-end gap-2">
               <button className="px-3 py-1 rounded bg-gray-200" onClick={() => setEditing(null)}>
