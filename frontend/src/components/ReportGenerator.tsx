@@ -79,7 +79,7 @@ export default function ReportGenerator({
       {(!hasAssessment || memos.length === 0) && (
         <p className="mt-2 text-xs text-gray-600">
           {memos.length === 0 ? 'メモがありません。' : ''}
-          {!hasAssessment ? (memos.length === 0 ? ' アセスメントも必要です。' : 'アセスメントがありません。') : ''}
+          {missingMessage}
         </p>
       )}
       {loading && <p>生成中...</p>}
