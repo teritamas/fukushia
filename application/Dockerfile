@@ -3,14 +3,13 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # uvインストール
-RUN pip install --upgrade pip && pip install uv
+RUN pip install --upgrade pip --no-cache-dir && pip install --no-cache-dir uv==0.1.39
 
 # ソースコピー
-COPY application/ /app/
+COPY . /app/
 
 # 依存インストール（pyproject.toml/requirements.txtに応じて）
-RUN uv pip install -r requirements.txt || uv pip install --project .
-
+RUN uv sync
 ENV PORT=8080
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
