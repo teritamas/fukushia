@@ -19,7 +19,7 @@ export type Note = {
 
 // 期限ラベルを返すヘルパー関数
 function getDueDateLabel(
-  dueDateObj: { seconds: number } | string | null | undefined
+  dueDateObj: { seconds: number } | string | null | undefined,
 ): string {
   if (!dueDateObj) return "";
   if (typeof dueDateObj === "string") {
@@ -61,10 +61,10 @@ const MemoList: React.FC<MemoListProps> = ({
           : "";
 
         const incompleteTasks = (note.todoItems || []).filter(
-          (t) => !t.isCompleted
+          (t) => !t.isCompleted,
         );
         const completedTasks = (note.todoItems || []).filter(
-          (t) => t.isCompleted
+          (t) => t.isCompleted,
         );
 
         return (

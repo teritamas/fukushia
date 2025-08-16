@@ -28,7 +28,7 @@ export default function ClientList({
       {
         name: newClient.trim(),
         createdAt: Timestamp.now(),
-      }
+      },
     );
     setClients([...clients, newClient.trim()]);
     setNewClient("");
