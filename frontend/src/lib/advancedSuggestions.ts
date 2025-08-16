@@ -11,16 +11,9 @@ export interface AdvancedSuggestResponse {
   used_summary: boolean;
 }
 
-// Re-imported lightweight shape (duplicated to avoid circular import)
-type AssessmentLeaf = string | Record<string, string>;
-type AssessmentCategory = Record<string, AssessmentLeaf>;
-export interface AssessmentDataShape {
-  assessment?: Record<string, AssessmentCategory>;
-}
-
 export async function fetchAdvancedSuggestions(
-  assessmentData: AssessmentDataShape,
-  top_k = 8,
+  assessmentData: any,
+  top_k = 8
 ): Promise<AdvancedSuggestResponse | null> {
   try {
     const API_BASE_URL =
@@ -35,8 +28,7 @@ export async function fetchAdvancedSuggestions(
       }),
     });
     if (!res.ok) return null;
-    const data = await res.json();
-    return data as AdvancedSuggestResponse;
+    return await res.json();
   } catch (e) {
     console.warn("advanced suggestion fetch failed", e);
     return null;

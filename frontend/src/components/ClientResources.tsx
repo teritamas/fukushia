@@ -66,14 +66,105 @@ interface SuggestionEntry {
   matched: string[]; // matched keywords
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE = "http://localhost:8000";
 
 export default function ClientResources({
   clientName,
   assessmentData,
   hasAssessmentPlan,
 }: ClientResourcesProps) {
+  // AIチャットから社会資源追加・除外・メモ追加
+  // resourceInfo: { name: string, exclude?: boolean, reason?: string }
+  const handleAddResource = async (
+    resourceInfo: string | { name: string; exclude?: boolean; reason?: string }
+  ) => {
+    let resourceName = "";
+    let exclude = false;
+    let reason = "";
+    if (typeof resourceInfo === "string") {
+      resourceName = resourceInfo;
+    } else {
+      resourceName = resourceInfo.name;
+      exclude = !!resourceInfo.exclude;
+      reason = resourceInfo.reason || "";
+    }
+    if (
+      !resourceName ||
+      resources.some((r) => r.service_name === resourceName)
+    ) {
+      alert("既に存在するか、無効な資源名です");
+      return;
+    }
+    try {
+      // Firestore: resourcesコレクションにexcludedフラグ追加
+      const newResource: ResourceRecord & { excluded?: boolean } = {
+        service_name: resourceName,
+        description: "AI相談チャットから追加",
+        keywords: [],
+        excluded: exclude,
+      };
+      const ref = collection(db, "resources");
+      const docRef = await addDoc(ref, newResource);
+      setResources((prev) => [{ ...newResource, id: docRef.id }, ...prev]);
+      if (exclude) {
+        setExcludedResources((prev) => new Set([...prev, resourceName]));
+        // client_resourcesにもexcludedフラグとnotes保存
+        if (clientName && docRef.id) {
+          const usageRef = collection(
+            db,
+            `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+          );
+          await addDoc(usageRef, {
+            clientName,
+            resourceId: docRef.id,
+            serviceName: resourceName,
+            status: "excluded",
+            addedAt: serverTimestamp(),
+            addedBy: USER_ID,
+            excluded: true,
+            notes: reason,
+          });
+        }
+        // メモ自動追加（API経由＋notesフィールド）
+        if (docRef.id && reason) {
+          await fetch(`${API_BASE}/resources/${docRef.id}/memos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resource_id: docRef.id, content: reason }),
+          });
+          fetchMemos(docRef.id);
+        }
+        alert(
+          `社会資源「${resourceName}」は対象外として登録され、メモが追加されました。`
+        );
+      } else {
+        // client_resourcesにも通常追加
+        if (clientName && docRef.id) {
+          const usageRef = collection(
+            db,
+            `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+          );
+          await addDoc(usageRef, {
+            clientName,
+            resourceId: docRef.id,
+            serviceName: resourceName,
+            status: "active",
+            addedAt: serverTimestamp(),
+            addedBy: USER_ID,
+            excluded: false,
+          });
+        }
+        alert(`新しい社会資源「${resourceName}」を追加しました`);
+      }
+    } catch (e) {
+      alert("社会資源の追加に失敗しました");
+    }
+  };
+
+  // 除外資源管理
+  const [excludedResources, setExcludedResources] = useState<Set<string>>(
+    new Set()
+  );
   const [usages, setUsages] = useState<ResourceUsageDoc[]>([]);
   const [loadingUsage, setLoadingUsage] = useState(false);
   const [resources, setResources] = useState<ResourceRecord[]>([]);
@@ -114,7 +205,7 @@ export default function ClientResources({
       try {
         const ref = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
+          `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
         );
         const q = query(ref, where("clientName", "==", clientName));
         const snap = await getDocs(q);
@@ -169,7 +260,7 @@ export default function ClientResources({
 
   const existingIds = useMemo(
     () => new Set(usages.map((u) => u.resourceId)),
-    [usages],
+    [usages]
   );
 
   // Extract tokens from assessment for naive suggestion
@@ -205,11 +296,12 @@ export default function ClientResources({
     resources.forEach((r) => {
       if (!r.id) return;
       if (existingIds.has(r.id)) return; // skip already used
+      if (excludedResources.has(r.service_name)) return; // 除外資源は表示しない
       const rKeywords = (r.keywords || []).map((k) => k.toLowerCase());
       const matched = rKeywords.filter((k) => assessmentTokens.has(k));
       // also try simple includes from service_name/category
       const serviceTokens = (r.service_name + " " + (r.category || ""))
-        .split(/[\s/]+/)
+        .split(/[ - -\s/]+/)
         .map((s) => s.toLowerCase());
       serviceTokens.forEach((st) => {
         if (assessmentTokens.has(st) && !matched.includes(st)) matched.push(st);
@@ -226,7 +318,13 @@ export default function ClientResources({
       );
     });
     return result.slice(0, 8);
-  }, [assessmentData, resources, existingIds, assessmentTokens]);
+  }, [
+    assessmentData,
+    resources,
+    existingIds,
+    assessmentTokens,
+    excludedResources,
+  ]);
 
   // Advanced suggestions (LLM + embeddings) – fallback to naive if fails
   const [adv, setAdv] = useState<AdvancedSuggestedResource[] | null>(null);
@@ -268,7 +366,7 @@ export default function ClientResources({
     try {
       const ref = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
       );
       await addDoc(ref, {
         clientName,
@@ -281,10 +379,10 @@ export default function ClientResources({
       // refresh usages list
       const qRef = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
       );
       const qSnap = await getDocs(
-        query(qRef, where("clientName", "==", clientName)),
+        query(qRef, where("clientName", "==", clientName))
       );
       const list: ResourceUsageDoc[] = qSnap.docs.map((d) => {
         const data = d.data() as DocumentData;
@@ -421,12 +519,12 @@ export default function ClientResources({
     try {
       const ref = doc(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`,
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`
       );
       const newStatus = u.status === "active" ? "ended" : "active";
       await updateDoc(ref, { status: newStatus });
       setUsages((prev) =>
-        prev.map((p) => (p.id === u.id ? { ...p, status: newStatus } : p)),
+        prev.map((p) => (p.id === u.id ? { ...p, status: newStatus } : p))
       );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "状態更新失敗");
@@ -440,10 +538,7 @@ export default function ClientResources({
     setRemovingIds((prev) => ({ ...prev, [u.id]: true }));
     try {
       await deleteDoc(
-        doc(
-          db,
-          `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`,
-        ),
+        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`)
       );
       setUsages((prev) => prev.filter((p) => p.id !== u.id));
     } catch (e: unknown) {
@@ -505,11 +600,7 @@ export default function ClientResources({
                       {u.serviceName}
                     </button>
                     <span
-                      className={`chip ${
-                        u.status === "active"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
+                      className={`chip ${u.status === "active" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}
                     >
                       {u.status === "active" ? "利用中" : "終了"}
                     </span>
@@ -593,32 +684,34 @@ export default function ClientResources({
               <ul className="space-y-2">
                 {adv &&
                   adv.length > 0 &&
-                  adv.map((a) => {
-                    const already = existingIds.has(a.resource_id);
-                    const r = resources.find((r) => r.id === a.resource_id);
-                    return (
-                      <ResourceSuggestionCard
-                        key={a.resource_id}
-                        resource={
-                          r ||
-                          ({
-                            id: a.resource_id,
-                            service_name: a.service_name,
-                            description: a.excerpt,
-                          } as ResourceRecord)
-                        }
-                        meta={{
-                          badge: "AI",
-                          matched: a.matched_keywords,
-                          score: a.score,
-                          alreadyUsed: already,
-                        }}
-                        onOpenDetail={openDetail}
-                        onAdd={r ? addUsage : undefined}
-                        addDisabled={addingIds[a.resource_id] || already}
-                      />
-                    );
-                  })}
+                  adv
+                    .filter((a) => !existingIds.has(a.resource_id))
+                    .map((a) => {
+                      const already = existingIds.has(a.resource_id);
+                      const r = resources.find((r) => r.id === a.resource_id);
+                      return (
+                        <ResourceSuggestionCard
+                          key={a.resource_id}
+                          resource={
+                            r ||
+                            ({
+                              id: a.resource_id,
+                              service_name: a.service_name,
+                              description: a.excerpt,
+                            } as ResourceRecord)
+                          }
+                          meta={{
+                            badge: "AI",
+                            matched: a.matched_keywords,
+                            score: a.score,
+                            alreadyUsed: already,
+                          }}
+                          onOpenDetail={openDetail}
+                          onAdd={r ? addUsage : undefined}
+                          addDisabled={addingIds[a.resource_id] || already}
+                        />
+                      );
+                    })}
                 {(!adv || adv.length === 0) &&
                   suggestions.map((s) => (
                     <ResourceSuggestionCard
@@ -730,7 +823,7 @@ export default function ClientResources({
                               </button>
                             </div>
                           </li>
-                        ),
+                        )
                       )}
                       {detailId &&
                         (memos[detailId]?.length ?? 0) === 0 &&

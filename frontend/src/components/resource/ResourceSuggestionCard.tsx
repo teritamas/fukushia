@@ -28,11 +28,11 @@ export default function ResourceSuggestionCard({
           {resource.service_name}
           {meta?.badge && <span className="ml-1 chip">{meta.badge}</span>}
         </button>
-        {onAdd && (
+        {onAdd && !meta?.alreadyUsed && (
           <button
             onClick={() => onAdd(resource)}
             disabled={addDisabled}
-            className="gbtn primary text-[11px] h-8 disabled:opacity-60"
+            className="border border-blue-400 text-blue-600 bg-white text-[11px] h-8 px-3 rounded hover:bg-blue-50 disabled:opacity-60"
           >
             追加
           </button>
