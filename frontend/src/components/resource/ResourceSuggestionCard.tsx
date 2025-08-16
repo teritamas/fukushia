@@ -32,7 +32,7 @@ export default function ResourceSuggestionCard({
           <button
             onClick={() => onAdd(resource)}
             disabled={addDisabled}
-            className="border border-blue-400 text-blue-600 bg-white text-[11px] h-8 px-3 rounded hover:bg-blue-50 disabled:opacity-60"
+            className="border [border-[var(--brand-600)]] text-[var(--brand-600)] bg-[var(--surface)] text-[11px] h-8 px-3 rounded hover:bg-[var(--gbtn-hover-bg)] disabled:opacity-60"
           >
             追加
           </button>

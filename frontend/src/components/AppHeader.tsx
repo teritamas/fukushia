@@ -41,7 +41,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
       try {
         const ref = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/clients`,
+          `artifacts/${APP_ID}/users/${USER_ID}/clients`
         );
         const q = query(ref, orderBy("createdAt", "asc"));
         const snap = await getDocs(q);
@@ -79,7 +79,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
     try {
       const ref = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/clients`,
+        `artifacts/${APP_ID}/users/${USER_ID}/clients`
       );
       const docRef = await addDoc(ref, {
         name: newName.trim(),
@@ -140,7 +140,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     setMenuOpen(false);
                   }
                 }}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-blue-600 text-white border-transparent" : "bg-white/95 text-gray-800 border-white/70"}`}
+                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-blue-600 text-white border-transparent" : "bg-white/95 text-gray-800 border-white/70 dark:bg-gray-900 dark:text-gray-200 dark:border-white/10"}`}
               >
                 <span className="truncate max-w-[170px]">
                   {currentClient?.name ||
@@ -166,7 +166,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                         <button
                           key={c.id}
                           onClick={() => onSelect(c.id)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 hover-scale flex items-center justify-between ${isSelected ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-800"}`}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 hover-scale flex items-center justify-between ${isSelected ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-800 dark:text-gray-200"}`}
                           aria-current={isSelected ? "true" : undefined}
                         >
                           <span className="truncate">{c.name}</span>
@@ -179,7 +179,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     <div className="my-1 border-t" />
                     <button
                       onClick={() => onSelect("__add__")}
-                      className="w-full text-left px-3 py-2 text-sm text-[var(--brand-600)] hover:bg-gray-50 hover-scale"
+                      className="w-full text-left px-3 py-2 text-sm text-[var(--brand-600)] hover:bg-gray-50 dark:hover:bg-white/5 hover-scale"
                     >
                       新しい支援対象者を追加
                     </button>
@@ -192,7 +192,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 key={item.key}
                 onClick={() => onChange(item.key)}
                 aria-current={active === item.key ? "page" : undefined}
-                className={`px-3 py-2 rounded-full text-sm transition border shadow-sm hover-scale ${active === item.key ? "bg-blue-600 text-white border-blue-600" : "bg-white/95 text-gray-800 border-white/70 hover:bg-white"} `}
+                className={`px-3 py-2 rounded-full text-sm transition border shadow-sm hover-scale ${active === item.key ? "bg-blue-600 text-white border-blue-600" : "bg-white/95 text-gray-800 border-white/70 hover:bg-white dark:bg-gray-900 dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/5"} `}
               >
                 <span>{item.label}</span>
               </button>
@@ -253,7 +253,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 </div>
               </div>
             </div>,
-            document.body,
+            document.body
           )}
       </div>
     </header>

@@ -40,7 +40,7 @@ const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
 function getCollectionPath(
   app_id: string,
   user_id: string,
-  type: "clients" | "notes",
+  type: "clients" | "notes"
 ) {
   return `artifacts/${app_id}/users/${user_id}/${type}`;
 }
@@ -48,7 +48,7 @@ function getCollectionPath(
 export default function MemoTaskManager() {
   // filters
   const [filter, setFilter] = useState<"all" | "incomplete" | "complete">(
-    "all",
+    "all"
   );
 
   // create form state
@@ -92,7 +92,7 @@ export default function MemoTaskManager() {
           content: doc.data().content ?? "",
           todoItems: (doc.data().todoItems ?? []) as TodoItem[],
           timestamp: doc.data().timestamp ?? { toDate: () => new Date() },
-        })),
+        }))
       );
     };
     run();
@@ -102,10 +102,10 @@ export default function MemoTaskManager() {
   const handleTaskChange = (
     id: string,
     field: "text" | "dueDate",
-    value: string,
+    value: string
   ) => {
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)),
+      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
     );
   };
   const addTaskField = () =>
@@ -162,7 +162,7 @@ export default function MemoTaskManager() {
         : window.confirm("このメモを削除してもよろしいですか？");
     if (!ok) return;
     await deleteDoc(
-      doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId),
+      doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId)
     );
     setNotes((p) => p.filter((n) => n.id !== noteId));
   };
@@ -170,16 +170,16 @@ export default function MemoTaskManager() {
   const handleToggleTask = async (
     noteId: string,
     taskId: string,
-    isCompleted: boolean,
+    isCompleted: boolean
   ) => {
     const note = notes.find((n) => n.id === noteId);
     if (!note) return;
     const todoItems = (note.todoItems || []).map((t) =>
-      t.id === taskId ? { ...t, isCompleted } : t,
+      t.id === taskId ? { ...t, isCompleted } : t
     );
     await updateDoc(
       doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId),
-      { todoItems },
+      { todoItems }
     );
     setNotes((p) => p.map((n) => (n.id === noteId ? { ...n, todoItems } : n)));
   };
@@ -252,7 +252,7 @@ export default function MemoTaskManager() {
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale"
+                className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-[var(--gbtn-hover-bg)] hover-scale"
                 onClick={() => setSpeaker("本人")}
               >
                 本人
@@ -325,7 +325,7 @@ export default function MemoTaskManager() {
         </div>
 
         <button
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg hover-scale"
+          className="bg-blue-600 hover:bg-[var(--brand-700)] disabled:bg-blue-300 text-white px-4 py-2 rounded-lg hover-scale"
           onClick={handleSaveMemo}
           disabled={!canSave}
         >
@@ -392,7 +392,7 @@ export default function MemoTaskManager() {
                 />
                 <button
                   type="button"
-                  className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300"
+                  className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-[var(--gbtn-hover-bg)]"
                   onClick={() => setEditing({ ...editing, speaker: "本人" })}
                 >
                   本人
@@ -430,12 +430,10 @@ export default function MemoTaskManager() {
                   const { id, speaker, content } = editing;
                   await updateDoc(
                     doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), id),
-                    { speaker, content },
+                    { speaker, content }
                   );
                   setNotes((p) =>
-                    p.map((n) =>
-                      n.id === id ? { ...n, speaker, content } : n,
-                    ),
+                    p.map((n) => (n.id === id ? { ...n, speaker, content } : n))
                   );
                   setEditing(null);
                 }}
