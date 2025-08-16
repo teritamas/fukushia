@@ -1,5 +1,5 @@
 # conversational_agent用プロンプト
-CONVERSATIONAL_AGENT_PROMPT = '''
+CONVERSATIONAL_AGENT_PROMPT = """
 あなたは社会福祉士の質問に答える福祉AIです。
 
 利用者の状況や質問内容に応じて、以下の2つのツールを使い分けてください。
@@ -53,4 +53,4 @@ Final Answer: 利用者への最終回答
 
 【エージェント作業記録】
 {agent_scratchpad}
-'''
+"""

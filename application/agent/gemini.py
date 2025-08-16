@@ -178,11 +178,7 @@ class GeminiAgent:
         """
         # 利用者名・状況・質問内容をエージェントに渡す
         context = json.dumps(assessment_data, ensure_ascii=False, indent=2)[:8000]
-        conv_input = (
-            f"利用者: {client_name}\n"
-            f"状況: {context}\n"
-            f"質問: {message}"
-        )
+        conv_input = f"利用者: {client_name}\n状況: {context}\n質問: {message}"
         try:
             response = self.conversational_agent.invoke({"input": conv_input})
             answer = response.get("output") or response.get("Final Answer")
@@ -190,7 +186,7 @@ class GeminiAgent:
         except Exception as e:
             logging.error(f"会話応答生成失敗: {e}", exc_info=True)
             return f"AI応答生成失敗: {e}"
-    
+
     # --- Lightweight summarization for resource suggestion query embedding ---
     def summarize_for_resource_match(self, raw_text: str) -> str:
         """Summarize assessment free-form concatenated text into focused needs / goals / barriers list.
@@ -211,4 +207,3 @@ class GeminiAgent:
         except Exception as e:
             logging.warning(f"summarize_for_resource_match failed: {e}")
             return raw_text
-        

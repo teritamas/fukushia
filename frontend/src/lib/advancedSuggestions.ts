@@ -13,7 +13,7 @@ export interface AdvancedSuggestResponse {
 
 export async function fetchAdvancedSuggestions(
   assessmentData: unknown,
-  top_k = 8
+  top_k = 8,
 ): Promise<AdvancedSuggestResponse | null> {
   try {
     const API_BASE_URL =

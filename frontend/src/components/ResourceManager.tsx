@@ -106,7 +106,7 @@ export default function ResourceManager() {
     } catch (e: unknown) {
       if (isAbortError(e)) {
         setError(
-          "タイムアウト: バックエンドが起動していない可能性があります (uvicorn を起動してください)。"
+          "タイムアウト: バックエンドが起動していない可能性があります (uvicorn を起動してください)。",
         );
       } else if (e instanceof Error) {
         setError(e.message || "取得エラー");
@@ -132,9 +132,9 @@ export default function ResourceManager() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(
         `${API_BASE_URL}/resources/search?q=${encodeURIComponent(
-          searchQuery.trim()
+          searchQuery.trim(),
         )}`,
-        { signal: controller.signal }
+        { signal: controller.signal },
       );
       clearTimeout(timeoutId);
       const data: unknown = await res.json();
@@ -146,7 +146,7 @@ export default function ResourceManager() {
     } catch (e: unknown) {
       if (isAbortError(e)) {
         setError(
-          "タイムアウト: バックエンドが起動していない可能性があります。"
+          "タイムアウト: バックエンドが起動していない可能性があります。",
         );
       } else if (e instanceof Error) {
         setError(e.message || "検索エラー");
@@ -205,7 +205,7 @@ export default function ResourceManager() {
       !confirm(
         `local_resources.json を読み込み${
           overwrite ? " (上書きあり)" : ""
-        } しますか？`
+        } しますか？`,
       )
     )
       return;
@@ -214,7 +214,7 @@ export default function ResourceManager() {
     try {
       const res = await fetch(
         `${API_BASE_URL}/resources/import-local?overwrite=${overwrite}`,
-        { method: "POST" }
+        { method: "POST" },
       );
       const data: unknown = await res.json();
       if (!res.ok) {
@@ -262,7 +262,7 @@ export default function ResourceManager() {
       setMemoLoading((prev) => ({ ...prev, [resourceId]: true }));
       try {
         const res = await fetch(
-          `${API_BASE_URL}/resources/${resourceId}/memos`
+          `${API_BASE_URL}/resources/${resourceId}/memos`,
         );
         const data: unknown = await res.json();
         if (!res.ok) {
@@ -276,7 +276,7 @@ export default function ResourceManager() {
         setMemoLoading((prev) => ({ ...prev, [resourceId]: false }));
       }
     },
-    [API_BASE_URL]
+    [API_BASE_URL],
   );
 
   // 詳細モーダルが開いた時にメモ未取得なら取得
@@ -297,7 +297,7 @@ export default function ResourceManager() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ resource_id: detailResource.id, content }),
-        }
+        },
       );
       const data: unknown = await res.json();
       if (!res.ok) {
@@ -568,7 +568,7 @@ export default function ResourceManager() {
           <div className="grid md:grid-cols-2 gap-4">
             {resources.map((r) => {
               const typeBadge = /制度/.test(
-                `${r.category || ""} ${r.service_name || ""}`
+                `${r.category || ""} ${r.service_name || ""}`,
               )
                 ? "制度"
                 : "サービス";

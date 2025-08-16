@@ -975,14 +975,17 @@ async def reindex_resources():
     _ensure_resource_embeddings()
     return {"embedded": len(_resource_embeddings)}
 
+
 # --- AI対話型支援計画エンドポイント ---
 class InteractiveSupportPlanRequest(BaseModel):
     client_name: str
     assessment_data: dict
     message: str
 
+
 class InteractiveSupportPlanResponse(BaseModel):
     reply: str
+
 
 @app.post("/interactive_support_plan", response_model=InteractiveSupportPlanResponse)
 async def interactive_support_plan(req: InteractiveSupportPlanRequest):
@@ -990,9 +993,7 @@ async def interactive_support_plan(req: InteractiveSupportPlanRequest):
     try:
         # gemini.pyの対話生成関数を呼び出し
         reply = agent.generate_interactive_support_plan(
-            client_name=req.client_name,
-            assessment_data=req.assessment_data,
-            message=req.message
+            client_name=req.client_name, assessment_data=req.assessment_data, message=req.message
         )
         return InteractiveSupportPlanResponse(reply=reply)
     except Exception as e:
