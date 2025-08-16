@@ -27,7 +27,7 @@ jobs:
         run: |
           curl -Ls https://astral.sh/uv/install.sh | sh
           cd application
-          uv sync
+          uv sync --dev
           uv run ruff format .
 
       - name: Run formatters
