@@ -14,22 +14,9 @@ import {
 } from "firebase/firestore";
 import { useClientContext } from "./ClientContext";
 
-// ClientWorkspace will become the central hub for managing a client.
-// For now, it will just have tabs to switch between client details and assessment.
-// Row background helper: changed fields are highlighted; otherwise zebra per row
-const getRowBackgroundColor = (changed: boolean, rowIndex: number): string => {
-  if (changed) return "bg-yellow-50";
-  return rowIndex % 2 === 0 ? "bg-gray-50" : "bg-white";
-};
-
 export default function ClientWorkspace() {
   const [activeTab, setActiveTab] = useState<"detail" | "assessment">("detail");
-  const {
-    currentClient,
-    setCurrentClient,
-    requestAssessmentEdit,
-    homeNavSignal,
-  } = useClientContext();
+  const { currentClient, setCurrentClient, homeNavSignal } = useClientContext();
   // 個別基本情報はアセスメントの本人情報を参照
   const [personalInfo, setPersonalInfo] = useState<Record<string, string>>({});
   const [prevPersonalInfo, setPrevPersonalInfo] = useState<Record<
@@ -40,6 +27,14 @@ export default function ClientWorkspace() {
   const [hasAssessment, setHasAssessment] = useState(false);
   const [personalLoading, setPersonalLoading] = useState(false);
   const [personalError, setPersonalError] = useState<string | null>(null);
+
+  // prevent unused var lint warnings (values are kept for future UI)
+  void personalInfo;
+  void prevPersonalInfo;
+  void changedKeys;
+  void hasAssessment;
+  void personalLoading;
+  void personalError;
   const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
   const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
 

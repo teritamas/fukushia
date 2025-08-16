@@ -12,7 +12,6 @@ import {
   Timestamp,
   deleteDoc,
 } from "firebase/firestore";
-import ReportGenerator from "./ReportGenerator";
 import ClientResources, { AssessmentDataShape } from "./ClientResources";
 import MemoList, { Note as SharedNote } from "./MemoList";
 import SupportAgentChatUI from "./SupportAgentChatUI";

@@ -12,7 +12,7 @@ export interface AdvancedSuggestResponse {
 }
 
 export async function fetchAdvancedSuggestions(
-  assessmentData: any,
+  assessmentData: unknown,
   top_k = 8
 ): Promise<AdvancedSuggestResponse | null> {
   try {
