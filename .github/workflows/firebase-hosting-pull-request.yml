@@ -3,10 +3,9 @@
 
 name: Deploy to Firebase Hosting on PR
 on:
-  workflow_run:
-    workflows: ["Auto Format & Push"] # フォーマットの適応後実行
-    types:
-      - completed
+  pull_request:
+    branches:
+      - main
 permissions:
   checks: write
   contents: read
