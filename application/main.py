@@ -33,6 +33,7 @@ from google.api_core.exceptions import NotFound as FirestoreNotFound, FailedPrec
 TARGET_APP_ID = os.getenv("TARGET_FIREBASE_APP_ID", "1:667712908416:web:ad84cae4853ac6de444a65")
 TARGET_USER_ID = os.getenv("TARGET_FIREBASE_USER_ID", "firebase-adminsdk-fbsvc@tritama-e20cf.iam.gserviceaccount.com")
 
+
 def _resource_collection():
     return (
         db.collection("artifacts")
@@ -41,6 +42,7 @@ def _resource_collection():
         .document(TARGET_USER_ID)
         .collection("resources")
     )
+
 
 def _resource_memo_collection():
     return (
@@ -51,10 +53,12 @@ def _resource_memo_collection():
         .collection("resource_memos")
     )
 
+
 # AssessmentMappingRequestモデルの定義
 class AssessmentMappingRequest(BaseModel):
     text_content: str
     assessment_items: list
+
 
 # Firestoreクライアント初期化: Firebase Admin 経由 (FIREBASE_SERVICE_ACCOUNT) 優先 / なければ Application Default
 def _init_firestore():
@@ -77,6 +81,7 @@ def _init_firestore():
             logger.error(f"Firestore 初期化に失敗しました: {inner}")
             raise
 
+
 db = _init_firestore()
 
 # .envファイルから環境変数を読み込む
@@ -95,6 +100,7 @@ logger = logging.getLogger(__name__)
 EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "models/text-embedding-004")
 _resource_embeddings: dict[str, list[float]] = {}
 
+
 def _cosine(a: list[float], b: list[float]) -> float:
     if not a or not b or len(a) != len(b):
         return 0.0
@@ -102,6 +108,7 @@ def _cosine(a: list[float], b: list[float]) -> float:
     na = math.sqrt(sum(x * x for x in a)) or 1e-9
     nb = math.sqrt(sum(y * y for y in b)) or 1e-9
     return dot / (na * nb)
+
 
 def _embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a list of texts returning list of float vectors.
@@ -146,6 +153,7 @@ def _embed_texts(texts: list[str]) -> list[list[float]]:
     # Fallback: return empty vectors preserving length
     return [[] for _ in texts]
 
+
 def _resource_to_corpus(r: Resource) -> str:
     parts = [
         r.service_name or "",
@@ -157,6 +165,7 @@ def _resource_to_corpus(r: Resource) -> str:
         " ".join(r.keywords or []),
     ]
     return "\n".join([p for p in parts if p])
+
 
 def _ensure_resource_embeddings():
     if _resource_embeddings:
@@ -178,6 +187,7 @@ def _ensure_resource_embeddings():
     except Exception as e:
         logger.error(f"Failed to build embeddings: {e}")
 
+
 def _refresh_resource_embedding(resource_id: str):
     try:
         snap = _resource_collection().document(resource_id).get()
@@ -190,6 +200,7 @@ def _refresh_resource_embedding(resource_id: str):
             _resource_embeddings[resource_id] = vec
     except Exception as e:
         logger.warning(f"refresh embedding failed: {e}")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -205,6 +216,7 @@ async def lifespan(app: FastAPI):
     # アプリケーション終了時に実行
     logger.info("アプリケーションをシャットダウンします...")
 
+
 app = FastAPI(lifespan=lifespan)
 # CORS設定（React/Next.jsからのリクエストを許可）
 app.add_middleware(
@@ -214,6 +226,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # --- Exponential Backoff Utility ---
 def exponential_backoff(func, max_attempts=5, initial_delay=1, max_delay=16):
@@ -230,6 +243,7 @@ def exponential_backoff(func, max_attempts=5, initial_delay=1, max_delay=16):
             time.sleep(delay + random.uniform(0, 0.5))
             delay = min(delay * 2, max_delay)
 
+
 # --- 活動報告書生成エンドポイント ---
 @app.post("/reports/activity/")
 async def generate_activity_report(req: ActivityReportRequest):
@@ -243,6 +257,7 @@ async def generate_activity_report(req: ActivityReportRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
     return {"report": report}
+
 
 # --- アセスメント項目取得エンドポイント ---
 @app.get("/assessment_items/")
@@ -262,6 +277,7 @@ async def get_assessment_items():
             detail=f"アセスメント項目の取得中にエラーが発生しました: {str(e)}",
         )
 
+
 # --- アセスメントマッピングエンドポイント ---
 @app.post("/assessment/map/")
 async def map_assessment(req: AssessmentMappingRequest, request: Request):
@@ -278,9 +294,11 @@ async def map_assessment(req: AssessmentMappingRequest, request: Request):
             detail=f"アセスメントマッピング中にエラーが発生しました: {str(e)}",
         )
 
+
 # SupportPlanRequestモデルの定義
 class SupportPlanRequest(BaseModel):
     assessment_data: dict  # 必要に応じて型やフィールドを調整
+
 
 # --- 支援計画生成エンドポイント ---
 @app.post("/support-plan/generate/")
@@ -299,7 +317,9 @@ async def generate_support_plan(req: SupportPlanRequest, request: Request):
             detail=f"支援計画の生成中にエラーが発生しました: {str(e)}",
         )
 
+
 # --- 社会資源 CRUD エンドポイント ---
+
 
 def _resource_doc_to_model(doc) -> Resource:
     data = doc.to_dict()
@@ -339,6 +359,7 @@ def _resource_doc_to_model(doc) -> Resource:
         last_verified_at=data.get("last_verified_at"),
     )
 
+
 @app.post("/resources/", response_model=Resource)
 async def create_resource(resource: ResourceCreate):
     try:
@@ -376,6 +397,7 @@ async def create_resource(resource: ResourceCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源登録失敗: {e}")
 
+
 @app.get("/resources/", response_model=List[Resource])
 async def list_resources():
     try:
@@ -393,6 +415,7 @@ async def list_resources():
         return items
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源一覧取得失敗: {e}")
+
 
 @app.get("/resources/search", response_model=List[Resource])
 async def search_resources(q: str, limit: int = 100):
@@ -466,12 +489,14 @@ async def search_resources(q: str, limit: int = 100):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源検索失敗: {e}")
 
+
 @app.get("/resources/{resource_id}", response_model=Resource)
 async def get_resource(resource_id: str):
     doc = _resource_collection().document(resource_id).get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="社会資源が見つかりません")
     return _resource_doc_to_model(doc)
+
 
 @app.patch("/resources/{resource_id}", response_model=Resource)
 async def update_resource(resource_id: str, resource: ResourceUpdate):
@@ -513,6 +538,7 @@ async def update_resource(resource_id: str, resource: ResourceUpdate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源更新失敗: {e}")
 
+
 @app.delete("/resources/{resource_id}")
 async def delete_resource(resource_id: str):
     doc_ref = _resource_collection().document(resource_id)
@@ -525,12 +551,14 @@ async def delete_resource(resource_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源削除失敗: {e}")
 
+
 def _candidate_local_resource_paths():
     return [
         os.path.join(os.path.dirname(__file__), "data", "local_resources.json"),
         os.path.join(os.getcwd(), "application", "data", "local_resources.json"),
         os.path.join(os.getcwd(), "data", "local_resources.json"),
     ]
+
 
 def _load_local_resources_file():
     for p in _candidate_local_resource_paths():
@@ -541,6 +569,7 @@ def _load_local_resources_file():
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"ローカル資源ファイル読込失敗: {p}: {e}")
     raise HTTPException(status_code=404, detail="local_resources.json が見つかりませんでした")
+
 
 def _normalize_resource(raw: dict) -> dict:
     contact = raw.get("contact_info") or {}
@@ -560,6 +589,7 @@ def _normalize_resource(raw: dict) -> dict:
         "contact_url": contact.get("url"),
         "keywords": raw.get("keywords", []),
     }
+
 
 @app.post("/resources/import-local")
 async def import_local_resources(overwrite: bool = False, dry_run: bool = False):
@@ -664,6 +694,7 @@ async def import_local_resources(overwrite: bool = False, dry_run: bool = False)
         "skipped_invalid_service_name": skipped_invalid_service_name,
     }
 
+
 # --- Resource Memo CRUD ---
 def _resource_memo_doc_to_model(doc) -> ResourceMemo:
     data = doc.to_dict()
@@ -675,6 +706,7 @@ def _resource_memo_doc_to_model(doc) -> ResourceMemo:
         updated_at=data.get("updated_at", 0.0),
     )
 
+
 @app.post("/resources/{resource_id}/memos", response_model=ResourceMemo)
 async def create_resource_memo(resource_id: str, memo: ResourceMemoCreate):
     # Ensure resource exists
@@ -685,6 +717,7 @@ async def create_resource_memo(resource_id: str, memo: ResourceMemoCreate):
     data = {"resource_id": resource_id, "content": memo.content, "created_at": now, "updated_at": now}
     doc_ref.set(data)
     return _resource_memo_doc_to_model(doc_ref.get())
+
 
 @app.get("/resources/{resource_id}/memos", response_model=list[ResourceMemo])
 async def list_resource_memos(resource_id: str):
@@ -706,6 +739,7 @@ async def list_resource_memos(resource_id: str):
         memos.sort(key=lambda m: m.created_at)
         return memos
 
+
 @app.patch("/resources/memos/{memo_id}", response_model=ResourceMemo)
 async def update_resource_memo(memo_id: str, memo: ResourceMemoUpdate):
     doc_ref = _resource_memo_collection().document(memo_id)
@@ -719,6 +753,7 @@ async def update_resource_memo(memo_id: str, memo: ResourceMemoUpdate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"資源メモ更新失敗: {e}")
 
+
 @app.delete("/resources/memos/{memo_id}")
 async def delete_resource_memo(memo_id: str):
     doc_ref = _resource_memo_collection().document(memo_id)
@@ -729,6 +764,7 @@ async def delete_resource_memo(memo_id: str):
         return {"status": "deleted", "id": memo_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"資源メモ削除失敗: {e}")
+
 
 # --- Advanced Suggestion Endpoints ---
 @app.post("/resources/advanced/suggest", response_model=ResourceSuggestResponse)
@@ -828,14 +864,17 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
         used_summary=used_summary,
     )
 
+
 # --- AI対話型支援計画エンドポイント ---
 class InteractiveSupportPlanRequest(BaseModel):
     client_name: str
     assessment_data: dict
     message: str
 
+
 class InteractiveSupportPlanResponse(BaseModel):
     reply: str
+
 
 @app.post("/interactive_support_plan", response_model=InteractiveSupportPlanResponse)
 async def interactive_support_plan(req: InteractiveSupportPlanRequest):
