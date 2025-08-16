@@ -9,8 +9,10 @@ from langchain_google_community import GoogleSearchAPIWrapper
 from langchain.prompts import PromptTemplate
 
 from .prompts.planner import PLANNER_PROMPT
+from .prompts.conversational_agent import CONVERSATIONAL_AGENT_PROMPT
 from .tools.support_planner_tools import (
-    search_local_resources,
+    search_resource_detail,
+    suggest_resources,
 )
 
 # loggingの設定
@@ -82,21 +84,33 @@ class GeminiAgent:
         )
 
         tools = [
-            search_local_resources,
+            search_resource_detail,
+            suggest_resources,
             google_search_tool,
         ]
 
-        # ReActプロンプトテンプレートの作成
-        # `partial` を使って、プロンプト内で毎回変わらない部分（tools, tool_names）を先に埋める
-        prompt = PromptTemplate.from_template(PLANNER_PROMPT).partial(
+        # プランナー用プロンプト
+        planner_prompt = PromptTemplate.from_template(PLANNER_PROMPT).partial(
             tools=render_text_description(tools),
             tool_names=", ".join([t.name for t in tools]),
         )
-
-        # エージェントの作成
-        agent = create_react_agent(self.llm, tools, prompt)
+        planner_agent_core = create_react_agent(self.llm, tools, planner_prompt)
         self.planner_agent = AgentExecutor(
-            agent=agent,
+            agent=planner_agent_core,
+            tools=tools,
+            verbose=True,
+            handle_parsing_errors=True,
+            max_iterations=10,  # 無限ループを防ぐ
+        )
+
+        # 会話用プロンプト
+        conversational_prompt = PromptTemplate.from_template(CONVERSATIONAL_AGENT_PROMPT).partial(
+            tools=render_text_description(tools),
+            tool_names=", ".join([t.name for t in tools]),
+        )
+        conversational_agent_core = create_react_agent(self.llm, tools, conversational_prompt)
+        self.conversational_agent = AgentExecutor(
+            agent=conversational_agent_core,
             tools=tools,
             verbose=True,
             handle_parsing_errors=True,
@@ -157,6 +171,21 @@ class GeminiAgent:
         except Exception as e:
             logging.error(f"Planner Agent execution failed: {e}", exc_info=True)
             return f"支援計画の生成中にエラーが発生しました: {e}"
+
+    def generate_interactive_support_plan(self, client_name: str, assessment_data: dict, message: str) -> str:
+        """
+        会話型エージェントで、ユーザーの質問・会話に自然な文章で答える。
+        """
+        # 利用者名・状況・質問内容をエージェントに渡す
+        context = json.dumps(assessment_data, ensure_ascii=False, indent=2)[:8000]
+        conv_input = f"利用者: {client_name}\n状況: {context}\n質問: {message}"
+        try:
+            response = self.conversational_agent.invoke({"input": conv_input})
+            answer = response.get("output") or response.get("Final Answer")
+            return answer if answer else "AI応答生成に失敗しました。"
+        except Exception as e:
+            logging.error(f"会話応答生成失敗: {e}", exc_info=True)
+            return f"AI応答生成失敗: {e}"
 
     # --- Lightweight summarization for resource suggestion query embedding ---
     def summarize_for_resource_match(self, raw_text: str) -> str:

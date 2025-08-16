@@ -116,7 +116,7 @@ export default function ResourceManager() {
     } finally {
       setResourcesLoading(false);
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -257,29 +257,34 @@ export default function ResourceManager() {
     }
   };
 
-  const fetchMemos = async (resourceId: string) => {
-    setMemoLoading((prev) => ({ ...prev, [resourceId]: true }));
-    try {
-      const res = await fetch(`${API_BASE_URL}/resources/${resourceId}/memos`);
-      const data: unknown = await res.json();
-      if (!res.ok) {
-        const detail = (data as { detail?: string })?.detail;
-        throw new Error(detail || "メモ取得失敗");
+  const fetchMemos = useCallback(
+    async (resourceId: string) => {
+      setMemoLoading((prev) => ({ ...prev, [resourceId]: true }));
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/resources/${resourceId}/memos`,
+        );
+        const data: unknown = await res.json();
+        if (!res.ok) {
+          const detail = (data as { detail?: string })?.detail;
+          throw new Error(detail || "メモ取得失敗");
+        }
+        setMemos((prev) => ({ ...prev, [resourceId]: data as ResourceMemo[] }));
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "メモ取得失敗");
+      } finally {
+        setMemoLoading((prev) => ({ ...prev, [resourceId]: false }));
       }
-      setMemos((prev) => ({ ...prev, [resourceId]: data as ResourceMemo[] }));
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "メモ取得失敗");
-    } finally {
-      setMemoLoading((prev) => ({ ...prev, [resourceId]: false }));
-    }
-  };
+    },
+    [API_BASE_URL],
+  );
 
   // 詳細モーダルが開いた時にメモ未取得なら取得
   useEffect(() => {
     if (detailResource?.id && !memos[detailResource.id]) {
       fetchMemos(detailResource.id);
     }
-  }, [detailResource, memos]);
+  }, [detailResource, memos, fetchMemos]);
 
   const addMemoInDetail = async () => {
     if (!detailResource?.id) return;
