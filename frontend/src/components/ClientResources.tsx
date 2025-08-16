@@ -114,7 +114,7 @@ export default function ClientResources({
       try {
         const ref = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+          `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
         );
         const q = query(ref, where("clientName", "==", clientName));
         const snap = await getDocs(q);
@@ -169,7 +169,7 @@ export default function ClientResources({
 
   const existingIds = useMemo(
     () => new Set(usages.map((u) => u.resourceId)),
-    [usages]
+    [usages],
   );
 
   // Extract tokens from assessment for naive suggestion
@@ -268,7 +268,7 @@ export default function ClientResources({
     try {
       const ref = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
       );
       await addDoc(ref, {
         clientName,
@@ -281,10 +281,10 @@ export default function ClientResources({
       // refresh usages list
       const qRef = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
       );
       const qSnap = await getDocs(
-        query(qRef, where("clientName", "==", clientName))
+        query(qRef, where("clientName", "==", clientName)),
       );
       const list: ResourceUsageDoc[] = qSnap.docs.map((d) => {
         const data = d.data() as DocumentData;
@@ -421,12 +421,12 @@ export default function ClientResources({
     try {
       const ref = doc(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`,
       );
       const newStatus = u.status === "active" ? "ended" : "active";
       await updateDoc(ref, { status: newStatus });
       setUsages((prev) =>
-        prev.map((p) => (p.id === u.id ? { ...p, status: newStatus } : p))
+        prev.map((p) => (p.id === u.id ? { ...p, status: newStatus } : p)),
       );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "状態更新失敗");
@@ -440,7 +440,10 @@ export default function ClientResources({
     setRemovingIds((prev) => ({ ...prev, [u.id]: true }));
     try {
       await deleteDoc(
-        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`)
+        doc(
+          db,
+          `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`,
+        ),
       );
       setUsages((prev) => prev.filter((p) => p.id !== u.id));
     } catch (e: unknown) {
@@ -727,7 +730,7 @@ export default function ClientResources({
                               </button>
                             </div>
                           </li>
-                        )
+                        ),
                       )}
                       {detailId &&
                         (memos[detailId]?.length ?? 0) === 0 &&

@@ -66,7 +66,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     clientName: string;
   };
   const [assessmentPlan, setAssessmentPlan] = useState<AssessmentPlan | null>(
-    null
+    null,
   );
   const [editableSupportPlan, setEditableSupportPlan] = useState<string>("");
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
@@ -91,10 +91,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const updateTodoField = (
     id: string,
     key: "text" | "dueDate",
-    value: string
+    value: string,
   ) =>
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [key]: value } : t))
+      prev.map((t) => (t.id === id ? { ...t, [key]: value } : t)),
     );
   const handleSaveClientNote = async () => {
     if (!selectedClient) return;
@@ -119,7 +119,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           content: memoContent.trim(),
           todoItems,
           timestamp: Timestamp.now(),
-        }
+        },
       );
       // 再取得でも良いが即時反映
       // Note 型へ合わせる (dueDate は文字列 or {seconds})
@@ -128,7 +128,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         dueDate: t.dueDate
           ? {
               seconds: Math.floor(
-                (t.dueDate as Timestamp).seconds ?? Date.now() / 1000
+                (t.dueDate as Timestamp).seconds ?? Date.now() / 1000,
               ),
             }
           : undefined,
@@ -167,7 +167,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       const USER_ID =
         process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       await deleteDoc(
-        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId)
+        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
       );
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
     } catch (e) {
@@ -180,13 +180,13 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const handleToggleTask = async (
     noteId: string,
     taskId: string,
-    isCompleted: boolean
+    isCompleted: boolean,
   ) => {
     try {
       const note = notes.find((n) => n.id === noteId);
       if (!note) return;
       const updated = (note.todoItems || []).map((t) =>
-        t?.id === taskId ? { ...t, isCompleted } : t
+        t?.id === taskId ? { ...t, isCompleted } : t,
       );
       const APP_ID =
         process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
@@ -194,10 +194,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       await updateDoc(
         doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
-        { todoItems: updated }
+        { todoItems: updated },
       );
       setNotes((prev) =>
-        prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n))
+        prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n)),
       );
     } catch (e) {
       console.error(e);
@@ -243,7 +243,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                 ? `${summary}\n(所感:${sentiment})`
                 : summary;
             }
-          }
+          },
         );
         if (Object.keys(catObj).length === 1) {
           formObj[category] = Object.values(catObj)[0];
@@ -281,7 +281,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     const assessmentRef = doc(
       db,
       `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
-      assessmentPlan.id
+      assessmentPlan.id,
     );
 
     try {
@@ -290,7 +290,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         updatedAt: serverTimestamp(),
       });
       setAssessmentPlan((prev) =>
-        prev ? { ...prev, supportPlan: editableSupportPlan } : null
+        prev ? { ...prev, supportPlan: editableSupportPlan } : null,
       );
       alert("支援計画を保存しました。");
     } catch (error) {
@@ -319,18 +319,18 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         setPlanError(
           typeof data.detail === "string"
             ? data.detail
-            : JSON.stringify(data.detail)
+            : JSON.stringify(data.detail),
         );
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
         setPlanError(
           error.message ||
-            "支援計画の生成中にクライアント側でエラーが発生しました。"
+            "支援計画の生成中にクライアント側でエラーが発生しました。",
         );
       } else {
         setPlanError(
-          "支援計画の生成中にクライアント側でエラーが発生しました。"
+          "支援計画の生成中にクライアント側でエラーが発生しました。",
         );
       }
     } finally {
@@ -357,7 +357,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     const fetchNotes = async () => {
       const notesRef = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/notes`
+        `artifacts/${APP_ID}/users/${USER_ID}/notes`,
       );
       const q = query(notesRef, where("clientName", "==", selectedClient));
       const snap = await getDocs(q);
@@ -366,7 +366,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           id: doc.id,
           clientName: selectedClient,
           ...(doc.data() as LocalNote),
-        }))
+        })),
       );
       setLoading(false);
     };
@@ -377,11 +377,11 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       try {
         const assessmentsRef = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`
+          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
         );
         const q = query(
           assessmentsRef,
-          where("clientName", "==", selectedClient)
+          where("clientName", "==", selectedClient),
         );
         const snap = await getDocs(q);
         const assessments = snap.docs.map((doc) => ({
@@ -392,7 +392,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         if (assessments.length > 0) {
           // 日付でソートして最新のものを取得
           assessments.sort(
-            (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0)
+            (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0),
           );
           const latestAssessment = assessments[0];
           setAssessmentPlan(latestAssessment);
@@ -537,12 +537,13 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                       typeof t?.dueDate === "string"
                         ? t.dueDate
                         : typeof t?.dueDate === "object" &&
-                          t?.dueDate &&
-                          "seconds" in t.dueDate
-                        ? {
-                            seconds: (t.dueDate as { seconds: number }).seconds,
-                          }
-                        : null,
+                            t?.dueDate &&
+                            "seconds" in t.dueDate
+                          ? {
+                              seconds: (t.dueDate as { seconds: number })
+                                .seconds,
+                            }
+                          : null,
                     isCompleted: t?.isCompleted,
                   })),
                 })) as SharedNote[]
@@ -629,14 +630,14 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                             doc(
                               db,
                               `artifacts/${APP_ID}/users/${USER_ID}/notes`,
-                              id
+                              id,
                             ),
-                            { speaker, content }
+                            { speaker, content },
                           );
                           setNotes((p) =>
                             p.map((n) =>
-                              n.id === id ? { ...n, speaker, content } : n
-                            )
+                              n.id === id ? { ...n, speaker, content } : n,
+                            ),
                           );
                           setEditing(null);
                         } catch (e) {
@@ -672,7 +673,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                     <p className="text-sm font-semibold text-gray-600">
                       最終更新日時:{" "}
                       {new Date(
-                        assessmentPlan.createdAt.seconds * 1000
+                        assessmentPlan.createdAt.seconds * 1000,
                       ).toLocaleString()}
                     </p>
                   </div>
@@ -695,7 +696,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                                 {categories &&
                                 typeof categories === "object" ? (
                                   Object.entries(
-                                    categories as unknown as AssessmentCategory
+                                    categories as unknown as AssessmentCategory,
                                   ).map(([category, value]) => (
                                     <div key={category}>
                                       <p className="font-semibold text-gray-600">
@@ -704,17 +705,17 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                                       {value && typeof value === "object" ? (
                                         <ul className="list-disc pl-6 text-gray-500">
                                           {Object.entries(
-                                            value as AssessmentItemDetail
+                                            value as AssessmentItemDetail,
                                           ).map(
                                             ([item, details]: [
                                               string,
-                                              string
+                                              string,
                                             ]) => (
                                               <li key={item}>
                                                 <strong>{item}:</strong>{" "}
                                                 {details || "N/A"}
                                               </li>
-                                            )
+                                            ),
                                           )}
                                         </ul>
                                       ) : null}
@@ -727,7 +728,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                                 )}
                               </div>
                             </div>
-                          )
+                          ),
                         )
                       ) : (
                         <p className="text-sm text-gray-500">

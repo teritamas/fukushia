@@ -1,0 +1,48 @@
+name: Auto Format & Push
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  format-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run Python Formaters
+        run: |
+          curl -Ls https://astral.sh/uv/install.sh | sh
+          cd application
+          uv sync --dev
+          uv run ruff format .
+
+      - name: Run formatters
+        run: |
+          cd frontend
+          npm install --save-dev prettier
+          npx prettier --write .
+
+      - name: Commit & Push changes
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "chore: auto-format by GitHub Actions"
+          git push origin HEAD:$BRANCH_NAME
