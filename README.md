@@ -76,3 +76,12 @@ or
 
 uv run uvicorn main:app --reload
 ```
+
+## Docker で API サーバをビルド・実行する
+
+**application/ ディレクトリで以下を実行してください**
+
+```sh
+docker build -t assessment_api .
+docker run --rm -p 8000:8000 assessment_api
+```
