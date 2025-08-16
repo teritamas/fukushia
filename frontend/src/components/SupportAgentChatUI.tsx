@@ -10,11 +10,12 @@ interface SupportAgentChatUIProps {
   assessmentData: unknown;
   addTaskFromChat?: (task: string) => void;
   onAddResource?: (
-    resourceInfo: string | { name: string; exclude?: boolean; reason?: string },
+    resourceInfo: string | { name: string; exclude?: boolean; reason?: string }
   ) => void;
 }
 
-const API_BASE = "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
   clientName,
@@ -36,7 +37,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     try {
-      const res = await fetch(`${API_BASE}/interactive_support_plan`, {
+      const res = await fetch(`${API_BASE_URL}/interactive_support_plan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -79,24 +80,24 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
       if (!found) {
         // 旧ロジック（制度名＋否定表現）
         const resourceMatch = data.reply.match(
-          /制度名[:：]?\s*([\w\u3040-\u30FF\u4E00-\u9FFF\uFF10-\uFF19\u3000-\u303F]+)/,
+          /制度名[:：]?\s*([\w\u3040-\u30FF\u4E00-\u9FFF\uFF10-\uFF19\u3000-\u303F]+)/
         );
         let exclude = false;
         let reason = "";
         const negativeMatch = data.reply.match(
-          /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/,
+          /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/
         );
         if (negativeMatch) {
           exclude = true;
           const lines = data.reply.split("\n");
           const idx = lines.findIndex((l: string) =>
-            l.includes(resourceMatch ? resourceMatch[1] : ""),
+            l.includes(resourceMatch ? resourceMatch[1] : "")
           );
           reason =
             lines
               .slice(idx + 1)
               .find(
-                (l: string) => negativeMatch[0] && l.includes(negativeMatch[0]),
+                (l: string) => negativeMatch[0] && l.includes(negativeMatch[0])
               ) || negativeMatch[0];
         }
         if (
