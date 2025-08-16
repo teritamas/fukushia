@@ -1,9 +1,8 @@
 name: Auto Format & Push
 
 on:
-  push:
-    branches-ignore:
-      - main
+  pull_request:
+    branches: [main]
 
 jobs:
   format-and-push:
