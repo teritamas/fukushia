@@ -19,7 +19,8 @@ export default function ReportGenerator({
   const [report, setReport] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canGenerate = !!selectedClient && memos.length > 0 && !!hasAssessment && !loading;
+  const canGenerate =
+    !!selectedClient && memos.length > 0 && !!hasAssessment && !loading;
 
   const handleGenerateReport = async () => {
     setLoading(true);
@@ -38,7 +39,9 @@ export default function ReportGenerator({
           : undefined,
         tags: m.tags || [],
       }));
-      const res = await fetch("http://localhost:8000/reports/activity/", {
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+      const res = await fetch(`${API_BASE_URL}/reports/activity/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,9 +70,7 @@ export default function ReportGenerator({
   };
 
   // 警告メッセージを条件に応じて設定
-  const missingMessage = !hasAssessment
-    ? "アセスメントが未登録です。"
-    : "";
+  const missingMessage = !hasAssessment ? "アセスメントが未登録です。" : "";
 
   return (
     <div className="my-4">
@@ -83,7 +84,7 @@ export default function ReportGenerator({
       )}
       {(!hasAssessment || memos.length === 0) && (
         <p className="mt-2 text-xs text-gray-600">
-          {memos.length === 0 ? 'メモがありません。' : ''}
+          {memos.length === 0 ? "メモがありません。" : ""}
           {missingMessage}
         </p>
       )}
