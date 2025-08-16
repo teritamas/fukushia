@@ -525,41 +525,45 @@ export default function AssessmentAssistant() {
           </div>
         </div>
         {saveEditMessage && (
-          <p className="text-xs mb-2 text-gray-600">{saveEditMessage}</p>
+          <p className="text-xs mb-2 text-[var(--muted)]">{saveEditMessage}</p>
         )}
         {currentClient && (
-          <div className="text-sm text-gray-700 mb-3">
+          <div className="text-sm text-[var(--foreground)] mb-3">
             対象支援者:{" "}
             <span className="font-semibold">{currentClient.name}</span>
           </div>
         )}
         {existingLoading && (
-          <p className="text-xs text-gray-500">読み込み中...</p>
+          <p className="text-xs text-[var(--muted)]">読み込み中...</p>
         )}
         {existingError && (
           <p className="text-xs text-red-500">{existingError}</p>
         )}
 
         {showHistory && (
-          <div className="mb-6 surface card-shadow border border-gray-100 rounded-lg p-4 text-xs max-h-64 overflow-auto">
+          <div className="mb-6 surface card-shadow border border-[var(--border)] rounded-lg p-4 text-xs max-h-64 overflow-auto">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-sm section-title">変更履歴</h3>
               {historyLoading && (
-                <span className="text-gray-400 text-[10px]">更新中...</span>
+                <span className="text-[var(--muted)] text-[10px]">
+                  更新中...
+                </span>
               )}
             </div>
             {historyError && <p className="text-red-500">{historyError}</p>}
             {!historyLoading && history.length === 0 && (
-              <p className="text-gray-400 italic">履歴がありません</p>
+              <p className="text-[var(--muted)] italic">履歴がありません</p>
             )}
             <ul className="space-y-2">
               {history.map((h) => (
                 <li
                   key={h.id}
-                  className="surface border border-gray-100 rounded p-2"
+                  className="surface border border-[var(--border)] rounded p-2"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-gray-800">{h.path}</span>
+                    <span className="font-medium text-[var(--foreground)]">
+                      {h.path}
+                    </span>
                     <span className="chip text-[10px]">
                       {h.createdAt?.seconds
                         ? new Date(h.createdAt.seconds * 1000).toLocaleString(
@@ -567,18 +571,18 @@ export default function AssessmentAssistant() {
                           )
                         : ""}
                     </span>
-                    <span className="text-gray-500 text-[11px]">
+                    <span className="text-[var(--muted)] text-[11px]">
                       by データを更新した人の名前
                     </span>
                   </div>
                   <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="rounded border border-gray-200 bg-white p-2">
+                    <div className="rounded border border-[var(--border)] bg-[var(--surface)] p-2">
                       <p className="text-[10px] text-gray-400 mb-0.5">旧</p>
                       <div className="whitespace-pre-wrap break-words max-h-24 overflow-auto">
                         {h.oldValue || "—"}
                       </div>
                     </div>
-                    <div className="rounded border border-gray-200 bg-white p-2">
+                    <div className="rounded border border-[var(--border)] bg-[var(--surface)] p-2">
                       <p className="text-[10px] text-gray-400 mb-0.5">新</p>
                       <div className="whitespace-pre-wrap break-words max-h-24 overflow-auto">
                         {h.newValue || "—"}
@@ -611,7 +615,7 @@ export default function AssessmentAssistant() {
                   className="surface card-shadow border border-gray-100 rounded-lg p-4"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-bold text-gray-800 section-title">
+                    <h3 className="text-lg font-bold text-[var(--foreground)] section-title">
                       {form}
                     </h3>
                   </div>
@@ -644,11 +648,11 @@ export default function AssessmentAssistant() {
                                   e.target.value,
                                 )
                               }
-                              className="rounded-lg border border-gray-200 p-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              className="rounded-lg border border-[var(--border)] p-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                               rows={3}
                             />
                           ) : (
-                            <div className="bg-gray-50 border border-gray-200 rounded p-2 whitespace-pre-wrap leading-relaxed text-gray-800 min-h-[3rem]">
+                            <div className="bg-[var(--surface)] border border-[var(--border)] rounded p-2 whitespace-pre-wrap leading-relaxed text-[var(--foreground)] min-h-[3rem]">
                               {value || "—"}
                             </div>
                           )
@@ -659,9 +663,9 @@ export default function AssessmentAssistant() {
                             ).map(([sub, subVal]) => (
                               <div
                                 key={sub}
-                                className="border border-gray-200 rounded bg-gray-50 p-2"
+                                className="border border-[var(--border)] rounded bg-[var(--chip-bg)] p-2"
                               >
-                                <p className="text-[11px] font-semibold text-gray-500 mb-1">
+                                <p className="text-[11px] font-semibold text-[var(--muted)] mb-1">
                                   {sub}
                                 </p>
                                 {editing ? (
@@ -681,11 +685,11 @@ export default function AssessmentAssistant() {
                                         e.target.value,
                                       )
                                     }
-                                    className="rounded-lg border border-gray-200 p-1 w-full text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                    className="rounded-lg border border-[var(--border)] p-1 w-full text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                                     rows={2}
                                   />
                                 ) : (
-                                  <div className="whitespace-pre-wrap leading-relaxed text-gray-800 text-[12px]">
+                                  <div className="whitespace-pre-wrap leading-relaxed text-[var(--foreground)] text-[12px]">
                                     {subVal || "—"}
                                   </div>
                                 )}
@@ -711,7 +715,7 @@ export default function AssessmentAssistant() {
           <h2 className="text-lg font-semibold section-title">
             保存されたアセスメントはありません
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[var(--muted)]">
             初回アセスメントを作成してください。AI
             が面談記録を解析して各項目へ自動整理します。
           </p>
@@ -764,7 +768,7 @@ export default function AssessmentAssistant() {
                 value={script}
                 onChange={(e) => setScript(e.target.value)}
                 rows={15}
-                className="w-full rounded-lg border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-[var(--border)] p-3 focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                 placeholder="ここに面談記録を貼り付けてください..."
               />
             </div>
@@ -791,7 +795,7 @@ export default function AssessmentAssistant() {
                   <h3 className="text-lg font-bold mb-2 section-title">
                     元の面談記録
                   </h3>
-                  <div className="surface card-shadow border border-gray-100 rounded p-4 h-full overflow-auto text-sm">
+                  <div className="surface card-shadow border border-[var(--border)] rounded p-4 h-full overflow-auto text-sm">
                     <pre className="whitespace-pre-wrap">{script}</pre>
                   </div>
                 </div>
@@ -813,9 +817,9 @@ export default function AssessmentAssistant() {
                     {Object.entries(mappedResult).map(([form, categories]) => (
                       <div
                         key={form}
-                        className="surface card-shadow border border-gray-100 rounded-lg p-4"
+                        className="surface card-shadow border border-[var(--border)] rounded-lg p-4"
                       >
-                        <h4 className="text-md font-bold text-gray-800 section-title mb-2">
+                        <h4 className="text-md font-bold text-[var(--foreground)] section-title mb-2">
                           {form}
                         </h4>
                         <div className="space-y-4">
@@ -826,7 +830,7 @@ export default function AssessmentAssistant() {
                             >,
                           ).map(([category, value]) => (
                             <div key={category}>
-                              <label className="text-sm font-semibold text-gray-600">
+                              <label className="text-sm font-semibold text-[var(--muted)]">
                                 {category}
                               </label>
                               {typeof value === "string" ? (
@@ -842,7 +846,7 @@ export default function AssessmentAssistant() {
                                       e.target.value,
                                     )
                                   }
-                                  className="w-full rounded-lg border border-gray-200 p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                  className="w-full rounded-lg border border-[var(--border)] p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                                   rows={3}
                                 />
                               ) : (
@@ -851,7 +855,7 @@ export default function AssessmentAssistant() {
                                     value as Record<string, string>,
                                   ).map(([subCategory, subValue]) => (
                                     <div key={subCategory}>
-                                      <label className="text-sm font-semibold text-gray-500">
+                                      <label className="text-sm font-semibold text-[var(--muted)]">
                                         {subCategory}
                                       </label>
                                       <textarea
@@ -866,7 +870,7 @@ export default function AssessmentAssistant() {
                                             e.target.value,
                                           )
                                         }
-                                        className="w-full rounded-lg border border-gray-200 p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                        className="w-full rounded-lg border border-[var(--border)] p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                                         rows={2}
                                       />
                                     </div>
@@ -883,8 +887,8 @@ export default function AssessmentAssistant() {
               </div>
             ) : (
               // 初期表示（自動整理前）
-              <div className="surface card-shadow border border-gray-100 rounded p-4 mt-4">
-                <p className="text-center text-gray-500">
+              <div className="surface card-shadow border border-[var(--border)] rounded p-4 mt-4">
+                <p className="text-center text-[var(--muted)]">
                   上記に面談記録を入力し、「アセスメント項目へ反映」ボタンを押してください。
                 </p>
               </div>

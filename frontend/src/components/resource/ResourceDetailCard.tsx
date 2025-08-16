@@ -19,40 +19,49 @@ export default function ResourceDetailCard({
   footer,
 }: Props) {
   return (
-    <div className="relative z-10 w-full max-w-lg surface card-shadow rounded-xl border border-gray-100 p-5 overflow-y-auto max-h-full space-y-3 text-xs">
+    <div className="relative z-10 w-full max-w-lg bg-[var(--surface)] card-shadow rounded-xl border border-[var(--border)] p-5 overflow-y-auto max-h-full space-y-3 text-xs">
       <div className="flex items-center justify-between">
         <h4 className="font-bold section-title text-sm">社会資源・制度詳細</h4>
         {onClose && (
-          <button onClick={onClose} className="gbtn text text-sm h-8">
+          <button
+            onClick={onClose}
+            className="px-3 py-1 text-sm text-[var(--foreground)] h-8"
+          >
             ×
           </button>
         )}
       </div>
-      {loading && <p className="text-gray-500">読込中...</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {loading && <p className="text-[var(--muted)]">読込中...</p>}
+      {error && <p className="text-red-500">{error}</p>}
       {!loading && !error && resource && (
         <div className="space-y-2">
           <div>
-            <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+            <div className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wide">
               名称
             </div>
             <div className="text-sm font-semibold">{resource.service_name}</div>
           </div>
           {resource.category && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">分類:</span>
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                分類:
+              </span>
               <span>{resource.category}</span>
             </div>
           )}
           {resource.target_users && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">対象:</span>
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                対象:
+              </span>
               <span>{resource.target_users}</span>
             </div>
           )}
           {resource.description && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">概要:</span>
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                概要:
+              </span>
               <span className="whitespace-pre-wrap break-words">
                 {resource.description}
               </span>
@@ -60,7 +69,9 @@ export default function ResourceDetailCard({
           )}
           {resource.eligibility && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">要件:</span>
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                要件:
+              </span>
               <span className="whitespace-pre-wrap break-words">
                 {resource.eligibility}
               </span>
@@ -68,7 +79,9 @@ export default function ResourceDetailCard({
           )}
           {resource.application_process && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">手続:</span>
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                手続:
+              </span>
               <span className="whitespace-pre-wrap break-words">
                 {resource.application_process}
               </span>
@@ -76,16 +89,16 @@ export default function ResourceDetailCard({
           )}
           {resource.provider && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">
-                提供主体:
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                分類:
               </span>
               <span>{resource.provider}</span>
             </div>
           )}
           {resource.location && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">
-                地域/所在地:
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                提供主体:
               </span>
               <span>{resource.location}</span>
             </div>
@@ -94,7 +107,7 @@ export default function ResourceDetailCard({
             resource.contact_email ||
             resource.contact_url) && (
             <div className="space-y-1">
-              <div className="font-semibold text-gray-600">連絡先</div>
+              <div className="font-semibold text-[var(--muted)]">連絡先</div>
               {resource.contact_phone && (
                 <div>電話: {resource.contact_phone}</div>
               )}
@@ -117,7 +130,10 @@ export default function ResourceDetailCard({
           )}
           {resource.keywords && resource.keywords.length > 0 && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                地域/所在地:
+              </span>
+              <span className="font-semibold text-[var(--muted)] mr-1">
                 キーワード:
               </span>
               <span className="flex flex-wrap gap-1">
@@ -130,7 +146,7 @@ export default function ResourceDetailCard({
             </div>
           )}
           {resource.last_verified_at && (
-            <div className="text-[10px] text-gray-400">
+            <div className="text-[10px] text-[var(--muted)]">
               最終確認:{" "}
               {new Date(resource.last_verified_at * 1000).toLocaleDateString()}
             </div>

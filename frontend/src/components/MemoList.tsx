@@ -68,17 +68,22 @@ const MemoList: React.FC<MemoListProps> = ({
         );
 
         return (
-          <div key={note.id} className="surface p-3 mb-2">
+          <div
+            key={note.id}
+            className="bg-[var(--surface)] border border-[var(--border)] rounded p-3 mb-2"
+          >
             <div className="flex items-center justify-between">
               <div className="font-bold flex items-center gap-2">
                 <span>{note.clientName}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-500">{dateStr || "-"}</span>
+                <span className="text-xs text-[var(--muted)]">
+                  {dateStr || "-"}
+                </span>
                 {onEditNote && onDeleteNote && (
                   <div className="flex gap-2">
                     <button
-                      className="text-[var(--brand-600)] hover:bg-[#e8f0fe] rounded p-1"
+                      className="text-[var(--brand-600)] hover:bg-[var(--gbtn-hover-bg)] rounded p-1"
                       title="編集"
                       onClick={() => onEditNote(note)}
                     >
@@ -87,7 +92,7 @@ const MemoList: React.FC<MemoListProps> = ({
                       </span>
                     </button>
                     <button
-                      className="text-red-500 hover:bg-red-100 rounded p-1"
+                      className="text-red-500 hover:bg-[var(--gbtn-hover-bg)] rounded p-1"
                       title="削除"
                       onClick={() => onDeleteNote(note.id)}
                     >
@@ -110,13 +115,13 @@ const MemoList: React.FC<MemoListProps> = ({
 
             {incompleteTasks.length > 0 && (
               <div className="mt-2">
-                <span className="text-sm text-gray-600 flex items-center gap-1">
+                <span className="text-sm text-[var(--muted)] flex items-center gap-1">
                   ⏳ 未完了タスク:
                 </span>
                 {incompleteTasks.map((item, i) => (
                   <div
                     key={item.id || `in-${i}`}
-                    className="flex items-center gap-2 bg-yellow-50/70 py-1 px-2 rounded mb-1"
+                    className="flex items-center gap-2 bg-[var(--chip-bg)] py-1 px-2 rounded mb-1"
                   >
                     {onToggleTask && item.id && (
                       <input
@@ -129,7 +134,7 @@ const MemoList: React.FC<MemoListProps> = ({
                     )}
                     <span>{item.text}</span>
                     {item.dueDate && (
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs text-[var(--muted)]">
                         (期限: {getDueDateLabel(item.dueDate)})
                       </span>
                     )}
@@ -146,7 +151,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 {completedTasks.map((item, i) => (
                   <div
                     key={item.id || `co-${i}`}
-                    className="flex items-center gap-2 bg-gray-50 py-[2px] px-2 rounded mb-1"
+                    className="flex items-center gap-2 bg-[var(--chip-bg)] py-[2px] px-2 rounded mb-1"
                   >
                     {onToggleTask && item.id && (
                       <input
@@ -157,11 +162,11 @@ const MemoList: React.FC<MemoListProps> = ({
                         }
                       />
                     )}
-                    <span className="line-through text-gray-400 text-xs">
+                    <span className="line-through text-[var(--muted)] text-xs">
                       {item.text}
                     </span>
                     {item.dueDate && (
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-[10px] text-[var(--muted)]">
                         期限: {getDueDateLabel(item.dueDate)}
                       </span>
                     )}

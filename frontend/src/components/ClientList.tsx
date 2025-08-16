@@ -42,11 +42,11 @@ export default function ClientList({
           value={newClient}
           onChange={(e) => setNewClient(e.target.value)}
           placeholder="新しい支援者名"
-          className="border px-2 py-1 rounded"
+          className="border border-[var(--ginput-border)] px-2 py-1 rounded bg-[var(--surface)] text-[var(--foreground)]"
         />
         <button
           onClick={handleAddClient}
-          className="bg-blue-500 text-white px-3 py-1 rounded"
+          className="bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white px-3 py-1 rounded"
         >
           追加
         </button>
@@ -57,8 +57,8 @@ export default function ClientList({
             key={c}
             className={`px-3 py-1 rounded border ${
               selectedClient === c
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800"
+                ? "bg-[var(--brand-600)] text-white border-transparent"
+                : "bg-[var(--chip-bg)] text-[var(--foreground)] border-[var(--border)]"
             }`}
             onClick={() => setSelectedClient(c)}
           >

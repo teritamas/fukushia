@@ -76,14 +76,14 @@ export default function ReportGenerator({
     <div className="my-4">
       {canGenerate && (
         <button
-          className="bg-purple-600 text-white px-4 py-2 rounded"
+          className="bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white px-4 py-2 rounded"
           onClick={handleGenerateReport}
         >
           活動報告書を生成
         </button>
       )}
       {(!hasAssessment || memos.length === 0) && (
-        <p className="mt-2 text-xs text-gray-600">
+        <p className="mt-2 text-xs text-[var(--muted)]">
           {memos.length === 0 ? "メモがありません。" : ""}
           {missingMessage}
         </p>
@@ -91,7 +91,7 @@ export default function ReportGenerator({
       {loading && <p>生成中...</p>}
       {error && <p className="text-red-500">{error}</p>}
       {report && (
-        <div className="bg-gray-100 rounded p-4 whitespace-pre-wrap mt-2">
+        <div className="bg-[var(--chip-bg)] text-[var(--foreground)] rounded p-4 whitespace-pre-wrap mt-2">
           {report}
         </div>
       )}

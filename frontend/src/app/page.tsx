@@ -42,10 +42,10 @@ export default function Page() {
         requestGoToBasicInfo,
       }}
     >
-      <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="min-h-screen flex flex-col bg-[var(--background)]">
         <AppHeader active={selectedTab} onChange={setSelectedTab} />
         <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 py-6">
-          <div className="surface card-shadow border border-gray-100 p-6">
+          <div className="surface card-shadow border border-[var(--border)] p-6">
             {selectedTab === "clients" && <ClientWorkspace />}
             {selectedTab === "notes" && <MemoTaskManager />}
             {selectedTab === "resources" && <ResourceManager />}

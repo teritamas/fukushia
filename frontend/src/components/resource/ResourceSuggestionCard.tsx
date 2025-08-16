@@ -17,13 +17,13 @@ export default function ResourceSuggestionCard({
   addDisabled,
 }: Props) {
   return (
-    <li className="surface border border-gray-100 rounded-lg p-3 text-xs flex flex-col gap-1">
+    <li className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-3 text-xs flex flex-col gap-1">
       <div className="flex items-start justify-between gap-2">
         <button
           onClick={() =>
             resource.id && onOpenDetail && onOpenDetail(resource.id)
           }
-          className="font-semibold leading-snug break-words text-left underline decoration-dotted hover:text-[var(--brand-600)]"
+          className="font-semibold leading-snug break-words text-left underline decoration-dotted text-[var(--foreground)] hover:text-[var(--brand-600)]"
         >
           {resource.service_name}
           {meta?.badge && <span className="ml-1 chip">{meta.badge}</span>}
@@ -32,24 +32,26 @@ export default function ResourceSuggestionCard({
           <button
             onClick={() => onAdd(resource)}
             disabled={addDisabled}
-            className="border border-blue-400 text-blue-600 bg-white text-[11px] h-8 px-3 rounded hover:bg-blue-50 disabled:opacity-60"
+            className="border border-[var(--brand-600)] text-[var(--brand-600)] bg-[var(--surface)] text-[11px] h-8 px-3 rounded hover:bg-[var(--gbtn-hover-bg)] disabled:opacity-60"
           >
             追加
           </button>
         )}
       </div>
       {resource.description && (
-        <div className="text-[11px] text-gray-600 line-clamp-2">
+        <div className="text-[11px] text-[var(--muted)] line-clamp-2">
           {resource.description}
         </div>
       )}
       {meta?.matched && meta.matched.length > 0 && (
-        <div className="text-[10px] text-gray-500">
+        <div className="text-[10px] text-[var(--muted)]">
           一致:{meta.matched.slice(0, 5).join(", ")}
         </div>
       )}
       {typeof meta?.score === "number" && (
-        <div className="text-[10px] text-gray-400">スコア:{meta.score}</div>
+        <div className="text-[10px] text-[var(--muted)]">
+          スコア:{meta.score}
+        </div>
       )}
     </li>
   );
