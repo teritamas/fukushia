@@ -66,7 +66,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     clientName: string;
   };
   const [assessmentPlan, setAssessmentPlan] = useState<AssessmentPlan | null>(
-    null,
+    null
   );
   const [editableSupportPlan, setEditableSupportPlan] = useState<string>("");
   const [assessmentsLoading, setAssessmentsLoading] = useState(false);
@@ -110,7 +110,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     try {
       const docRef = await addDoc(
         collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`),
-        newNote,
+        newNote
       );
       setNotes((prev) => [
         {
@@ -130,10 +130,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const updateTodoField = (
     id: string,
     key: "text" | "dueDate",
-    value: string,
+    value: string
   ) =>
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [key]: value } : t)),
+      prev.map((t) => (t.id === id ? { ...t, [key]: value } : t))
     );
   const handleSaveClientNote = async () => {
     if (!selectedClient) return;
@@ -158,7 +158,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           content: memoContent.trim(),
           todoItems,
           timestamp: Timestamp.now(),
-        },
+        }
       );
       // 再取得でも良いが即時反映
       // Note 型へ合わせる (dueDate は文字列 or {seconds})
@@ -167,7 +167,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         dueDate: t.dueDate
           ? {
               seconds: Math.floor(
-                (t.dueDate as Timestamp).seconds ?? Date.now() / 1000,
+                (t.dueDate as Timestamp).seconds ?? Date.now() / 1000
               ),
             }
           : undefined,
@@ -206,7 +206,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       const USER_ID =
         process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       await deleteDoc(
-        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
+        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId)
       );
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
     } catch (e) {
@@ -219,13 +219,13 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const handleToggleTask = async (
     noteId: string,
     taskId: string,
-    isCompleted: boolean,
+    isCompleted: boolean
   ) => {
     try {
       const note = notes.find((n) => n.id === noteId);
       if (!note) return;
       const updated = (note.todoItems || []).map((t) =>
-        t?.id === taskId ? { ...t, isCompleted } : t,
+        t?.id === taskId ? { ...t, isCompleted } : t
       );
       const APP_ID =
         process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
@@ -233,10 +233,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       await updateDoc(
         doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
-        { todoItems: updated },
+        { todoItems: updated }
       );
       setNotes((prev) =>
-        prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n)),
+        prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n))
       );
     } catch (e) {
       console.error(e);
@@ -282,7 +282,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                 ? `${summary}\n(所感:${sentiment})`
                 : summary;
             }
-          },
+          }
         );
         if (Object.keys(catObj).length === 1) {
           formObj[category] = Object.values(catObj)[0];
@@ -320,7 +320,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     const assessmentRef = doc(
       db,
       `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
-      assessmentPlan.id,
+      assessmentPlan.id
     );
 
     try {
@@ -329,7 +329,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         updatedAt: serverTimestamp(),
       });
       setAssessmentPlan((prev) =>
-        prev ? { ...prev, supportPlan: editableSupportPlan } : null,
+        prev ? { ...prev, supportPlan: editableSupportPlan } : null
       );
       alert("支援計画を保存しました。");
     } catch (error) {
@@ -358,18 +358,18 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         setPlanError(
           typeof data.detail === "string"
             ? data.detail
-            : JSON.stringify(data.detail),
+            : JSON.stringify(data.detail)
         );
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
         setPlanError(
           error.message ||
-            "支援計画の生成中にクライアント側でエラーが発生しました。",
+            "支援計画の生成中にクライアント側でエラーが発生しました。"
         );
       } else {
         setPlanError(
-          "支援計画の生成中にクライアント側でエラーが発生しました。",
+          "支援計画の生成中にクライアント側でエラーが発生しました。"
         );
       }
     } finally {
@@ -396,7 +396,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     const fetchNotes = async () => {
       const notesRef = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/notes`,
+        `artifacts/${APP_ID}/users/${USER_ID}/notes`
       );
       const q = query(notesRef, where("clientName", "==", selectedClient));
       const snap = await getDocs(q);
@@ -405,7 +405,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           id: doc.id,
           clientName: selectedClient,
           ...(doc.data() as LocalNote),
-        })),
+        }))
       );
       setLoading(false);
     };
@@ -416,11 +416,11 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       try {
         const assessmentsRef = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
+          `artifacts/${APP_ID}/users/${USER_ID}/assessments`
         );
         const q = query(
           assessmentsRef,
-          where("clientName", "==", selectedClient),
+          where("clientName", "==", selectedClient)
         );
         const snap = await getDocs(q);
         const assessments = snap.docs.map((doc) => ({
@@ -431,7 +431,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         if (assessments.length > 0) {
           // 日付でソートして最新のものを取得
           assessments.sort(
-            (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0),
+            (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0)
           );
           const latestAssessment = assessments[0];
           setAssessmentPlan(latestAssessment);
@@ -452,26 +452,26 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   return (
     <div className="flex flex-col md:flex-row gap-6 w-full p-4">
       {/* 左カラム: メモ入力・一覧 */}
-      <div className="flex-1 bg-white rounded-xl card-shadow border border-gray-100 p-6 min-w-[320px]">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+      <div className="flex-1 bg-[var(--surface)] rounded-xl card-shadow border border-[var(--border)] p-6 min-w-[320px]">
+        <h2 className="text-2xl font-semibold mb-4 text-[var(--foreground)]">
           メモ・TODOを入力
         </h2>
         {/* メモ / TODO 入力フォーム */}
-        <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+        <div className="mb-6 p-4 border border-[var(--ginput-border)] rounded-lg bg-[var(--surface)]">
           <div className="mb-2">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-700 w-16">発言者</label>
+              <label className="text-sm text-[var(--muted)] w-16">発言者</label>
               <input
                 value={speaker}
                 onChange={(e) => setSpeaker(e.target.value)}
                 placeholder="例: 本人 / 家族 / その他関係者"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="flex-1 border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
               />
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setSpeaker("本人")}
-                  className="text-xs px-2 py-1 bg-gray-200 rounded-lg hover-scale"
+                  className="text-xs px-2 py-1 bg-[var(--gbtn-hover-bg)] rounded-lg hover-scale text-[var(--foreground)]"
                 >
                   本人
                 </button>
@@ -484,7 +484,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                 </button>
               </div>
             </div>
-            <p className="mt-1 text-[11px] text-gray-500">
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
               誰の発言かを明記してください（例: 本人 / 家族 / その他関係者）。
             </p>
           </div>
@@ -496,7 +496,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
               value={memoContent}
               onChange={(e) => setMemoContent(e.target.value)}
               rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
               placeholder="活動や気づき、課題など"
             />
           </div>
@@ -550,7 +550,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
               (!memoContent.trim() && todos.every((t) => !t.text.trim()))
             }
             onClick={handleSaveClientNote}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm py-2 rounded-lg hover-scale"
+            className="w-full bg-blue-600 hover:bg-[var(--brand-700)] disabled:bg-blue-300 text-white text-sm py-2 rounded-lg hover-scale"
           >
             保存
           </button>
@@ -618,7 +618,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                       />
                       <button
                         type="button"
-                        className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale"
+                        className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-[var(--gbtn-hover-bg)] hover-scale"
                         onClick={() =>
                           setEditing({ ...editing, speaker: "本人" })
                         }
@@ -655,7 +655,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                       キャンセル
                     </button>
                     <button
-                      className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white hover-scale"
+                      className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-[var(--brand-700)] text-white hover-scale"
                       onClick={async () => {
                         try {
                           const APP_ID =
@@ -669,14 +669,14 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                             doc(
                               db,
                               `artifacts/${APP_ID}/users/${USER_ID}/notes`,
-                              id,
+                              id
                             ),
-                            { speaker, content },
+                            { speaker, content }
                           );
                           setNotes((p) =>
                             p.map((n) =>
-                              n.id === id ? { ...n, speaker, content } : n,
-                            ),
+                              n.id === id ? { ...n, speaker, content } : n
+                            )
                           );
                           setEditing(null);
                         } catch (e) {

@@ -10,7 +10,7 @@ interface SupportAgentChatUIProps {
   assessmentData: unknown;
   addTaskFromChat?: (task: string) => void;
   onAddResource?: (
-    resourceInfo: string | { name: string; exclude?: boolean; reason?: string },
+    resourceInfo: string | { name: string; exclude?: boolean; reason?: string }
   ) => void;
 }
 
@@ -80,24 +80,24 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
       if (!found) {
         // 旧ロジック（制度名＋否定表現）
         const resourceMatch = data.reply.match(
-          /制度名[:：]?\s*([\w\u3040-\u30FF\u4E00-\u9FFF\uFF10-\uFF19\u3000-\u303F]+)/,
+          /制度名[:：]?\s*([\w\u3040-\u30FF\u4E00-\u9FFF\uFF10-\uFF19\u3000-\u303F]+)/
         );
         let exclude = false;
         let reason = "";
         const negativeMatch = data.reply.match(
-          /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/,
+          /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/
         );
         if (negativeMatch) {
           exclude = true;
           const lines = data.reply.split("\n");
           const idx = lines.findIndex((l: string) =>
-            l.includes(resourceMatch ? resourceMatch[1] : ""),
+            l.includes(resourceMatch ? resourceMatch[1] : "")
           );
           reason =
             lines
               .slice(idx + 1)
               .find(
-                (l: string) => negativeMatch[0] && l.includes(negativeMatch[0]),
+                (l: string) => negativeMatch[0] && l.includes(negativeMatch[0])
               ) || negativeMatch[0];
         }
         if (
@@ -130,12 +130,12 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
   };
 
   return (
-    <div className="surface border border-blue-100 rounded-lg p-3 mt-4">
+    <div className="surface border border-[var(--border)] rounded-lg p-3 mt-4">
       <div className="space-y-2 max-h-fit overflow-y-auto mb-2">
         {messages.map((m, idx) => (
           <div
             key={idx}
-            className={`text-xs p-2 rounded ${m.role === "user" ? "bg-gray-50 text-gray-700" : "bg-blue-50 text-blue-700"}`}
+            className={`text-xs p-2 rounded ${m.role === "user" ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--gbtn-hover-bg)] text-[var(--brand-700)]"}`}
           >
             <span className="font-bold mr-1">
               {m.role === "user" ? "あなた" : "AI"}
@@ -143,19 +143,21 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
             {m.content}
           </div>
         ))}
-        {loading && <div className="text-xs text-gray-400">AI応答中...</div>}
+        {loading && (
+          <div className="text-xs text-[var(--muted)]">AI応答中...</div>
+        )}
         {error && <div className="text-xs text-red-600">{error}</div>}
         {/* タスク候補表示 */}
         {tasks.length > 0 && (
           <div className="mt-2">
-            <div className="text-xs font-bold text-blue-600 mb-1">
+            <div className="text-xs font-bold text-[var(--brand-600)] mb-1">
               AIが抽出したタスク候補:
             </div>
             {tasks.map((task, i) => (
               <div key={i} className="flex items-center gap-2 mb-1">
-                <span className="text-xs text-gray-800">{task}</span>
+                <span className="text-xs text-[var(--foreground)]">{task}</span>
                 <button
-                  className="border border-blue-400 text-blue-600 bg-white text-xs px-2 py-1 rounded hover:bg-blue-50"
+                  className="border border-[var(--brand-600)] text-[var(--brand-600)] bg-[var(--surface)] text-xs px-2 py-1 rounded hover:bg-[var(--gbtn-hover-bg)]"
                   onClick={() => handleAddTask(task)}
                 >
                   タスクにする
@@ -168,7 +170,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
       <div className="flex gap-2">
         <input
           type="text"
-          className="border rounded px-2 py-1 text-xs flex-1"
+          className="border border-[var(--ginput-border)] rounded px-2 py-1 text-xs flex-1 bg-[var(--surface)] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)]"
           placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
           value={input}
           onChange={(e) => setInput(e.target.value)}

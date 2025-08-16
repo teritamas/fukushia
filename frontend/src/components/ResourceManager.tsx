@@ -106,7 +106,7 @@ export default function ResourceManager() {
     } catch (e: unknown) {
       if (isAbortError(e)) {
         setError(
-          "タイムアウト: バックエンドが起動していない可能性があります (uvicorn を起動してください)。",
+          "タイムアウト: バックエンドが起動していない可能性があります (uvicorn を起動してください)。"
         );
       } else if (e instanceof Error) {
         setError(e.message || "取得エラー");
@@ -132,9 +132,9 @@ export default function ResourceManager() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(
         `${API_BASE_URL}/resources/search?q=${encodeURIComponent(
-          searchQuery.trim(),
+          searchQuery.trim()
         )}`,
-        { signal: controller.signal },
+        { signal: controller.signal }
       );
       clearTimeout(timeoutId);
       const data: unknown = await res.json();
@@ -146,7 +146,7 @@ export default function ResourceManager() {
     } catch (e: unknown) {
       if (isAbortError(e)) {
         setError(
-          "タイムアウト: バックエンドが起動していない可能性があります。",
+          "タイムアウト: バックエンドが起動していない可能性があります。"
         );
       } else if (e instanceof Error) {
         setError(e.message || "検索エラー");
@@ -205,7 +205,7 @@ export default function ResourceManager() {
       !confirm(
         `local_resources.json を読み込み${
           overwrite ? " (上書きあり)" : ""
-        } しますか？`,
+        } しますか？`
       )
     )
       return;
@@ -214,7 +214,7 @@ export default function ResourceManager() {
     try {
       const res = await fetch(
         `${API_BASE_URL}/resources/import-local?overwrite=${overwrite}`,
-        { method: "POST" },
+        { method: "POST" }
       );
       const data: unknown = await res.json();
       if (!res.ok) {
@@ -262,7 +262,7 @@ export default function ResourceManager() {
       setMemoLoading((prev) => ({ ...prev, [resourceId]: true }));
       try {
         const res = await fetch(
-          `${API_BASE_URL}/resources/${resourceId}/memos`,
+          `${API_BASE_URL}/resources/${resourceId}/memos`
         );
         const data: unknown = await res.json();
         if (!res.ok) {
@@ -276,7 +276,7 @@ export default function ResourceManager() {
         setMemoLoading((prev) => ({ ...prev, [resourceId]: false }));
       }
     },
-    [API_BASE_URL],
+    [API_BASE_URL]
   );
 
   // 詳細モーダルが開いた時にメモ未取得なら取得
@@ -297,7 +297,7 @@ export default function ResourceManager() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ resource_id: detailResource.id, content }),
-        },
+        }
       );
       const data: unknown = await res.json();
       if (!res.ok) {
@@ -355,7 +355,7 @@ export default function ResourceManager() {
       </h2>
       {error && <div className="text-red-600 text-sm">{error}</div>}
       {/* 検索バー (常時表示) */}
-      <div className="surface card-shadow border border-gray-100 p-3 sm:p-4 flex flex-wrap gap-2 items-center">
+      <div className="surface card-shadow border border-[var(--border)] p-3 sm:p-4 flex flex-wrap gap-2 items-center">
         <input
           className="ginput flex-1 min-w-[240px]"
           placeholder="検索キーワード (資源＋メモ全文 / スペースAND)"
@@ -392,7 +392,7 @@ export default function ResourceManager() {
         </button>
       </div>
       {showEditor && (
-        <div className="surface card-shadow border border-gray-100 rounded-lg p-4 sm:p-5 space-y-4">
+        <div className="surface card-shadow border border-[var(--border)] rounded-lg p-4 sm:p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input
               className="ginput"
@@ -449,21 +449,21 @@ export default function ResourceManager() {
               onChange={(e) => handleChange("keywords", e.target.value)}
             />
             <textarea
-              className="rounded-lg border border-gray-200 p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="rounded-lg border border-[var(--ginput-border)] p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)]"
               placeholder="概要 / 説明"
               rows={3}
               value={form.description || ""}
               onChange={(e) => handleChange("description", e.target.value)}
             />
             <textarea
-              className="rounded-lg border border-gray-200 p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="rounded-lg border border-[var(--ginput-border)] p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)]"
               placeholder="利用条件"
               rows={2}
               value={form.eligibility || ""}
               onChange={(e) => handleChange("eligibility", e.target.value)}
             />
             <textarea
-              className="rounded-lg border border-gray-200 p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="rounded-lg border border-[var(--ginput-border)] p-3 sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)]"
               placeholder="申請手続き"
               rows={2}
               value={form.application_process || ""}
@@ -505,13 +505,13 @@ export default function ResourceManager() {
               Import上書き
             </button>
             {(actionLoading || resourcesLoading) && (
-              <span className="text-xs text-gray-500 self-center">
+              <span className="text-xs text-[var(--muted)] self-center">
                 処理中...
               </span>
             )}
           </div>
           {importResult && (
-            <div className="text-xs bg-gray-50 border rounded p-2 space-y-1">
+            <div className="text-xs bg-[var(--surface)] border border-[var(--border)] rounded p-2 space-y-1">
               <div className="font-semibold">Import結果</div>
               <div>source: {importResult.source_path}</div>
               <div>
@@ -549,10 +549,10 @@ export default function ResourceManager() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="surface card-shadow border border-gray-100 rounded-lg p-3 space-y-2 animate-pulse"
+                className="surface card-shadow border border-[var(--border)] rounded-lg p-3 space-y-2 animate-pulse"
               >
-                <div className="h-4 bg-gray-200 rounded w-2/3 mb-2" />
-                <div className="h-3 bg-gray-100 rounded w-1/3 mb-1" />
+                <div className="h-4 bg-[var(--surface)] rounded w-2/3 mb-2" />
+                <div className="h-3 bg-[var(--surface)] rounded w-1/3 mb-1" />
                 <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
                 <div className="h-3 bg-gray-100 rounded w-full mb-1" />
                 <div className="h-3 bg-gray-100 rounded w-3/4 mb-1" />
@@ -568,7 +568,7 @@ export default function ResourceManager() {
           <div className="grid md:grid-cols-2 gap-4">
             {resources.map((r) => {
               const typeBadge = /制度/.test(
-                `${r.category || ""} ${r.service_name || ""}`,
+                `${r.category || ""} ${r.service_name || ""}`
               )
                 ? "制度"
                 : "サービス";
@@ -585,14 +585,14 @@ export default function ResourceManager() {
                     <span
                       className={`chip ${
                         typeBadge === "制度"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-emerald-100 text-emerald-700"
+                          ? "bg-[var(--chip-bg)] text-[var(--chip-text)]"
+                          : "bg-[var(--chip-bg)] text-[var(--chip-text)]"
                       }`}
                     >
                       {typeBadge}
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-600 line-clamp-1">
+                  <div className="text-[11px] text-[var(--muted)] line-clamp-1">
                     {r.category}
                   </div>
                   <div className="text-xs line-clamp-3 whitespace-pre-wrap min-h-[2.5rem]">
@@ -602,7 +602,7 @@ export default function ResourceManager() {
                     {(r.keywords || []).join(", ")}
                   </div>
                   {r.last_verified_at && (
-                    <div className="text-[10px] text-gray-400">
+                    <div className="text-[10px] text-[var(--muted)]">
                       確認:
                       {new Date(r.last_verified_at * 1000).toLocaleDateString()}
                     </div>
@@ -613,7 +613,7 @@ export default function ResourceManager() {
                   >
                     <button
                       onClick={() => handleEdit(r)}
-                      className="text-xs text-blue-600 hover:underline"
+                      className="text-xs text-[var(--brand-600)] hover:underline"
                     >
                       編集
                     </button>
@@ -627,7 +627,7 @@ export default function ResourceManager() {
                       onClick={() => {
                         setDetailResource(r);
                       }}
-                      className="text-xs text-emerald-600 hover:underline"
+                      className="text-xs text-[var(--brand-600)] hover:underline"
                     >
                       メモ
                     </button>
@@ -721,7 +721,7 @@ export default function ResourceManager() {
                       {(memos[detailResource.id!] || []).map((m) => (
                         <li
                           key={m.id}
-                          className="text-xs border border-gray-200 rounded p-2 flex justify-between gap-2 items-start bg-white"
+                          className="text-xs border border-[var(--ginput-border)] rounded p-2 flex justify-between gap-2 items-start bg-[var(--surface)]"
                         >
                           <span className="whitespace-pre-wrap flex-1">
                             {m.content}

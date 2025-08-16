@@ -223,11 +223,11 @@ export default function MemoTaskManager() {
   return (
     <div>
       {/* Create form */}
-      <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+      <div className="mb-6 p-4 border border-[var(--ginput-border)] rounded-lg bg-[var(--surface)]">
         <div className="mb-2">
-          <label className="text-sm text-gray-700 mr-2">支援対象者</label>
+          <label className="text-sm text-[var(--muted)] mr-2">支援対象者</label>
           <select
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+            className="border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-sm bg-[var(--surface)] text-[var(--foreground)]"
             value={selectedClient}
             onChange={(e) => setSelectedClient(e.target.value)}
           >
@@ -244,7 +244,7 @@ export default function MemoTaskManager() {
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-700 w-16">発言者</label>
             <input
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
               value={speaker}
               onChange={(e) => setSpeaker(e.target.value)}
               placeholder="例: 本人 / 家族"
@@ -252,31 +252,31 @@ export default function MemoTaskManager() {
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-[var(--gbtn-hover-bg)] hover-scale"
+                className="bg-[var(--gbtn-hover-bg)] text-xs px-2 py-1 rounded-lg hover:bg-[var(--gbtn-hover-bg)] hover-scale text-[var(--foreground)]"
                 onClick={() => setSpeaker("本人")}
               >
                 本人
               </button>
               <button
                 type="button"
-                className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale"
+                className="bg-[var(--gbtn-hover-bg)] text-xs px-2 py-1 rounded-lg hover:bg-[var(--gbtn-hover-bg)] hover-scale text-[var(--foreground)]"
                 onClick={() => setSpeaker("家族")}
               >
                 家族
               </button>
             </div>
           </div>
-          <p className="mt-1 text-[11px] text-gray-500">
+          <p className="mt-1 text-[11px] text-[var(--muted)]">
             誰の発言かを明記してください（例: 本人 / 家族 / その他関係者）。
           </p>
         </div>
 
         <div className="mb-2">
-          <label className="text-sm font-medium text-gray-800 block mb-1">
+          <label className="text-sm font-medium text-[var(--foreground)] block mb-1">
             メモ内容
           </label>
           <textarea
-            className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="border border-[var(--ginput-border)] rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
             value={memoContent}
             onChange={(e) => setMemoContent(e.target.value)}
             placeholder="活動や気づき、課題など"
@@ -298,7 +298,7 @@ export default function MemoTaskManager() {
           {tasks.map((task, idx) => (
             <div key={task.id} className="flex items-center gap-2 mb-1">
               <input
-                className="border border-gray-300 rounded-lg px-3 py-2 text-xs flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-xs flex-1 focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
                 value={task.text}
                 onChange={(e) =>
                   handleTaskChange(task.id, "text", e.target.value)
@@ -307,7 +307,7 @@ export default function MemoTaskManager() {
               />
               <input
                 type="date"
-                className="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
                 value={task.dueDate}
                 onChange={(e) =>
                   handleTaskChange(task.id, "dueDate", e.target.value)
@@ -325,7 +325,7 @@ export default function MemoTaskManager() {
         </div>
 
         <button
-          className="bg-blue-600 hover:bg-[var(--brand-700)] disabled:bg-blue-300 text-white px-4 py-2 rounded-lg hover-scale"
+          className="bg-[var(--brand-600)] hover:bg-[var(--brand-700)] disabled:bg-blue-300 text-white px-4 py-2 rounded-lg hover-scale"
           onClick={handleSaveMemo}
           disabled={!canSave}
         >
@@ -333,25 +333,25 @@ export default function MemoTaskManager() {
         </button>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-3 text-gray-800">
+      <h2 className="text-2xl font-semibold mb-3 text-[var(--foreground)]">
         登録済みメモ
       </h2>
       {/* filters */}
       <div className="mb-4 flex gap-2">
         <button
-          className={`px-3 py-1 rounded-full hover-scale ${filter === "all" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          className={`px-3 py-1 rounded-full hover-scale ${filter === "all" ? "bg-[var(--brand-600)] text-white" : "bg-[var(--surface)]"}`}
           onClick={() => setFilter("all")}
         >
           すべて
         </button>
         <button
-          className={`px-3 py-1 rounded-full hover-scale ${filter === "incomplete" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          className={`px-3 py-1 rounded-full hover-scale ${filter === "incomplete" ? "bg-[var(--brand-600)] text-white" : "bg-[var(--surface)]"}`}
           onClick={() => setFilter("incomplete")}
         >
           未完了タスクあり
         </button>
         <button
-          className={`px-3 py-1 rounded-full hover-scale ${filter === "complete" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          className={`px-3 py-1 rounded-full hover-scale ${filter === "complete" ? "bg-[var(--brand-600)] text-white" : "bg-[var(--surface)]"}`}
           onClick={() => setFilter("complete")}
         >
           完了タスクのみ

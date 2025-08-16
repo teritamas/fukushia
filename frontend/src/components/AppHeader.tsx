@@ -140,7 +140,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     setMenuOpen(false);
                   }
                 }}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-blue-600 text-white border-transparent" : "bg-white/95 text-gray-800 border-white/70 dark:bg-gray-900 dark:text-gray-200 dark:border-white/10"}`}
+                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-[var(--brand-600)] text-white border-transparent" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)]"}`}
               >
                 <span className="truncate max-w-[170px]">
                   {currentClient?.name ||
@@ -150,7 +150,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
               </button>
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-0 w-[300px] rounded-md rounded-t-none border border-gray-200 bg-white text-gray-800 shadow-2xl ring-1 ring-black/5 z-50"
+                  className="absolute right-0 mt-0 w-[300px] rounded-md rounded-t-none border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-2xl ring-1 ring-black/5 z-50"
                   onMouseEnter={() => setMenuOpen(true)}
                   onMouseLeave={() => setMenuOpen(false)}
                 >
@@ -166,12 +166,14 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                         <button
                           key={c.id}
                           onClick={() => onSelect(c.id)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 hover-scale flex items-center justify-between ${isSelected ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-800 dark:text-gray-200"}`}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-[var(--chip-bg)] hover-scale flex items-center justify-between ${isSelected ? "bg-[var(--chip-bg)] text-[var(--brand-700)] font-medium" : "text-[var(--foreground)]"}`}
                           aria-current={isSelected ? "true" : undefined}
                         >
                           <span className="truncate">{c.name}</span>
                           {isSelected && (
-                            <span className="ml-2 text-blue-600">✓</span>
+                            <span className="ml-2 text-[var(--brand-600)]">
+                              ✓
+                            </span>
                           )}
                         </button>
                       );
@@ -192,7 +194,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 key={item.key}
                 onClick={() => onChange(item.key)}
                 aria-current={active === item.key ? "page" : undefined}
-                className={`px-3 py-2 rounded-full text-sm transition border shadow-sm hover-scale ${active === item.key ? "bg-blue-600 text-white border-blue-600" : "bg-white/95 text-gray-800 border-white/70 hover:bg-white dark:bg-gray-900 dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/5"} `}
+                className={`px-3 py-2 rounded-full text-sm transition border shadow-sm hover-scale ${active === item.key ? "bg-[var(--brand-600)] text-white border-[var(--brand-600)]" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface)]"} `}
               >
                 <span>{item.label}</span>
               </button>

@@ -19,7 +19,7 @@ export default function ResourceDetailCard({
   footer,
 }: Props) {
   return (
-    <div className="relative z-10 w-full max-w-lg surface card-shadow rounded-xl border border-gray-100 p-5 overflow-y-auto max-h-full space-y-3 text-xs">
+    <div className="relative z-10 w-full max-w-lg surface card-shadow rounded-xl border border-[var(--border)] p-5 overflow-y-auto max-h-full space-y-3 text-xs">
       <div className="flex items-center justify-between">
         <h4 className="font-bold section-title text-sm">社会資源・制度詳細</h4>
         {onClose && (
@@ -28,19 +28,21 @@ export default function ResourceDetailCard({
           </button>
         )}
       </div>
-      {loading && <p className="text-gray-500">読込中...</p>}
+      {loading && <p className="text-[var(--muted)]">読込中...</p>}
       {error && <p className="text-red-600">{error}</p>}
       {!loading && !error && resource && (
         <div className="space-y-2">
           <div>
-            <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+            <div className="text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wide">
               名称
             </div>
             <div className="text-sm font-semibold">{resource.service_name}</div>
           </div>
           {resource.category && (
             <div>
-              <span className="font-semibold text-gray-600 mr-1">分類:</span>
+              <span className="font-semibold text-[var(--muted)] mr-1">
+                分類:
+              </span>
               <span>{resource.category}</span>
             </div>
           )}
@@ -130,7 +132,7 @@ export default function ResourceDetailCard({
             </div>
           )}
           {resource.last_verified_at && (
-            <div className="text-[10px] text-gray-400">
+            <div className="text-[10px] text-[var(--muted)]">
               最終確認:{" "}
               {new Date(resource.last_verified_at * 1000).toLocaleDateString()}
             </div>
