@@ -14,7 +14,8 @@ interface SupportAgentChatUIProps {
   ) => void;
 }
 
-const API_BASE = "http://localhost:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
   clientName,
@@ -36,7 +37,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     try {
-      const res = await fetch(`${API_BASE}/interactive_support_plan`, {
+      const res = await fetch(`${API_BASE_URL}/interactive_support_plan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

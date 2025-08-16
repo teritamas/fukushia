@@ -3,8 +3,6 @@ from infra.firestore import get_firestore_client
 from typing import List
 from models.pydantic_models import (
     ActivityReportRequest,
-    Memo,
-    Task,
     ResourceCreate,
     ResourceUpdate,
     Resource,
@@ -244,88 +242,6 @@ def exponential_backoff(func, max_attempts=5, initial_delay=1, max_delay=16):
                 raise
             time.sleep(delay + random.uniform(0, 0.5))
             delay = min(delay * 2, max_delay)
-
-
-# Firestoreクライアントの初期化 (二重初期化を避け _init_firestore の結果を利用)
-
-
-# Memoモデルの定義
-class Memo(BaseModel):
-    case_name: str
-    content: str
-    # 必要に応じて他のフィールドを追加
-
-
-# Taskモデルの定義
-class Task(BaseModel):
-    case_name: str
-    description: str
-    # 必要に応じて他のフィールドを追加
-
-
-# --- メモ保存エンドポイント ---
-@app.post("/memos/")
-async def create_memo(memo: Memo):
-    memo_dict = memo.dict()
-    now = time.time()
-    memo_dict["created_at"] = now
-    memo_dict["updated_at"] = now
-    doc_ref = db.collection("memos").document()
-    doc_ref.set(memo_dict)
-    return {"id": doc_ref.id, **memo_dict}
-
-
-# --- メモ取得エンドポイント ---
-@app.get("/memos/{case_name}")
-async def get_memos(case_name: str):
-    memos_ref = db.collection("memos").where("case_name", "==", case_name)
-    docs = memos_ref.stream()
-    memos = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-    return {"memos": memos}
-
-
-# --- タスク保存エンドポイント ---
-@app.post("/tasks/")
-async def create_task(task: Task):
-    task_dict = task.dict()
-    now = time.time()
-    task_dict["created_at"] = now
-    task_dict["updated_at"] = now
-    doc_ref = db.collection("tasks").document()
-    doc_ref.set(task_dict)
-    return {"id": doc_ref.id, **task_dict}
-
-
-# --- タスク取得エンドポイント（ケース名で絞り込み） ---
-@app.get("/tasks/{case_name}")
-async def get_tasks(case_name: str):
-    tasks_ref = db.collection("tasks").where("case_name", "==", case_name)
-    docs = tasks_ref.stream()
-    tasks = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-    return {"tasks": tasks}
-
-
-# --- 社会資源 簡易保存エンドポイント (tasks と同じスタイル) ---
-@app.post("/resources/simple/")
-async def create_resource_simple(resource: ResourceCreate):
-    data = resource.dict()
-    now = time.time()
-    data["created_at"] = now
-    data["updated_at"] = now
-    if not data.get("last_verified_at"):
-        data["last_verified_at"] = now
-    doc_ref = _resource_collection().document()
-    doc_ref.set(data)
-    return {"id": doc_ref.id, **data}
-
-
-# --- 社会資源 簡易取得エンドポイント（service_name で絞り込み） ---
-@app.get("/resources/simple/by-name/{service_name}")
-async def get_resources_by_name(service_name: str):
-    ref = _resource_collection().where("service_name", "==", service_name)
-    docs = ref.stream()
-    items = [{"id": d.id, **d.to_dict()} for d in docs]
-    return {"resources": items}
 
 
 # --- 活動報告書生成エンドポイント ---
@@ -779,25 +695,6 @@ async def import_local_resources(overwrite: bool = False, dry_run: bool = False)
     }
 
 
-@app.get("/firestore/health")
-async def firestore_health():
-    """Firestore 接続と DB 存在チェック。
-    404/NotFound, 権限エラーなどをクライアント向けに分かりやすく返却。
-    """
-    try:
-        # 軽量にランダム doc を取得 (存在しなくて良い) -> DB 存在のために batch_get 呼び出しされる
-        _ = db.collection("__healthcheck").document("ping").get()
-        return {"status": "ok", "project": getattr(db, "project", None)}
-    except FirestoreNotFound:
-        raise HTTPException(status_code=503, detail="Firestore データベース未作成 (Native モードで作成してください)")
-    except PermissionDenied as e:
-        raise HTTPException(status_code=403, detail=f"Firestore 権限不足: {e}")
-    except FailedPrecondition as e:
-        raise HTTPException(status_code=412, detail=f"Firestore 状態エラー: {e}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Firestore ヘルスチェック失敗: {e}")
-
-
 # --- Resource Memo CRUD ---
 def _resource_memo_doc_to_model(doc) -> ResourceMemo:
     data = doc.to_dict()
@@ -966,14 +863,6 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
         ],
         used_summary=used_summary,
     )
-
-
-@app.post("/resources/advanced/reindex")
-async def reindex_resources():
-    global _resource_embeddings
-    _resource_embeddings = {}
-    _ensure_resource_embeddings()
-    return {"embedded": len(_resource_embeddings)}
 
 
 # --- AI対話型支援計画エンドポイント ---
