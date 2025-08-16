@@ -2,6 +2,9 @@
 
 社会福祉士向けのメモ・タスク管理＆アセスメント支援アプリです。Streamlit で動作し、Firebase Firestore と Gemini API を利用します。
 
+- [デモサイト](https://tritama-e20cf.web.app/)
+- [API Docs](https://assessment-assistant-backend-667712908416.europe-west1.run.app/docs)
+
 ## 機能
 
 - 支援者（クライアント）管理
@@ -75,4 +78,14 @@ uvicorn main:app --reload
 or
 
 uv run uvicorn main:app --reload
+```
+
+## Docker で API サーバをビルド・実行する
+
+**application/ ディレクトリで以下を実行してください**
+
+```sh
+cd application
+docker build -t assessment_api .
+docker run --rm -p 8000:8000 assessment_api
 ```
