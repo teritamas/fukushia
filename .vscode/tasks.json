@@ -14,6 +14,30 @@
       }
     },
     {
+      "label": "Format Backend (ruff)",
+      "type": "shell",
+      "command": "cd application && uv sync --dev && uv run ruff format .",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Format Frontend (prettier)",
+      "type": "shell",
+      "command": "cd frontend && npm install --save-dev prettier && npx prettier --write .",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
       "label": "uv run backend",
       "type": "shell",
       "command": "uv run uvicorn main:app --reload",
