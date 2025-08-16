@@ -4,6 +4,7 @@ import { collection, getDocs, query, where, doc, updateDoc, serverTimestamp, add
 import ReportGenerator from "./ReportGenerator";
 import ClientResources, { AssessmentDataShape } from "./ClientResources";
 import MemoList, { Note as SharedNote } from "./MemoList";
+import SupportAgentChatUI from "./SupportAgentChatUI";
 
 interface ClientDetailProps { selectedClient: string; }
 export default function ClientDetail({ selectedClient }: ClientDetailProps) {
@@ -61,6 +62,30 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const [memoContent, setMemoContent] = useState("");
   const [todos, setTodos] = useState<TodoDraft[]>([{ id: 'initial', text: '', dueDate: '' }]);
   const addTodoField = () => setTodos(prev => [...prev, { id: Date.now().toString(), text: '', dueDate: '' }]);
+  // AIチャットからタスク追加
+  // AIチャットからタスク追加（即保存＆一覧反映）
+  const addTaskFromChat = async (task: string) => {
+    if (!selectedClient || !task.trim()) return;
+    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+    const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+    const newNote = {
+      clientName: selectedClient,
+      speaker: "AI",
+      content: `AIチャットで「${task}」という確認事項が発生しました。背景：制度やリソースの有無が不明、追加確認が必要なため。`,
+      todoItems: [{ id: Date.now().toString(), text: task, dueDate: null, isCompleted: false }],
+      timestamp: Timestamp.now(),
+    };
+    try {
+      const docRef = await addDoc(collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`), newNote);
+      setNotes(prev => [
+        { id: docRef.id, ...newNote, timestamp: { seconds: Math.floor(Date.now()/1000) } },
+        ...prev
+      ]);
+    } catch (e) {
+      console.error(e);
+      alert('AIタスクの保存に失敗しました');
+    }
+  };
   const removeTodoField = (id: string) => setTodos(prev => prev.filter(t => t.id !== id));
   const updateTodoField = (id: string, key: 'text' | 'dueDate', value: string) => setTodos(prev => prev.map(t => t.id === id ? { ...t, [key]: value } : t));
   const handleSaveClientNote = async () => {
@@ -307,7 +332,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       {/* 左カラム: メモ入力・一覧 */}
       <div className="flex-1 bg-white rounded-xl card-shadow border border-gray-100 p-6 min-w-[320px]">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-          日々の活動メモ入力
+          メモ・TODOを入力
         </h2>
         {/* メモ / TODO 入力フォーム */}
         <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
@@ -347,7 +372,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         {selectedClient && !loading && (
           <div>
             <h3 className="text-xl font-semibold mb-3">
-              {selectedClient} さんのメモ一覧
+              {selectedClient} さんのメモ・TODO一覧
             </h3>
             <MemoList
               notes={(notes as LocalNote[]).map((n, i) => ({
@@ -425,119 +450,14 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       </div>
   {/* 右カラム: 情報・生成セクション（順序変更） */}
   <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
-    <div className="bg-yellow-50 rounded-xl shadow p-4">
-          <h3 className="font-bold text-yellow-700 mb-2">
-            アセスメントと支援計画
-          </h3>
-          {assessmentsLoading && <p>読み込み中...</p>}
-          {assessmentsError && <p className="text-red-500">{assessmentsError}</p>}
-          {!assessmentsLoading && !assessmentsError && (
-            <>
-              {assessmentPlan ? (
-                <div className="bg-white p-4 rounded-lg shadow-md">
-                  <div className="border-b pb-2 mb-3">
-                    <p className="text-sm font-semibold text-gray-600">
-                      最終更新日時: {new Date(assessmentPlan.createdAt.seconds * 1000).toLocaleString()}
-                    </p>
-                  </div>
-                  
-
-                  {/* アセスメント内容表示 */}
-                  <details className="mb-4">
-                    <summary className="font-bold text-gray-800 cursor-pointer">アセスメント内容を表示</summary>
-                    <div className="mt-2 space-y-3 text-sm p-3 bg-gray-50 rounded-md max-h-60 overflow-y-auto">
-                      {assessmentPlan.assessment && typeof assessmentPlan.assessment === 'object' ? (
-                        Object.entries(assessmentPlan.assessment).map(([form, categories]) => (
-                          <div key={form}>
-                            <h5 className="text-md font-bold text-gray-700 border-b pb-1 mb-2">{form}</h5>
-                            <div className="space-y-2 pl-4">
-                              {categories && typeof categories === 'object' ? (
-                                Object.entries(categories as unknown as AssessmentCategory).map(([category, value]) => (
-                                  <div key={category}>
-                                    <p className="font-semibold text-gray-600">{category}</p>
-                                    {value && typeof value === 'object' ? (
-                                      <ul className="list-disc pl-6 text-gray-500">
-                                        {Object.entries(value as AssessmentItemDetail).map(([item, details]: [string, string]) => (
-                                          <li key={item}>
-                                            <strong>{item}:</strong> {details || 'N/A'} 
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    ) : null}
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-sm text-gray-500">カテゴリ情報がありません。</p>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      ) : <p className="text-sm text-gray-500">アセスメントデータがありません。</p>}
-                    </div>
-                  </details>
-
-                  {/* 支援計画 */}
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-md font-bold text-gray-800">支援計画</h4>
-                      <button
-                        onClick={handleGenerateSupportPlan}
-                        className="bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600"
-                        disabled={planLoading}
-                      >
-                        {planLoading ? 'AIで生成中...' : 'AIで計画案を生成'}
-                      </button>
-                    </div>
-                    {planError && <p className="text-red-500 text-sm mb-2">{planError}</p>}
-                    <textarea
-                      value={editableSupportPlan}
-                      onChange={(e) => setEditableSupportPlan(e.target.value)}
-                      className="w-full border border-gray-200 p-2 rounded mt-1 text-sm"
-                      rows={15}
-                      placeholder="ここに支援計画を入力・編集してください。"
-                    />
-                    <button
-                      onClick={handleSaveSupportPlan}
-                      className="w-full mt-2 bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600"
-                    >
-                      この計画を保存
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  {selectedClient ? "保存されたアセスメントはありません。" : "支援者を選択してください。"}
-                </p>
-              )}
-            </>
-          )}
+        {/* AIチャット: タスク化連携 */}
+        <div className="bg-blue-50 rounded-xl shadow p-4 mt-4">
+          <h4 className="text-sm font-semibold text-blue-700 mb-2">AI相談チャット</h4>
+          <SupportAgentChatUI clientName={selectedClient} assessmentData={simplifiedAssessment} addTaskFromChat={addTaskFromChat} />
         </div>
         {/* ClientResources: pass simplified assessment for suggestions (may be null if no data) */}
         <div className="bg-white rounded-xl shadow p-0">
           <ClientResources clientName={selectedClient || null} hasAssessmentPlan={!!assessmentPlan} assessmentData={simplifiedAssessment} />
-        </div>
-        <div className="bg-purple-50 rounded-xl shadow p-4">
-          <h3 className="font-bold text-purple-700 mb-2">
-            活動報告書・支払い報告書生成
-          </h3>
-          <p className="text-sm text-gray-700 mb-2">
-            選択中の支援対象者のメモに基づき、報告書を生成します。
-          </p>
-          <ReportGenerator
-            selectedClient={selectedClient}
-            hasAssessment={!!assessmentPlan}
-            memos={notes.map((n) => ({
-              ...n,
-              content: n.content ?? "",
-              timestamp:
-                n.timestamp?.seconds !== undefined
-                  ? {
-                      toDate: () =>
-                        new Date((n.timestamp?.seconds ?? 0) * 1000),
-                    }
-                  : undefined,
-            }))}
-          />
         </div>
       </div>
     </div>

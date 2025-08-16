@@ -3,6 +3,7 @@ import { fetchAdvancedSuggestions, AdvancedSuggestedResource } from '../lib/adva
 import { db } from '../firebase';
 import ResourceSuggestionCard from './resource/ResourceSuggestionCard';
 import ResourceDetailCard from './resource/ResourceDetailCard';
+import SupportAgentChatUI from './SupportAgentChatUI';
 import { collection, addDoc, deleteDoc, doc, getDocs, query, where, updateDoc, serverTimestamp, DocumentData } from 'firebase/firestore';
 
 interface ResourceUsageDoc {
@@ -55,6 +56,81 @@ interface SuggestionEntry {
 const API_BASE = 'http://localhost:8000';
 
 export default function ClientResources({ clientName, assessmentData, hasAssessmentPlan }: ClientResourcesProps) {
+  // AIチャットから社会資源追加・除外・メモ追加
+  // resourceInfo: { name: string, exclude?: boolean, reason?: string }
+  const handleAddResource = async (resourceInfo: string | { name: string, exclude?: boolean, reason?: string }) => {
+    let resourceName = '';
+    let exclude = false;
+    let reason = '';
+    if (typeof resourceInfo === 'string') {
+      resourceName = resourceInfo;
+    } else {
+      resourceName = resourceInfo.name;
+      exclude = !!resourceInfo.exclude;
+      reason = resourceInfo.reason || '';
+    }
+    if (!resourceName || resources.some(r => r.service_name === resourceName)) {
+      alert('既に存在するか、無効な資源名です');
+      return;
+    }
+    try {
+      // Firestore: resourcesコレクションにexcludedフラグ追加
+      const newResource: ResourceRecord & { excluded?: boolean } = {
+        service_name: resourceName,
+        description: 'AI相談チャットから追加',
+        keywords: [],
+        excluded: exclude,
+      };
+      const ref = collection(db, 'resources');
+      const docRef = await addDoc(ref, newResource);
+      setResources(prev => [{ ...newResource, id: docRef.id }, ...prev]);
+      if (exclude) {
+        setExcludedResources(prev => new Set([...prev, resourceName]));
+        // client_resourcesにもexcludedフラグとnotes保存
+        if (clientName && docRef.id) {
+          const usageRef = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources`);
+          await addDoc(usageRef, {
+            clientName,
+            resourceId: docRef.id,
+            serviceName: resourceName,
+            status: 'excluded',
+            addedAt: serverTimestamp(),
+            addedBy: USER_ID,
+            excluded: true,
+            notes: reason,
+          });
+        }
+        // メモ自動追加（API経由＋notesフィールド）
+        if (docRef.id && reason) {
+          await fetch(`${API_BASE}/resources/${docRef.id}/memos`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resource_id: docRef.id, content: reason })
+          });
+          fetchMemos(docRef.id);
+        }
+        alert(`社会資源「${resourceName}」は対象外として登録され、メモが追加されました。`);
+      } else {
+        // client_resourcesにも通常追加
+        if (clientName && docRef.id) {
+          const usageRef = collection(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources`);
+          await addDoc(usageRef, {
+            clientName,
+            resourceId: docRef.id,
+            serviceName: resourceName,
+            status: 'active',
+            addedAt: serverTimestamp(),
+            addedBy: USER_ID,
+            excluded: false,
+          });
+        }
+        alert(`新しい社会資源「${resourceName}」を追加しました`);
+      }
+    } catch (e) {
+      alert('社会資源の追加に失敗しました');
+    }
+  };
+
+  // 除外資源管理
+  const [excludedResources, setExcludedResources] = useState<Set<string>>(new Set());
   const [usages, setUsages] = useState<ResourceUsageDoc[]>([]);
   const [loadingUsage, setLoadingUsage] = useState(false);
   const [resources, setResources] = useState<ResourceRecord[]>([]);
@@ -156,10 +232,11 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
     resources.forEach(r=>{
       if (!r.id) return;
       if (existingIds.has(r.id)) return; // skip already used
+      if (excludedResources.has(r.service_name)) return; // 除外資源は表示しない
       const rKeywords = (r.keywords || []).map(k=>k.toLowerCase());
       const matched = rKeywords.filter(k=> assessmentTokens.has(k));
       // also try simple includes from service_name/category
-      const serviceTokens = (r.service_name + ' ' + (r.category||'')).split(/[\s/]+/).map(s=>s.toLowerCase());
+      const serviceTokens = (r.service_name + ' ' + (r.category||'')).split(/[ - -\s/]+/).map(s=>s.toLowerCase());
       serviceTokens.forEach(st=>{ if (assessmentTokens.has(st) && !matched.includes(st)) matched.push(st); });
       if (matched.length === 0) return;
       const score = matched.length * 3 + (r.last_verified_at ? 1 : 0);
@@ -168,7 +245,7 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
     // sort by score desc then verified desc
     result.sort((a,b)=>{ if (b.score !== a.score) return b.score - a.score; return (b.resource.last_verified_at||0)-(a.resource.last_verified_at||0); });
     return result.slice(0, 8);
-  }, [assessmentData, resources, existingIds, assessmentTokens]);
+  }, [assessmentData, resources, existingIds, assessmentTokens, excludedResources]);
 
   // Advanced suggestions (LLM + embeddings) – fallback to naive if fails
   const [adv, setAdv] = useState<AdvancedSuggestedResource[] | null>(null);
@@ -391,7 +468,7 @@ export default function ClientResources({ clientName, assessmentData, hasAssessm
                 <p className="text-[11px] text-gray-500">現在のアセスメント内容から提案できる社会資源・制度は見つかりませんでした。記述を具体化するか関連キーワードを追加してください。</p>
               )}
               <ul className="space-y-2">
-                {adv && adv.length>0 && adv.map(a => {
+                {adv && adv.length>0 && adv.filter(a => !existingIds.has(a.resource_id)).map(a => {
                   const already = existingIds.has(a.resource_id);
                   const r = resources.find(r=> r.id === a.resource_id);
                   return (
