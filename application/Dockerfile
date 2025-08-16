@@ -3,7 +3,7 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # uvインストール
-RUN pip install --upgrade pip --no-cache-dir && pip install --no-cache-dir uv==0.1.39
+RUN pip install --upgrade pip --no-cache-dir && pip install --no-cache-dir uv==0.8.5
 
 # ソースコピー
 COPY . /app/
