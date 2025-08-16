@@ -48,7 +48,7 @@ export default function ClientWorkspace() {
       try {
         const ref = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/clients`
+          `artifacts/${APP_ID}/users/${USER_ID}/clients`,
         );
         const q = query(ref, orderBy("createdAt", "asc"));
         const snap = await getDocs(q);
@@ -86,11 +86,11 @@ export default function ClientWorkspace() {
       try {
         const assessmentsRef = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`
+          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
         );
         const qAssess = query(
           assessmentsRef,
-          where("clientName", "==", currentClient.name)
+          where("clientName", "==", currentClient.name),
         );
         const snap = await getDocs(qAssess);
         type RawAssessment = {
@@ -102,7 +102,7 @@ export default function ClientWorkspace() {
           (d: QueryDocumentSnapshot<DocumentData>) => ({
             id: d.id,
             ...(d.data() as DocumentData),
-          })
+          }),
         );
         setHasAssessment(assessments.length > 0);
         if (assessments.length === 0) {
@@ -112,7 +112,7 @@ export default function ClientWorkspace() {
           return;
         }
         assessments.sort(
-          (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+          (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0),
         );
         const latest = assessments[0];
         const previous = assessments.length > 1 ? assessments[1] : null;

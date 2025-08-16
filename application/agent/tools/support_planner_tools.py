@@ -13,15 +13,18 @@ def format_resource_explanation(resource: dict, client_name: str = "利用者", 
     category = resource.get("category") or "カテゴリ情報なし"
     # 対象判定（簡易: 利用者状況や名前がtarget/eligibilityに含まれるか）
     context_text = f"{client_name} {client_context}".strip()
-    is_target = (client_name in target or client_name in eligibility or client_context in target or client_context in eligibility)
+    is_target = (
+        client_name in target or client_name in eligibility or client_context in target or client_context in eligibility
+    )
     target_comment = "利用者は制度の対象です。" if is_target else "利用者は制度の対象か追加確認が必要です。"
     # 推奨可否（困りごと・状況がdescriptionやcategoryに含まれるか）
-    recommend = (client_context in desc or client_context in category)
+    recommend = client_context in desc or client_context in category
     if recommend:
         # 推奨理由を生成
         recommend_reason = (
             "利用者の状況（%s）が説明やカテゴリに合致しているため、制度の利用が推奨されます。" % client_context
-            if client_context else "利用者の状況が制度の説明やカテゴリに合致しているため、制度の利用が推奨されます。"
+            if client_context
+            else "利用者の状況が制度の説明やカテゴリに合致しているため、制度の利用が推奨されます。"
         )
         recommend_text = f"この制度の利用は推奨されます。理由: {recommend_reason}"
     else:
@@ -35,15 +38,18 @@ def format_resource_explanation(resource: dict, client_name: str = "利用者", 
         f"費用: {cost}\n"
         f"地域: {location}\n"
         f"カテゴリ: {category}\n"
-            f"{target_comment} {recommend_text}"
+        f"{target_comment} {recommend_text}"
     )
+
 
 # 制度名でDBから詳細を取得するツール
 from langchain.agents import tool
 from pydantic.v1 import BaseModel, Field
 
+
 class ResourceDetailInput(BaseModel):
     resource_name: str = Field(description="取得したい制度・サービスの正式名称。例: 高齢者外出支援事業")
+
 
 @tool("search_resource_detail", args_schema=ResourceDetailInput, return_direct=True)
 def search_resource_detail(resource_name: str) -> str:
@@ -58,7 +64,9 @@ def search_resource_detail(resource_name: str) -> str:
     db = firestore.client()
     app_id = os.environ.get("TARGET_FIREBASE_APP_ID", "1:667712908416:web:ad84cae4853ac6de444a65")
     user_id = os.environ.get("TARGET_FIREBASE_USER_ID", "firebase-adminsdk-fbsvc@tritama-e20cf.iam.gserviceaccount.com")
-    resources_ref = db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
+    resources_ref = (
+        db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
+    )
     docs = resources_ref.stream()
     # 部分一致（複数ヒット時は最初のものを返す）
     norm_name = resource_name.strip().lower()
@@ -74,9 +82,11 @@ def search_resource_detail(resource_name: str) -> str:
         return format_resource_explanation(matches[0])
     return f"(NO_RESULT) {resource_name} に該当する制度・サービスがDBに見つかりませんでした。"
 
+
 # 状況・困りごと・地域で提案するツール
 class SuggestResourcesInput(BaseModel):
     situation: str = Field(description="利用者の状況や困りごと、地域など。例: 山形市 生活困窮 就労支援")
+
 
 @tool("suggest_resources", args_schema=SuggestResourcesInput, return_direct=False)
 def suggest_resources(situation: str) -> str:
@@ -91,22 +101,26 @@ def suggest_resources(situation: str) -> str:
     db = firestore.client()
     app_id = os.environ.get("TARGET_FIREBASE_APP_ID", "1:667712908416:web:ad84cae4853ac6de444a65")
     user_id = os.environ.get("TARGET_FIREBASE_USER_ID", "firebase-adminsdk-fbsvc@tritama-e20cf.iam.gserviceaccount.com")
-    resources_ref = db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
+    resources_ref = (
+        db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
+    )
     docs = resources_ref.stream()
     norm_query = situation.strip().lower()
     query_tokens = [t for t in norm_query.split() if t]
     results = []
     for doc in docs:
         r = doc.to_dict()
-        haystack = " ".join([
-            str(r.get("service_name", "")),
-            str(r.get("category", "")),
-            str(r.get("description", "")),
-            str(r.get("provider", "")),
-            str(r.get("location", "")),
-            str(r.get("target_users", "")),
-            " ".join(r.get("keywords", [])),
-        ]).lower()
+        haystack = " ".join(
+            [
+                str(r.get("service_name", "")),
+                str(r.get("category", "")),
+                str(r.get("description", "")),
+                str(r.get("provider", "")),
+                str(r.get("location", "")),
+                str(r.get("target_users", "")),
+                " ".join(r.get("keywords", [])),
+            ]
+        ).lower()
         # 部分一致（AND条件）
         if all(q in haystack for q in query_tokens):
             r["id"] = doc.id
@@ -115,6 +129,8 @@ def suggest_resources(situation: str) -> str:
         return json.dumps(results, ensure_ascii=False, indent=2)
     else:
         return f"(NO_RESULT) {situation} に該当する制度・サービスがDBに見つかりませんでした。"
+
+
 # Firestore用
 import json
 import os
@@ -128,6 +144,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 import requests
+
+
 def fetch_resources_via_api(api_url: str = "http://localhost:8000/resources/") -> list:
     """
     FastAPIの/resources/エンドポイントから社会資源一覧を取得する。
@@ -142,8 +160,6 @@ def fetch_resources_via_api(api_url: str = "http://localhost:8000/resources/") -
         return response.json()
     except Exception as e:
         raise RuntimeError(f"API経由で社会資源一覧取得失敗: {e}")
-
-
 
 
 class ExtractInfoInput(BaseModel):

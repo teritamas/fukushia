@@ -76,7 +76,7 @@ export default function ClientResources({
   // AIチャットから社会資源追加・除外・メモ追加
   // resourceInfo: { name: string, exclude?: boolean, reason?: string }
   const handleAddResource = async (
-    resourceInfo: string | { name: string; exclude?: boolean; reason?: string }
+    resourceInfo: string | { name: string; exclude?: boolean; reason?: string },
   ) => {
     let resourceName = "";
     let exclude = false;
@@ -112,7 +112,7 @@ export default function ClientResources({
         if (clientName && docRef.id) {
           const usageRef = collection(
             db,
-            `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+            `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
           );
           await addDoc(usageRef, {
             clientName,
@@ -135,14 +135,14 @@ export default function ClientResources({
           fetchMemos(docRef.id);
         }
         alert(
-          `社会資源「${resourceName}」は対象外として登録され、メモが追加されました。`
+          `社会資源「${resourceName}」は対象外として登録され、メモが追加されました。`,
         );
       } else {
         // client_resourcesにも通常追加
         if (clientName && docRef.id) {
           const usageRef = collection(
             db,
-            `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+            `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
           );
           await addDoc(usageRef, {
             clientName,
@@ -163,7 +163,7 @@ export default function ClientResources({
 
   // 除外資源管理
   const [excludedResources, setExcludedResources] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [usages, setUsages] = useState<ResourceUsageDoc[]>([]);
   const [loadingUsage, setLoadingUsage] = useState(false);
@@ -205,7 +205,7 @@ export default function ClientResources({
       try {
         const ref = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+          `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
         );
         const q = query(ref, where("clientName", "==", clientName));
         const snap = await getDocs(q);
@@ -260,7 +260,7 @@ export default function ClientResources({
 
   const existingIds = useMemo(
     () => new Set(usages.map((u) => u.resourceId)),
-    [usages]
+    [usages],
   );
 
   // Extract tokens from assessment for naive suggestion
@@ -366,7 +366,7 @@ export default function ClientResources({
     try {
       const ref = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
       );
       await addDoc(ref, {
         clientName,
@@ -379,10 +379,10 @@ export default function ClientResources({
       // refresh usages list
       const qRef = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources`,
       );
       const qSnap = await getDocs(
-        query(qRef, where("clientName", "==", clientName))
+        query(qRef, where("clientName", "==", clientName)),
       );
       const list: ResourceUsageDoc[] = qSnap.docs.map((d) => {
         const data = d.data() as DocumentData;
@@ -519,12 +519,12 @@ export default function ClientResources({
     try {
       const ref = doc(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`
+        `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`,
       );
       const newStatus = u.status === "active" ? "ended" : "active";
       await updateDoc(ref, { status: newStatus });
       setUsages((prev) =>
-        prev.map((p) => (p.id === u.id ? { ...p, status: newStatus } : p))
+        prev.map((p) => (p.id === u.id ? { ...p, status: newStatus } : p)),
       );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "状態更新失敗");
@@ -538,7 +538,10 @@ export default function ClientResources({
     setRemovingIds((prev) => ({ ...prev, [u.id]: true }));
     try {
       await deleteDoc(
-        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`)
+        doc(
+          db,
+          `artifacts/${APP_ID}/users/${USER_ID}/client_resources/${u.id}`,
+        ),
       );
       setUsages((prev) => prev.filter((p) => p.id !== u.id));
     } catch (e: unknown) {
@@ -823,7 +826,7 @@ export default function ClientResources({
                               </button>
                             </div>
                           </li>
-                        )
+                        ),
                       )}
                       {detailId &&
                         (memos[detailId]?.length ?? 0) === 0 &&
