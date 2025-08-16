@@ -19,7 +19,7 @@ export type Note = {
 
 // 期限ラベルを返すヘルパー関数
 function getDueDateLabel(
-  dueDateObj: { seconds: number } | string | null | undefined,
+  dueDateObj: { seconds: number } | string | null | undefined
 ): string {
   if (!dueDateObj) return "";
   if (typeof dueDateObj === "string") {
@@ -61,10 +61,10 @@ const MemoList: React.FC<MemoListProps> = ({
           : "";
 
         const incompleteTasks = (note.todoItems || []).filter(
-          (t) => !t.isCompleted,
+          (t) => !t.isCompleted
         );
         const completedTasks = (note.todoItems || []).filter(
-          (t) => t.isCompleted,
+          (t) => t.isCompleted
         );
 
         return (
@@ -78,7 +78,7 @@ const MemoList: React.FC<MemoListProps> = ({
                 {onEditNote && onDeleteNote && (
                   <div className="flex gap-2">
                     <button
-                      className="text-[var(--brand-600)] hover:bg-[#e8f0fe] rounded p-1"
+                      className="text-[var(--brand-600)] hover:bg-[var(--gbtn-hover-bg)] rounded p-1"
                       title="編集"
                       onClick={() => onEditNote(note)}
                     >

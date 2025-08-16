@@ -9,6 +9,13 @@
   --brand-600: #1a73e8;
   --brand-700: #1558c0;
   --ring: rgba(26, 115, 232, 0.35);
+
+  /* Theme tokens for components */
+  --border: rgba(0, 0, 0, 0.08);
+  --ginput-border: rgba(0, 0, 0, 0.1);
+  --chip-bg: #f1f3f4;
+  --chip-text: #374151;
+  --gbtn-hover-bg: #f6f8fc;
 }
 
 /* Tailwind v4 will provide design tokens; using plain CSS vars here for broad compatibility */
@@ -16,7 +23,17 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
+    --surface: #0f1113;
     --foreground: #ededed;
+    --muted: #9ca3af;
+
+    /* Dark theme overrides for tokens */
+    --border: rgba(255, 255, 255, 0.06);
+    --ginput-border: rgba(255, 255, 255, 0.08);
+    --chip-bg: #0f1114;
+    --chip-text: #cbd5e1;
+    --gbtn-hover-bg: rgba(255, 255, 255, 0.03);
+    --ring: rgba(26, 115, 232, 0.18);
   }
 }
 
@@ -80,7 +97,7 @@ body {
   height: 36px;
   padding: 0 14px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   background: var(--surface);
   color: var(--foreground);
   transition:
@@ -89,7 +106,7 @@ body {
     transform 120ms ease;
 }
 .gbtn:hover {
-  background: #f6f8fc;
+  background: var(--gbtn-hover-bg);
 }
 .gbtn:focus {
   outline: none;
@@ -117,7 +134,7 @@ body {
   color: var(--brand-600);
 }
 .gbtn.text:hover {
-  background: #f6f8fc;
+  background: var(--gbtn-hover-bg);
 }
 
 /* Chip */
@@ -127,8 +144,8 @@ body {
   gap: 6px;
   padding: 2px 8px;
   border-radius: 9999px;
-  background: #f1f3f4;
-  color: #374151;
+  background: var(--chip-bg);
+  color: var(--chip-text);
   font-size: 12px;
 }
 
@@ -136,7 +153,7 @@ body {
 .ginput {
   height: 36px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--ginput-border);
   background: var(--surface);
   padding: 0 12px;
 }
@@ -148,5 +165,5 @@ body {
 /* Section header */
 .section-title {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--foreground);
 }
