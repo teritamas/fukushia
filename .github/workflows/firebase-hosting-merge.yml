@@ -12,7 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: cd frontend && npm ci
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - run: cd frontend && npm build
+      - uses: FirebaseExtended/action-hosting-deploy@v0.9.0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TRITAMA_E20CF }}
