@@ -25,6 +25,7 @@ jobs:
 
       - name: Run Python Formaters
         run: |
+          curl -Ls https://astral.sh/uv/install.sh | sh
           cd application
           uv sync
           uv run ruff format .
