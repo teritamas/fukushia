@@ -117,7 +117,7 @@ export default function AssessmentAssistant() {
     } catch (error: unknown) {
       if (error instanceof Error) {
         setMappingError(
-          error.message || "APIへの接続中にエラーが発生しました。"
+          error.message || "APIへの接続中にエラーが発生しました。",
         );
       } else {
         setMappingError("APIへの接続中にエラーが発生しました。");
@@ -131,7 +131,7 @@ export default function AssessmentAssistant() {
     form: string,
     category: string,
     subCategory: string | null,
-    value: string
+    value: string,
   ) => {
     setMappedResult((prev: MappedResult | null) => {
       const newResult = { ...prev };
@@ -174,7 +174,7 @@ export default function AssessmentAssistant() {
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
           version: 1,
-        }
+        },
       );
       // 保存後は既存表示モードへ移行
       setExistingAssessment(mappedResult);
@@ -205,11 +205,11 @@ export default function AssessmentAssistant() {
           process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
         const ref = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`
+          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
         );
         const qAssess = query(
           ref,
-          where("clientName", "==", currentClient.name)
+          where("clientName", "==", currentClient.name),
         );
         const snap = await getDocs(qAssess);
         if (snap.empty) {
@@ -226,10 +226,10 @@ export default function AssessmentAssistant() {
             (d: QueryDocumentSnapshot<DocumentData>) => ({
               id: d.id,
               ...(d.data() as DocumentData),
-            })
+            }),
           ) as RawDoc[];
           docs.sort(
-            (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+            (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0),
           );
           setExistingAssessment(docs[0]?.assessment ?? null);
           setExistingDocId(docs[0]?.id || null);
@@ -261,12 +261,12 @@ export default function AssessmentAssistant() {
           process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
         const changesRef = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}/changes`
+          `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}/changes`,
         );
         const qHist = query(
           changesRef,
           orderBy("createdAt", "desc"),
-          limit(30)
+          limit(30),
         );
         const snap = await getDocs(qHist);
         const list: ChangeEntry[] = snap.docs.map((d) => ({
@@ -293,7 +293,7 @@ export default function AssessmentAssistant() {
         if (typeof val === "string") flat[`${form}|${cat}`] = val;
         else
           for (const [sub, subVal] of Object.entries(
-            val as Record<string, string>
+            val as Record<string, string>,
           ))
             flat[`${form}|${cat}|${sub}`] = subVal;
       }
@@ -307,7 +307,7 @@ export default function AssessmentAssistant() {
     form: string,
     category: string,
     sub: string | null,
-    value: string
+    value: string,
   ) => {
     const key = sub ? `${form}|${category}|${sub}` : `${form}|${category}`;
     setEditBuffer((prev) => ({ ...prev, [key]: value }));
@@ -321,7 +321,7 @@ export default function AssessmentAssistant() {
   }
   const diffAssessments = (
     before: MappedResult,
-    after: MappedResult
+    after: MappedResult,
   ): FieldChange[] => {
     const changes: FieldChange[] = [];
     for (const [form, categories] of Object.entries(after)) {
@@ -363,7 +363,7 @@ export default function AssessmentAssistant() {
     if (!currentClient || !existingDocId || !existingAssessment) return;
     // reconstruct
     const reconstructed: MappedResult = JSON.parse(
-      JSON.stringify(existingAssessment)
+      JSON.stringify(existingAssessment),
     );
     for (const [key, val] of Object.entries(editBuffer)) {
       const parts = key.split("|");
@@ -400,7 +400,7 @@ export default function AssessmentAssistant() {
         process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       const assessDocRef = doc(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}`
+        `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}`,
       );
       const newVersion = (existingVersion || 1) + 1;
       await updateDoc(assessDocRef, {
@@ -439,7 +439,7 @@ export default function AssessmentAssistant() {
       setHistory((prev) => [...newHistoryEntries, ...prev].slice(0, 30));
       setEditing(false);
       setSaveEditMessage(
-        `${changes.length}件の変更を保存しました (v${newVersion})`
+        `${changes.length}件の変更を保存しました (v${newVersion})`,
       );
     } catch (e) {
       console.error(e);
@@ -467,7 +467,7 @@ export default function AssessmentAssistant() {
       if (assessmentEditTarget?.category) {
         setTimeout(() => {
           const el = document.querySelector(
-            `[data-assessment-category="${assessmentEditTarget.category}"]`
+            `[data-assessment-category="${assessmentEditTarget.category}"]`,
           );
           if (el)
             (el as HTMLElement).scrollIntoView({
@@ -563,7 +563,7 @@ export default function AssessmentAssistant() {
                     <span className="chip text-[10px]">
                       {h.createdAt?.seconds
                         ? new Date(h.createdAt.seconds * 1000).toLocaleString(
-                            "ja-JP"
+                            "ja-JP",
                           )
                         : ""}
                     </span>
@@ -620,7 +620,7 @@ export default function AssessmentAssistant() {
                       categories as Record<
                         string,
                         string | Record<string, string>
-                      >
+                      >,
                     ).map(([category, value]) => (
                       <div
                         key={category}
@@ -641,7 +641,7 @@ export default function AssessmentAssistant() {
                                   form,
                                   category,
                                   null,
-                                  e.target.value
+                                  e.target.value,
                                 )
                               }
                               className="rounded-lg border border-gray-200 p-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -655,7 +655,7 @@ export default function AssessmentAssistant() {
                         ) : (
                           <div className="space-y-3">
                             {Object.entries(
-                              value as Record<string, string>
+                              value as Record<string, string>,
                             ).map(([sub, subVal]) => (
                               <div
                                 key={sub}
@@ -678,7 +678,7 @@ export default function AssessmentAssistant() {
                                         form,
                                         category,
                                         sub,
-                                        e.target.value
+                                        e.target.value,
                                       )
                                     }
                                     className="rounded-lg border border-gray-200 p-1 w-full text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -776,8 +776,8 @@ export default function AssessmentAssistant() {
               {mappingLoading
                 ? "反映中..."
                 : currentClient
-                ? "アセスメント項目へ反映"
-                : "支援者を選択してください"}
+                  ? "アセスメント項目へ反映"
+                  : "支援者を選択してください"}
             </button>
             {mappingError && (
               <p className="text-red-500 mb-4">{mappingError}</p>
@@ -823,7 +823,7 @@ export default function AssessmentAssistant() {
                             categories as Record<
                               string,
                               string | Record<string, string>
-                            >
+                            >,
                           ).map(([category, value]) => (
                             <div key={category}>
                               <label className="text-sm font-semibold text-gray-600">
@@ -833,13 +833,13 @@ export default function AssessmentAssistant() {
                                 <textarea
                                   value={value}
                                   onChange={(
-                                    e: React.ChangeEvent<HTMLTextAreaElement>
+                                    e: React.ChangeEvent<HTMLTextAreaElement>,
                                   ) =>
                                     handleResultChange(
                                       form,
                                       category,
                                       null,
-                                      e.target.value
+                                      e.target.value,
                                     )
                                   }
                                   className="w-full rounded-lg border border-gray-200 p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -848,7 +848,7 @@ export default function AssessmentAssistant() {
                               ) : (
                                 <div className="pl-4 mt-1 space-y-2 border-l-2">
                                   {Object.entries(
-                                    value as Record<string, string>
+                                    value as Record<string, string>,
                                   ).map(([subCategory, subValue]) => (
                                     <div key={subCategory}>
                                       <label className="text-sm font-semibold text-gray-500">
@@ -857,13 +857,13 @@ export default function AssessmentAssistant() {
                                       <textarea
                                         value={subValue as string}
                                         onChange={(
-                                          e: React.ChangeEvent<HTMLTextAreaElement>
+                                          e: React.ChangeEvent<HTMLTextAreaElement>,
                                         ) =>
                                           handleResultChange(
                                             form,
                                             category,
                                             subCategory,
-                                            e.target.value
+                                            e.target.value,
                                           )
                                         }
                                         className="w-full rounded-lg border border-gray-200 p-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"

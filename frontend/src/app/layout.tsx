@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Primary UI font (JP) 
+// Primary UI font (JP)
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   weight: ["300", "400", "500", "700"],
@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-  className={`${geistSans.variable} ${geistMono.variable} ${notoSansJP.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${notoSansJP.variable} antialiased`}
       >
         {children}
       </body>
