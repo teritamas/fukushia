@@ -353,9 +353,9 @@ export default function ResourceManager() {
       <h2 className="text-2xl font-semibold tracking-tight section-title">
         社会資源・制度管理
       </h2>
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {error && <div className="text-red-500 text-sm">{error}</div>}
       {/* 検索バー (常時表示) */}
-      <div className="surface card-shadow border border-[var(--border)] p-3 sm:p-4 flex flex-wrap gap-2 items-center">
+      <div className="bg-[var(--surface)] card-shadow border border-[var(--border)] p-3 sm:p-4 flex flex-wrap gap-2 items-center">
         <input
           className="ginput flex-1 min-w-[240px]"
           placeholder="検索キーワード (資源＋メモ全文 / スペースAND)"
@@ -553,9 +553,9 @@ export default function ResourceManager() {
               >
                 <div className="h-4 bg-[var(--surface)] rounded w-2/3 mb-2" />
                 <div className="h-3 bg-[var(--surface)] rounded w-1/3 mb-1" />
-                <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
-                <div className="h-3 bg-gray-100 rounded w-full mb-1" />
-                <div className="h-3 bg-gray-100 rounded w-3/4 mb-1" />
+                <div className="h-3 bg-[var(--chip-bg)] rounded w-1/2 mb-1" />
+                <div className="h-3 bg-[var(--chip-bg)] rounded w-full mb-1" />
+                <div className="h-3 bg-[var(--chip-bg)] rounded w-3/4 mb-1" />
                 <div className="flex gap-2 pt-1">
                   <div className="h-7 w-12 bg-gray-200 rounded" />
                   <div className="h-7 w-12 bg-gray-200 rounded" />

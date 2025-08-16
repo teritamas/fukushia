@@ -104,7 +104,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
   };
 
   return (
-    <header className="w-full sticky top-0 z-30 bg-gradient-to-r from-blue-700 to-blue-800 text-white header-shadow">
+    <header className="w-full sticky top-0 z-30 bg-gradient-to-r from-[var(--brand-600)] to-[var(--brand-700)] text-white header-shadow">
       <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center gap-3">
         <button
           className="text-left text-lg font-semibold tracking-wide hover:opacity-90"
@@ -150,13 +150,13 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
               </button>
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-0 w-[300px] rounded-md rounded-t-none border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-2xl ring-1 ring-black/5 z-50"
+                  className="absolute right-0 mt-0 w-[300px] rounded-md rounded-t-none border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-2xl ring-1 ring-[var(--ring)] z-50"
                   onMouseEnter={() => setMenuOpen(true)}
                   onMouseLeave={() => setMenuOpen(false)}
                 >
                   <div className="max-h-[60vh] overflow-auto py-1">
                     {clients.length === 0 && !loadingClients && (
-                      <div className="px-3 py-2 text-xs text-gray-500">
+                      <div className="px-3 py-2 text-xs text-[var(--muted)]">
                         支援対象者がいません
                       </div>
                     )}
@@ -181,7 +181,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     <div className="my-1 border-t" />
                     <button
                       onClick={() => onSelect("__add__")}
-                      className="w-full text-left px-3 py-2 text-sm text-[var(--brand-600)] hover:bg-gray-50 dark:hover:bg-white/5 hover-scale"
+                      className="w-full text-left px-3 py-2 text-sm text-[var(--brand-600)] hover:bg-[var(--gbtn-hover-bg)] hover-scale"
                     >
                       新しい支援対象者を追加
                     </button>

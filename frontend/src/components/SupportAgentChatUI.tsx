@@ -130,7 +130,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
   };
 
   return (
-    <div className="surface border border-[var(--border)] rounded-lg p-3 mt-4">
+    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-3 mt-4">
       <div className="space-y-2 max-h-fit overflow-y-auto mb-2">
         {messages.map((m, idx) => (
           <div
@@ -146,7 +146,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
         {loading && (
           <div className="text-xs text-[var(--muted)]">AI応答中...</div>
         )}
-        {error && <div className="text-xs text-red-600">{error}</div>}
+        {error && <div className="text-xs text-red-500">{error}</div>}
         {/* タスク候補表示 */}
         {tasks.length > 0 && (
           <div className="mt-2">
@@ -180,7 +180,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
           disabled={loading || !clientName}
         />
         <button
-          className="gbtn primary text-xs"
+          className="bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs px-3 py-1 rounded"
           onClick={sendMessage}
           disabled={loading || !input.trim() || !clientName}
         >

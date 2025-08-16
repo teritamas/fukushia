@@ -242,7 +242,7 @@ export default function MemoTaskManager() {
 
         <div className="mb-2">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-700 w-16">発言者</label>
+            <label className="text-sm text-[var(--muted)] w-16">発言者</label>
             <input
               className="border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
               value={speaker}
@@ -285,7 +285,7 @@ export default function MemoTaskManager() {
 
         <div className="mb-2">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-800">
+            <label className="text-sm font-medium text-[var(--foreground)]">
               TODO（タスク化）
             </label>
             <button
@@ -378,13 +378,13 @@ export default function MemoTaskManager() {
             className="absolute inset-0 bg-black/30"
             onClick={() => setEditing(null)}
           />
-          <div className="relative bg-white rounded shadow-lg p-4 w-[480px] max-w-[90vw]">
+          <div className="relative bg-[var(--surface)] rounded shadow-lg p-4 w-[480px] max-w-[90vw]">
             <h3 className="font-semibold mb-3">メモを編集</h3>
             <div className="mb-2">
               <label className="text-sm text-gray-700">発言者</label>
               <div className="flex items-center gap-2 mt-1">
                 <input
-                  className="border rounded px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="border rounded px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] bg-[var(--surface)] text-[var(--foreground)]"
                   value={editing.speaker}
                   onChange={(e) =>
                     setEditing({ ...editing, speaker: e.target.value })
@@ -392,14 +392,14 @@ export default function MemoTaskManager() {
                 />
                 <button
                   type="button"
-                  className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-[var(--gbtn-hover-bg)]"
+                  className="bg-[var(--chip-bg)] text-xs px-2 py-1 rounded hover:bg-[var(--gbtn-hover-bg)] text-[var(--foreground)]"
                   onClick={() => setEditing({ ...editing, speaker: "本人" })}
                 >
                   本人
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-300"
+                  className="bg-[var(--chip-bg)] text-xs px-2 py-1 rounded hover:bg-[var(--gbtn-hover-bg)] text-[var(--foreground)]"
                   onClick={() => setEditing({ ...editing, speaker: "家族" })}
                 >
                   家族
@@ -425,7 +425,7 @@ export default function MemoTaskManager() {
                 キャンセル
               </button>
               <button
-                className="px-3 py-1 rounded bg-blue-600 text-white"
+                className="px-3 py-1 rounded bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white"
                 onClick={async () => {
                   const { id, speaker, content } = editing;
                   await updateDoc(
