@@ -188,11 +188,14 @@ class GeminiAgent:
         context = json.dumps(assessment_data, ensure_ascii=False, indent=2)[:8000]
         conv_input = f"利用者: {client_name}\n状況: {context}\n質問: {message}"
         try:
+
             async def stream_generator():
                 try:
                     async for event in self.conversational_agent.astream_events({"input": conv_input}):
                         if event["event"] == "on_chat_model_stream":
-                            data = f"data: {json.dumps({'chunk': event['data']['chunk'].content}, ensure_ascii=False)}\n\n"
+                            data = (
+                                f"data: {json.dumps({'chunk': event['data']['chunk'].content}, ensure_ascii=False)}\n\n"
+                            )
                             logging.debug(f"type: {event['event']} data: {data}")
                             yield data
                         await asyncio.sleep(0.01)
@@ -204,6 +207,8 @@ class GeminiAgent:
             return stream_generator()
         except Exception as e:
             logging.error(f"会話応答生成失敗: {e}", exc_info=True)
+
             async def err_gen():
                 yield f"event: error\ndata: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+
             return err_gen()

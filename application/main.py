@@ -884,8 +884,6 @@ class InteractiveSupportPlanResponse(BaseModel):
 async def interactive_support_plan(req: InteractiveSupportPlanRequest):
     agent = app.state.gemini_agent
     stream = await agent.generate_interactive_support_plan_stream(
-            client_name=req.client_name,
-            assessment_data=req.assessment_data,
-            message=req.message
-        )
+        client_name=req.client_name, assessment_data=req.assessment_data, message=req.message
+    )
     return StreamingResponse(stream, media_type="text/event-stream")
