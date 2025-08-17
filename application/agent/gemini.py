@@ -193,7 +193,7 @@ class GeminiAgent:
                     async for event in self.conversational_agent.astream_events({"input": conv_input}):
                         if event["event"] == "on_chat_model_stream":
                             data = f"data: {json.dumps({'chunk': event['data']['chunk'].content}, ensure_ascii=False)}\n\n"
-                            logging.info(f"type: {event['event']} data: {data}")
+                            logging.debug(f"type: {event['event']} data: {data}")
                             yield data
                         await asyncio.sleep(0.01)
                     yield "event: done\ndata: [DONE]\n\n"
