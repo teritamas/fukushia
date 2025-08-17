@@ -204,6 +204,8 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
         {/* 追加モーダル */}
         {showAdd &&
           typeof window !== "undefined" &&
+          typeof document !== "undefined" &&
+          document.body &&
           createPortal(
             <div
               className="fixed inset-0 z-[1000] grid place-items-center bg-black/30"

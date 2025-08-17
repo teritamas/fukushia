@@ -676,6 +676,9 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           </Button>
         </div>
         {aiChatOpen &&
+          typeof window !== "undefined" &&
+          typeof document !== "undefined" &&
+          document.body &&
           createPortal(
             <div
               ref={popoverRef}

@@ -466,9 +466,15 @@ export default function AssessmentAssistant() {
       // Scroll to target if specified
       if (assessmentEditTarget?.category) {
         setTimeout(() => {
-          const el = document.querySelector(
-            `[data-assessment-category="${assessmentEditTarget.category}"]`,
-          );
+          let el: Element | null = null;
+          if (
+            typeof window !== "undefined" &&
+            typeof document !== "undefined"
+          ) {
+            el = document.querySelector(
+              `[data-assessment-category="${assessmentEditTarget.category}"]`,
+            );
+          }
           if (el)
             (el as HTMLElement).scrollIntoView({
               behavior: "smooth",
