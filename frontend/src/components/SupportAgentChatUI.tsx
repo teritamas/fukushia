@@ -16,7 +16,7 @@ interface SupportAgentChatUIProps {
   assessmentData: unknown;
   addTaskFromChat?: (task: string) => void;
   onAddResource?: (
-    resourceInfo: string | { name: string; exclude?: boolean; reason?: string }
+    resourceInfo: string | { name: string; exclude?: boolean; reason?: string },
   ) => void;
   embedded?: boolean;
 }
@@ -344,19 +344,19 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
       let exclude = false;
       let reason = "";
       const negativeMatch = reply.match(
-        /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/
+        /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/,
       );
       if (negativeMatch) {
         exclude = true;
         const lines = reply.split("\n");
         const idx = lines.findIndex((l: string) =>
-          l.includes(resourceMatch ? resourceMatch[1] : "")
+          l.includes(resourceMatch ? resourceMatch[1] : ""),
         );
         reason =
           lines
             .slice(idx + 1)
             .find(
-              (l: string) => negativeMatch[0] && l.includes(negativeMatch[0])
+              (l: string) => negativeMatch[0] && l.includes(negativeMatch[0]),
             ) || negativeMatch[0];
       }
       if (
@@ -448,7 +448,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                           className="ml-1 text-[10px] text-[var(--brand-600)] underline-offset-2 hover:underline"
                           onClick={() =>
                             setExpandedThoughtIndex(
-                              expandedThoughtIndex === idx ? null : idx
+                              expandedThoughtIndex === idx ? null : idx,
                             )
                           }
                         >
@@ -564,7 +564,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                   className="ml-1 text-[10px] text-[var(--brand-600)] underline-offset-2 hover:underline"
                   onClick={() =>
                     setExpandedThoughtIndex(
-                      expandedThoughtIndex === idx ? null : idx
+                      expandedThoughtIndex === idx ? null : idx,
                     )
                   }
                 >
