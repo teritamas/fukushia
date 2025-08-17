@@ -16,6 +16,7 @@ from models.pydantic_models import (
 import logging
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 from agent.gemini import GeminiAgent
 from pydantic import BaseModel
@@ -25,6 +26,7 @@ import hashlib
 import random
 import re
 import math
+import asyncio
 from google.cloud import firestore  # GCP Firestore client (fallback 用)
 from fastapi.middleware.cors import CORSMiddleware
 from google.api_core.exceptions import NotFound as FirestoreNotFound, FailedPrecondition, PermissionDenied
@@ -870,6 +872,8 @@ class InteractiveSupportPlanRequest(BaseModel):
     client_name: str
     assessment_data: dict
     message: str
+    stream: bool = True
+    chunk_size: int = 120
 
 
 class InteractiveSupportPlanResponse(BaseModel):
@@ -879,11 +883,9 @@ class InteractiveSupportPlanResponse(BaseModel):
 @app.post("/interactive_support_plan", response_model=InteractiveSupportPlanResponse)
 async def interactive_support_plan(req: InteractiveSupportPlanRequest):
     agent = app.state.gemini_agent
-    try:
-        # gemini.pyの対話生成関数を呼び出し
-        reply = agent.generate_interactive_support_plan(
-            client_name=req.client_name, assessment_data=req.assessment_data, message=req.message
+    stream = await agent.generate_interactive_support_plan_stream(
+            client_name=req.client_name,
+            assessment_data=req.assessment_data,
+            message=req.message
         )
-        return InteractiveSupportPlanResponse(reply=reply)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI応答生成失敗: {str(e)}")
+    return StreamingResponse(stream, media_type="text/event-stream")
