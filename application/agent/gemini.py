@@ -1,7 +1,9 @@
+from venv import logger
 import google.generativeai as genai
 from agent.natural_language_processor import NaturalLanguageProcessor
 import json
 import logging
+import asyncio
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_react_agent, AgentExecutor, Tool
 from langchain.tools.render import render_text_description
@@ -84,7 +86,7 @@ class GeminiAgent:
         )
 
         tools = [
-            search_resource_detail,
+            # search_resource_detail, # FIXME: これがうまく動いていない
             suggest_resources,
             google_search_tool,
         ]
@@ -172,38 +174,41 @@ class GeminiAgent:
             logging.error(f"Planner Agent execution failed: {e}", exc_info=True)
             return f"支援計画の生成中にエラーが発生しました: {e}"
 
-    def generate_interactive_support_plan(self, client_name: str, assessment_data: dict, message: str) -> str:
+    async def generate_interactive_support_plan_stream(
+        self,
+        client_name: str,
+        assessment_data: dict,
+        message: str,
+    ):
         """
         会話型エージェントで、ユーザーの質問・会話に自然な文章で答える。
+
+        この関数は非同期ジェネレータを返すため、FastAPI等でStreamingResponseとして利用できます。
         """
-        # 利用者名・状況・質問内容をエージェントに渡す
         context = json.dumps(assessment_data, ensure_ascii=False, indent=2)[:8000]
         conv_input = f"利用者: {client_name}\n状況: {context}\n質問: {message}"
         try:
-            response = self.conversational_agent.invoke({"input": conv_input})
-            answer = response.get("output") or response.get("Final Answer")
-            return answer if answer else "AI応答生成に失敗しました。"
+
+            async def stream_generator():
+                try:
+                    async for event in self.conversational_agent.astream_events({"input": conv_input}):
+                        if event["event"] == "on_chat_model_stream":
+                            data = (
+                                f"data: {json.dumps({'chunk': event['data']['chunk'].content}, ensure_ascii=False)}\n\n"
+                            )
+                            logging.debug(f"type: {event['event']} data: {data}")
+                            yield data
+                        await asyncio.sleep(0.01)
+                    yield "event: done\ndata: [DONE]\n\n"
+                except Exception as e:
+                    logging.error(f"stream_generator error: {e}", exc_info=True)
+                    yield f"event: error\ndata: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+
+            return stream_generator()
         except Exception as e:
             logging.error(f"会話応答生成失敗: {e}", exc_info=True)
-            return f"AI応答生成失敗: {e}"
 
-    # --- Lightweight summarization for resource suggestion query embedding ---
-    def summarize_for_resource_match(self, raw_text: str) -> str:
-        """Summarize assessment free-form concatenated text into focused needs / goals / barriers list.
+            async def err_gen():
+                yield f"event: error\ndata: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
 
-        Keeps it short (<= 800 tokens) and bullet oriented to produce better embedding signal.
-        Fallback: returns raw_text if model call fails.
-        """
-        prompt = (
-            "以下は福祉アセスメントから抽出した自由記述テキストです。"
-            "支援上関連する: 1) 主訴/課題 2) 生活上のリスク・障壁 3) 既存の強み・活用可能な資源 4) 直近ニーズ の4分類で日本語簡潔箇条書き要約を生成してください。"
-            "各行は分類タグを[]で先頭に付け、20～60文字程度。最大40行。余計な前置きや締め文は不要。\n\n"
-            + raw_text[:12000]
-        )
-        try:
-            resp = self.model.generate_content(prompt)
-            out = getattr(resp, "text", None) or (resp.candidates[0].content.parts[0].text if resp.candidates else "")  # type: ignore
-            return out.strip()[:8000] if out else raw_text
-        except Exception as e:
-            logging.warning(f"summarize_for_resource_match failed: {e}")
-            return raw_text
+            return err_gen()
