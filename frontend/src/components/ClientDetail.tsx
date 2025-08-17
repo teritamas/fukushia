@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { db } from "../firebase";
 import {
   collection,
@@ -7,7 +8,6 @@ import {
   where,
   doc,
   updateDoc,
-  serverTimestamp,
   addDoc,
   Timestamp,
   deleteDoc,
@@ -15,6 +15,8 @@ import {
 import ClientResources, { AssessmentDataShape } from "./ClientResources";
 import MemoList, { Note as SharedNote } from "./MemoList";
 import SupportAgentChatUI from "./SupportAgentChatUI";
+import { Button } from "./ui/button";
+import { Bot, X } from "lucide-react";
 
 interface ClientDetailProps {
   selectedClient: string;
@@ -66,13 +68,18 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     clientName: string;
   };
   const [assessmentPlan, setAssessmentPlan] = useState<AssessmentPlan | null>(
-    null,
+    null
   );
-  const [editableSupportPlan, setEditableSupportPlan] = useState<string>("");
-  const [assessmentsLoading, setAssessmentsLoading] = useState(false);
-  const [assessmentsError, setAssessmentsError] = useState<string | null>(null);
-  const [planLoading, setPlanLoading] = useState(false);
-  const [planError, setPlanError] = useState<string | null>(null);
+  const [, setEditableSupportPlan] = useState<string>("");
+  const [, setAssessmentsLoading] = useState(false);
+  const [, setAssessmentsError] = useState<string | null>(null);
+  const [, setIsDragging] = useState(false);
+  const [, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // AIチャット用ポップオーバー状態
+  const [aiChatOpen, setAiChatOpen] = useState(true);
+  const toggleAiChatOpen = () => setAiChatOpen((prev) => !prev);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
 
   // メモ / TODO 入力用 draft state
   type TodoDraft = { id: string; text: string; dueDate: string };
@@ -110,7 +117,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     try {
       const docRef = await addDoc(
         collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`),
-        newNote,
+        newNote
       );
       setNotes((prev) => [
         {
@@ -130,10 +137,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const updateTodoField = (
     id: string,
     key: "text" | "dueDate",
-    value: string,
+    value: string
   ) =>
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [key]: value } : t)),
+      prev.map((t) => (t.id === id ? { ...t, [key]: value } : t))
     );
   const handleSaveClientNote = async () => {
     if (!selectedClient) return;
@@ -158,7 +165,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           content: memoContent.trim(),
           todoItems,
           timestamp: Timestamp.now(),
-        },
+        }
       );
       // 再取得でも良いが即時反映
       // Note 型へ合わせる (dueDate は文字列 or {seconds})
@@ -167,7 +174,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         dueDate: t.dueDate
           ? {
               seconds: Math.floor(
-                (t.dueDate as Timestamp).seconds ?? Date.now() / 1000,
+                (t.dueDate as Timestamp).seconds ?? Date.now() / 1000
               ),
             }
           : undefined,
@@ -206,7 +213,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       const USER_ID =
         process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       await deleteDoc(
-        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
+        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId)
       );
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
     } catch (e) {
@@ -219,13 +226,13 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const handleToggleTask = async (
     noteId: string,
     taskId: string,
-    isCompleted: boolean,
+    isCompleted: boolean
   ) => {
     try {
       const note = notes.find((n) => n.id === noteId);
       if (!note) return;
       const updated = (note.todoItems || []).map((t) =>
-        t?.id === taskId ? { ...t, isCompleted } : t,
+        t?.id === taskId ? { ...t, isCompleted } : t
       );
       const APP_ID =
         process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
@@ -233,10 +240,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
       await updateDoc(
         doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
-        { todoItems: updated },
+        { todoItems: updated }
       );
       setNotes((prev) =>
-        prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n)),
+        prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n))
       );
     } catch (e) {
       console.error(e);
@@ -282,7 +289,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                 ? `${summary}\n(所感:${sentiment})`
                 : summary;
             }
-          },
+          }
         );
         if (Object.keys(catObj).length === 1) {
           formObj[category] = Object.values(catObj)[0];
@@ -307,74 +314,15 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     return out;
   }, [assessmentPlan]);
 
-  // 支援計画の保存ハンドラ
-  const handleSaveSupportPlan = async () => {
-    if (!assessmentPlan) {
-      alert("保存対象のアセスメントがありません。");
-      return;
-    }
-
-    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-    const USER_ID =
-      process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-    const assessmentRef = doc(
-      db,
-      `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
-      assessmentPlan.id,
-    );
-
-    try {
-      await updateDoc(assessmentRef, {
-        supportPlan: editableSupportPlan,
-        updatedAt: serverTimestamp(),
-      });
-      setAssessmentPlan((prev) =>
-        prev ? { ...prev, supportPlan: editableSupportPlan } : null,
-      );
-      alert("支援計画を保存しました。");
-    } catch (error) {
-      console.error("Error saving support plan: ", error);
-      alert("支援計画の保存に失敗しました。");
-    }
-  };
-
-  // 支援計画生成ハンドラ
-  const handleGenerateSupportPlan = async () => {
-    if (!assessmentPlan) return;
-    setPlanLoading(true);
-    setPlanError(null);
-    try {
-      const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-      const res = await fetch(`${API_BASE_URL}/support-plan/generate/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assessment_data: assessmentPlan }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setEditableSupportPlan(data.plan);
-      } else {
-        setPlanError(
-          typeof data.detail === "string"
-            ? data.detail
-            : JSON.stringify(data.detail),
-        );
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setPlanError(
-          error.message ||
-            "支援計画の生成中にクライアント側でエラーが発生しました。",
-        );
-      } else {
-        setPlanError(
-          "支援計画の生成中にクライアント側でエラーが発生しました。",
-        );
-      }
-    } finally {
-      setPlanLoading(false);
-    }
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    setDragOffset({
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    });
   };
 
   // 支援者選択時にその人のメモと最新のアセスメントを取得
@@ -396,7 +344,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     const fetchNotes = async () => {
       const notesRef = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/notes`,
+        `artifacts/${APP_ID}/users/${USER_ID}/notes`
       );
       const q = query(notesRef, where("clientName", "==", selectedClient));
       const snap = await getDocs(q);
@@ -405,7 +353,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           id: doc.id,
           clientName: selectedClient,
           ...(doc.data() as LocalNote),
-        })),
+        }))
       );
       setLoading(false);
     };
@@ -416,11 +364,11 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       try {
         const assessmentsRef = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
+          `artifacts/${APP_ID}/users/${USER_ID}/assessments`
         );
         const q = query(
           assessmentsRef,
-          where("clientName", "==", selectedClient),
+          where("clientName", "==", selectedClient)
         );
         const snap = await getDocs(q);
         const assessments = snap.docs.map((doc) => ({
@@ -431,7 +379,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
         if (assessments.length > 0) {
           // 日付でソートして最新のものを取得
           assessments.sort(
-            (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0),
+            (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0)
           );
           const latestAssessment = assessments[0];
           setAssessmentPlan(latestAssessment);
@@ -448,6 +396,17 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     fetchNotes();
     fetchLatestAssessment();
   }, [selectedClient]);
+
+  // ESCでポップオーバーを閉じる
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setAiChatOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div className="flex flex-col md:flex-row gap-6 w-full p-4">
@@ -669,14 +628,14 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                             doc(
                               db,
                               `artifacts/${APP_ID}/users/${USER_ID}/notes`,
-                              id,
+                              id
                             ),
-                            { speaker, content },
+                            { speaker, content }
                           );
                           setNotes((p) =>
                             p.map((n) =>
-                              n.id === id ? { ...n, speaker, content } : n,
-                            ),
+                              n.id === id ? { ...n, speaker, content } : n
+                            )
                           );
                           setEditing(null);
                         } catch (e) {
@@ -696,17 +655,6 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       </div>
       {/* 右カラム: 情報・生成セクション（順序変更） */}
       <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
-        {/* AIチャット: タスク化連携 */}
-        <div className="bg-[var(--chip-bg)] rounded-xl shadow p-4 mt-4">
-          <h4 className="text-sm font-semibold text-[var(--brand-600)] mb-2">
-            AI相談チャット
-          </h4>
-          <SupportAgentChatUI
-            clientName={selectedClient}
-            assessmentData={simplifiedAssessment}
-            addTaskFromChat={addTaskFromChat}
-          />
-        </div>
         {/* ClientResources: pass simplified assessment for suggestions (may be null if no data) */}
         <div className="bg-[var(--surface)] rounded-xl shadow p-0">
           <ClientResources
@@ -715,6 +663,54 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
             assessmentData={simplifiedAssessment}
           />
         </div>
+      </div>
+      {/* AIチャット: タスク化連携 */}
+      <div className="relative">
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={() => toggleAiChatOpen()}
+            className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-200 animate-pulse"
+          >
+            <Bot className="h-6 w-6 text-white" />
+          </Button>
+        </div>
+        {aiChatOpen &&
+          createPortal(
+            <div
+              ref={popoverRef}
+              className="ai-chat-popover fixed right-25 bottom-6 z-50 w-[80%] md:w-[80%] bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden"
+              role="dialog"
+              aria-label="AI チャット"
+            >
+              <div
+                className="flex items-center justify-between p-3 md:p-2 border-b bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-t-lg touch-manipulation"
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleMouseDown}
+              >
+                <div className="flex items-center gap-3">
+                  <Bot className="h-5 w-5" />
+                  <h3 className="font-semibold text-sm md:text-base">
+                    福祉支援提案アシスタント
+                  </h3>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAiChatOpen(false)}
+                  className="text-white hover:bg-white/20 touch-manipulation min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <SupportAgentChatUI
+                clientName={selectedClient}
+                assessmentData={simplifiedAssessment}
+                addTaskFromChat={addTaskFromChat}
+                embedded
+              />
+            </div>,
+            document.body
+          )}
       </div>
     </div>
   );
