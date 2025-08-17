@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { Button } from "./ui/button";
+import { Send } from "lucide-react";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -10,7 +13,7 @@ interface SupportAgentChatUIProps {
   assessmentData: unknown;
   addTaskFromChat?: (task: string) => void;
   onAddResource?: (
-    resourceInfo: string | { name: string; exclude?: boolean; reason?: string }
+    resourceInfo: string | { name: string; exclude?: boolean; reason?: string },
   ) => void;
   embedded?: boolean;
 }
@@ -82,24 +85,24 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
       if (!found) {
         // 旧ロジック（制度名＋否定表現）
         const resourceMatch = data.reply.match(
-          /制度名[:：]?\s*([\w\u3040-\u30FF\u4E00-\u9FFF\uFF10-\uFF19\u3000-\u303F]+)/
+          /制度名[:：]?\s*([\w\u3040-\u30FF\u4E00-\u9FFF\uFF10-\uFF19\u3000-\u303F]+)/,
         );
         let exclude = false;
         let reason = "";
         const negativeMatch = data.reply.match(
-          /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/
+          /(対象外|利用できない|該当しない|不可|条件不適合|申請不可|利用不可|対象ではない)/,
         );
         if (negativeMatch) {
           exclude = true;
           const lines = data.reply.split("\n");
           const idx = lines.findIndex((l: string) =>
-            l.includes(resourceMatch ? resourceMatch[1] : "")
+            l.includes(resourceMatch ? resourceMatch[1] : ""),
           );
           reason =
             lines
               .slice(idx + 1)
               .find(
-                (l: string) => negativeMatch[0] && l.includes(negativeMatch[0])
+                (l: string) => negativeMatch[0] && l.includes(negativeMatch[0]),
               ) || negativeMatch[0];
         }
         if (
@@ -143,12 +146,23 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
         {messages.map((m, idx) => (
           <div
             key={idx}
-            className={`text-xs p-2 rounded ${m.role === "user" ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--gbtn-hover-bg)] text-[var(--brand-700)]"}`}
+            className={`text-md p-2 rounded ${m.role === "user" ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--gbtn-hover-bg)] text-[var(--brand-700)]"}`}
           >
             <span className="font-bold mr-1">
               {m.role === "user" ? "あなた" : "AI"}
             </span>
-            {m.content}
+            <div className="mt-1">
+              <ReactMarkdown
+                components={{
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  p: ({ node, ...props }) => (
+                    <p className="whitespace-pre-wrap text-sm" {...props} />
+                  ),
+                }}
+              >
+                {m.content}
+              </ReactMarkdown>
+            </div>
           </div>
         ))}
         {loading && (
@@ -178,7 +192,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
       <div className="flex gap-2">
         <input
           type="text"
-          className="border border-[var(--ginput-border)] rounded px-2 py-1 text-xs flex-1 bg-[var(--surface)] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)]"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -187,13 +201,13 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
           }}
           disabled={loading || !clientName}
         />
-        <button
-          className="bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs px-3 py-1 rounded"
-          onClick={sendMessage}
-          disabled={loading || !input.trim() || !clientName}
+        <Button
+          size="sm"
+          className="h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto touch-manipulation"
+          onClick={() => sendMessage()}
         >
-          送信
-        </button>
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
