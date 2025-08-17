@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { db } from "../firebase";
@@ -669,7 +667,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
 
       {/* AIチャット: タスク化連携 */}
       <div className="relative">
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed md:bottom-6 md:right-6 bottom-3 right-3 z-50">
           <Button
             onClick={() => toggleAiChatOpen()}
             className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-200 animate-pulse"
@@ -684,7 +682,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           createPortal(
             <div
               ref={popoverRef}
-              className="ai-chat-popover fixed right-25 bottom-6 z-50 w-[80%] md:w-[80%] bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden"
+              className="fixed md:bottom-6 bottom-18 z-50 left-1/2 -translate-x-1/2 md:w-[80vw] w-[90vw] bg-[var(--surface)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden"
               role="dialog"
               aria-label="AI チャット"
             >
