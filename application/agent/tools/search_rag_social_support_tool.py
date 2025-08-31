@@ -14,8 +14,6 @@ def create_suggest_resources_tool() -> Tool:
         # Build explicit credentials from FIREBASE_SERVICE_ACCOUNT and pass to Client
         # (falls back to ADC if building fails or is omitted)
         creds = get_google_service_account_credentials()
-        if creds is None:
-            return "(ERROR) RAG検索でエラーが発生しました: 認証情報が取得できませんでした。"
         client = genai.Client(vertexai=True, project=RAG_PROJECT_ID, location=RAG_LOCATION, credentials=creds)
 
         contents = [
