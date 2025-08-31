@@ -3,16 +3,13 @@ import json
 import logging
 import asyncio
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import create_react_agent, AgentExecutor, Tool
+from langchain.agents import create_react_agent, AgentExecutor
 from langchain.tools.render import render_text_description
 from langchain.prompts import PromptTemplate
 
 from .prompts.planner import PLANNER_PROMPT
 from .prompts.conversational_agent import CONVERSATIONAL_AGENT_PROMPT
-from .tools.support_planner_tools import (
-    search_resource_detail,
-    suggest_resources,
-)
+from .tools.support_planner_tools import create_suggest_resources_tool
 from .tools.google_search_tool import create_google_search_tool
 
 # loggingの設定
@@ -35,14 +32,11 @@ class GeminiAgent:
             google_api_key=api_key,
         )
 
-        # --- Robust Google Search Tool (extracted) ---
+        # --- Tools ---
         google_search_tool = create_google_search_tool(api_key, google_cse_id)
+        rag_suggest_tool = create_suggest_resources_tool()
 
-        tools = [
-            # search_resource_detail, # FIXME: これがうまく動いていない
-            suggest_resources,
-            google_search_tool,
-        ]
+        tools = [google_search_tool, rag_suggest_tool]
 
         # プランナー用プロンプト
         planner_prompt = PromptTemplate.from_template(PLANNER_PROMPT).partial(
