@@ -7,7 +7,6 @@ import asyncio
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_react_agent, AgentExecutor, Tool
 from langchain.tools.render import render_text_description
-from langchain_google_community import GoogleSearchAPIWrapper
 from langchain.prompts import PromptTemplate
 
 from .prompts.planner import PLANNER_PROMPT
@@ -16,6 +15,7 @@ from .tools.support_planner_tools import (
     search_resource_detail,
     suggest_resources,
 )
+from .tools.google_search_tool import create_google_search_tool
 
 # loggingの設定
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -49,41 +49,8 @@ class GeminiAgent:
             google_api_key=api_key,
         )
 
-        # --- Robust Google Search Tool (safe wrapper) ---
-        search_api = GoogleSearchAPIWrapper(google_api_key=api_key, google_cse_id=google_cse_id)
-
-        def safe_google_search(query: str) -> str:
-            """トップ検索結果を安全に取得し構造化テキストで返す。失敗時もNoneを返さず必ず説明文を返す。"""
-            logging.info(f"【Tool】Executing safe_google_search with query: {query}")
-            try:
-                # 2025/令和7年度など最新年度情報を意図したクエリ強化: 年度指定が無く制度/給付系キーワードなら 2025 を付加
-                if not any(y in query for y in ["2025", "令和7", "R7"]) and any(
-                    k in query for k in ["制度", "給付", "補助", "支援", "助成", "要件", "対象"]
-                ):
-                    query += " 2025"
-                    logging.info(f"【Tool】Augmented google query with year -> {query}")
-                results = search_api.results(query, num_results=5)
-                if not results:
-                    return "Google検索結果は0件でした。クエリを具体化してください。"
-                formatted = []
-                for r in results:
-                    formatted.append(
-                        "タイトル: {title}\nリンク: {link}\nスニペット: {snippet}".format(
-                            title=r.get("title", "N/A"),
-                            link=r.get("link", "N/A"),
-                            snippet=r.get("snippet", "N/A"),
-                        )
-                    )
-                return "\n---\n".join(formatted)
-            except Exception as e:
-                logging.error(f"Google検索中に例外: {e}", exc_info=True)
-                return f"Google検索でエラーが発生しました（再試行/別クエリを検討）: {e}"
-
-        google_search_tool = Tool(
-            name="google_search",
-            func=safe_google_search,
-            description="Google検索を実行し最新の制度・サービス情報を取得する。ローカル検索で不足した場合に使用する。出力はタイトル/リンク/スニペットの一覧。",
-        )
+        # --- Robust Google Search Tool (extracted) ---
+        google_search_tool = create_google_search_tool(api_key, google_cse_id)
 
         tools = [
             # search_resource_detail, # FIXME: これがうまく動いていない
