@@ -74,4 +74,3 @@ def normalize_resource_input(raw: dict) -> dict:
         "contact_url": contact.get("url"),
         "keywords": raw.get("keywords", []),
     }
-

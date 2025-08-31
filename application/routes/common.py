@@ -45,13 +45,21 @@ db = _init_firestore()
 
 def resource_collection():
     return (
-        db.collection("artifacts").document(TARGET_APP_ID).collection("users").document(TARGET_USER_ID).collection("resources")
+        db.collection("artifacts")
+        .document(TARGET_APP_ID)
+        .collection("users")
+        .document(TARGET_USER_ID)
+        .collection("resources")
     )
 
 
 def resource_memo_collection():
     return (
-        db.collection("artifacts").document(TARGET_APP_ID).collection("users").document(TARGET_USER_ID).collection("resource_memos")
+        db.collection("artifacts")
+        .document(TARGET_APP_ID)
+        .collection("users")
+        .document(TARGET_USER_ID)
+        .collection("resource_memos")
     )
 
 
@@ -67,4 +75,3 @@ def exponential_backoff(func, max_attempts: int = 5, initial_delay: float = 1.0,
                 raise
             time.sleep(delay + random.uniform(0, 0.5))
             delay = min(delay * 2, max_delay)
-

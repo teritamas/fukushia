@@ -45,4 +45,3 @@ def create_google_search_tool(google_api_key: str, google_cse_id: str | None) ->
         func=safe_google_search,
         description="Google検索を実行し最新の制度・サービス情報を取得する。ローカル検索で不足した場合に使用する。出力はタイトル/リンク/スニペットの一覧。",
     )
-

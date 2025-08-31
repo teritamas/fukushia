@@ -54,4 +54,3 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     except Exception as e:
         logger.error(f"Embedding API error: {e}")
     return [[] for _ in texts]
-

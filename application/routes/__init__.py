@@ -19,4 +19,3 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(resource_imports_router)
     app.include_router(resources_advanced_router)
     app.include_router(interactive_support_plan_router)
-

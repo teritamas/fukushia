@@ -11,4 +11,3 @@ class InteractiveSupportPlanRequest(BaseModel):
 
 class InteractiveSupportPlanResponse(BaseModel):
     reply: str
-

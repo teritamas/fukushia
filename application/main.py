@@ -37,4 +37,3 @@ app.add_middleware(
 
 
 register_routes(app)
-

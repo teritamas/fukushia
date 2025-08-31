@@ -35,13 +35,17 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
             summary_text = gemini_agent.summarize_for_resource_match(base_text)
             used_summary = True
             if logger.isEnabledFor(10):
-                logger.debug(f"[suggest_debug] summarization used_summary={used_summary} summary_len={len(summary_text)}")
+                logger.debug(
+                    f"[suggest_debug] summarization used_summary={used_summary} summary_len={len(summary_text)}"
+                )
         except Exception as e:
             logger.warning(f"summary failed fallback raw: {e}")
             summary_text = base_text
     import re
 
-    tokens = [t.lower() for t in re.split(r"[\s、。,.；;:\n\r\t/()『』「」【】\[\]{}]+", summary_text) if len(t) > 1][:1000]
+    tokens = [t.lower() for t in re.split(r"[\s、。,.；;:\n\r\t/()『』「」【】\[\]{}]+", summary_text) if len(t) > 1][
+        :1000
+    ]
     if logger.isEnabledFor(10):
         logger.debug(f"[suggest_debug] token_count={len(tokens)} first_tokens={tokens[:15]}")
     q_vec = embed_texts([summary_text])[0]
