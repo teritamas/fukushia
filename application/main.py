@@ -302,24 +302,6 @@ class SupportPlanRequest(BaseModel):
     assessment_data: dict  # 必要に応じて型やフィールドを調整
 
 
-# --- 支援計画生成エンドポイント ---
-@app.post("/support-plan/generate/")
-async def generate_support_plan(req: SupportPlanRequest, request: Request):
-    """
-    アセスメント情報を基に支援計画を生成するエンドポイント。
-    """
-    gemini_agent: GeminiAgent = request.app.state.gemini_agent
-    try:
-        plan = gemini_agent.generate_support_plan_with_agent(req.assessment_data)
-        return {"plan": plan}
-    except Exception as e:
-        logger.error(f"支援計画の生成中にエラーが発生しました: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"支援計画の生成中にエラーが発生しました: {str(e)}",
-        )
-
-
 # --- 社会資源 CRUD エンドポイント ---
 
 

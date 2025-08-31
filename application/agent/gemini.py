@@ -86,61 +86,6 @@ class GeminiAgent:
             max_iterations=10,  # 無限ループを防ぐ
         )
 
-    def generate_support_plan_with_agent(self, assessment_data: dict) -> str:
-        """
-        プランナーエージェントを呼び出し、支援計画を生成する。
-        """
-        try:
-            logging.info("--- Invoking Planner Agent ---")
-            # supporter_info を明示的に抽出 / 供給
-            supporter_info = assessment_data.get("supporter_info")
-
-            # 簡易フォールバック抽出: assessment_data['assessment'] の構造から主要フィールドを拾う
-            if supporter_info is None:
-                supporter_info = {}
-                a = assessment_data.get("assessment") or {}
-                try:
-                    form1 = a.get("様式1：インテークシート", {})
-                    personal = form1.get("本人情報", {}) if isinstance(form1, dict) else {}
-                    consult = form1.get("相談内容", {}) if isinstance(form1, dict) else {}
-                    supporter_info.update(
-                        {
-                            "name": personal.get("氏名") or personal.get("名前"),
-                            "address": personal.get("現住所") or personal.get("住所"),
-                        }
-                    )
-                    # concerns を複数フィールドから連結
-                    concern_parts = []
-                    if isinstance(consult, dict):
-                        concern_parts.append(consult.get("相談の概要"))
-                    supporter_info["concerns"] = "。".join([p for p in concern_parts if p]) or None
-                except Exception:
-                    pass
-
-                # プレースホルダ補完
-                for k in ["name", "address", "concerns"]:
-                    supporter_info.setdefault(k, "不明")
-
-            # エージェントに与える入力テキストを構築
-            agent_input_obj = {
-                "supporter_info": supporter_info,
-                "raw_assessment": assessment_data,
-            }
-            assessment_text = json.dumps(agent_input_obj, indent=2, ensure_ascii=False)
-
-            # エージェントの入力は`input`キーに文字列として渡す
-            response = self.planner_agent.invoke({"input": assessment_text})
-
-            plan_json = response["output"]
-
-            logging.info("--- Planner Agent Finished ---")
-            # JSONオブジェクトを整形された文字列として返す
-            return json.dumps(plan_json, indent=2, ensure_ascii=False)
-
-        except Exception as e:
-            logging.error(f"Planner Agent execution failed: {e}", exc_info=True)
-            return f"支援計画の生成中にエラーが発生しました: {e}"
-
     async def generate_interactive_support_plan_stream(
         self,
         client_name: str,
