@@ -57,4 +57,3 @@ def get_google_service_account_credentials(scopes: Optional[List[str]] = None):
         return service_account.Credentials.from_service_account_info(info, scopes=scopes)
     except Exception as e:
         raise RuntimeError(f"サービスアカウント認証情報の生成に失敗しました: {e}")
-
