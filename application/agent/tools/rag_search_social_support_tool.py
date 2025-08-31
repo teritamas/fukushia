@@ -5,7 +5,7 @@ from google import genai
 from google.genai import types
 
 
-def create_suggest_resources_tool() -> Tool:
+def create_rag_search_social_support_tool() -> Tool:
     """
     Return a LangChain Tool that queries Vertex RAG Store for relevant policies/services.
     """
@@ -77,7 +77,7 @@ def create_suggest_resources_tool() -> Tool:
             return f"(ERROR) RAG検索でエラーが発生しました: {e}"
 
     return Tool(
-        name="suggest_resources",
+        name="rag_search_social_support",
         func=rag_suggest,
         description="RAG(Vertex AI)で状況・困りごと・地域に合う制度/資源を検索・要約する。",
     )

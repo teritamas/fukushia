@@ -8,7 +8,7 @@ from langchain.tools.render import render_text_description
 from langchain.prompts import PromptTemplate
 
 from .prompts.conversational_agent import CONVERSATIONAL_AGENT_PROMPT
-from .tools.search_rag_social_support_tool import create_suggest_resources_tool
+from .tools.rag_search_social_support_tool import create_rag_search_social_support_tool
 from .tools.google_search_tool import create_google_search_tool
 
 # loggingの設定
@@ -33,9 +33,9 @@ class GeminiAgent:
 
         # --- Tools ---
         google_search_tool = create_google_search_tool(api_key, google_cse_id)
-        rag_suggest_tool = create_suggest_resources_tool()
+        search_rag_social_support_tool = create_rag_search_social_support_tool()
 
-        tools = [google_search_tool, rag_suggest_tool]
+        tools = [google_search_tool, search_rag_social_support_tool]
 
         conversational_prompt = PromptTemplate.from_template(CONVERSATIONAL_AGENT_PROMPT).partial(
             tools=render_text_description(tools),
