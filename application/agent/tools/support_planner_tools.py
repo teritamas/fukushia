@@ -58,12 +58,17 @@ def search_resource_detail(resource_name: str) -> str:
     """
     # Firestore直接参照で部分一致検索
     if not firebase_admin._apps:
-        cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "serviceAccountKey.json")
+        try:
+            from config import GOOGLE_APPLICATION_CREDENTIALS as cred_path
+        except Exception:
+            cred_path = None
+        if not cred_path:
+            cred_path = "serviceAccountKey.json"
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
     db = firestore.client()
-    app_id = os.environ.get("TARGET_FIREBASE_APP_ID", "1:667712908416:web:ad84cae4853ac6de444a65")
-    user_id = os.environ.get("TARGET_FIREBASE_USER_ID", "firebase-adminsdk-fbsvc@tritama-e20cf.iam.gserviceaccount.com")
+    from config import TARGET_FIREBASE_APP_ID as app_id, TARGET_FIREBASE_USER_ID as user_id
+
     resources_ref = (
         db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
     )
@@ -95,12 +100,17 @@ def suggest_resources(situation: str) -> str:
     """
     # Firestore直接参照で部分一致検索
     if not firebase_admin._apps:
-        cred_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "serviceAccountKey.json")
+        try:
+            from config import GOOGLE_APPLICATION_CREDENTIALS as cred_path
+        except Exception:
+            cred_path = None
+        if not cred_path:
+            cred_path = "serviceAccountKey.json"
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
     db = firestore.client()
-    app_id = os.environ.get("TARGET_FIREBASE_APP_ID", "1:667712908416:web:ad84cae4853ac6de444a65")
-    user_id = os.environ.get("TARGET_FIREBASE_USER_ID", "firebase-adminsdk-fbsvc@tritama-e20cf.iam.gserviceaccount.com")
+    from config import TARGET_FIREBASE_APP_ID as app_id, TARGET_FIREBASE_USER_ID as user_id
+
     resources_ref = (
         db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
     )
