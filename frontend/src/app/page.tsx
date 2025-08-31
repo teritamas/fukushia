@@ -15,6 +15,7 @@ export default function Page() {
     form?: string;
   } | null>(null);
   const [homeNavSignal, setHomeNavSignal] = useState(0);
+  const [assessmentRefreshSignal, setAssessmentRefreshSignal] = useState(0);
   const requestAssessmentEdit = (target?: {
     category?: string;
     form?: string;
@@ -29,6 +30,9 @@ export default function Page() {
     setSelectedTab("clients");
     setHomeNavSignal((s) => s + 1);
   };
+  const notifyAssessmentUpdated = () => {
+    setAssessmentRefreshSignal((s) => s + 1);
+  };
 
   return (
     <ClientContext.Provider
@@ -40,6 +44,8 @@ export default function Page() {
         requestAssessmentEdit,
         homeNavSignal,
         requestGoToBasicInfo,
+        assessmentRefreshSignal,
+        notifyAssessmentUpdated,
       }}
     >
       <div className="min-h-screen flex flex-col bg-[var(--background)]">
