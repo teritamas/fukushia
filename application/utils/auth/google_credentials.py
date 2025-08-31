@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Optional, List
 
 from config import FIREBASE_SERVICE_ACCOUNT, GOOGLE_APPLICATION_CREDENTIALS
@@ -23,8 +24,6 @@ def get_google_service_account_info() -> dict:
 
     if GOOGLE_APPLICATION_CREDENTIALS:
         try:
-            import os
-
             path = GOOGLE_APPLICATION_CREDENTIALS
             if not os.path.exists(path):
                 raise RuntimeError(f"GOOGLE_APPLICATION_CREDENTIALS のパスが存在しません: {path}")
