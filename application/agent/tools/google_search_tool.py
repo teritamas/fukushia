@@ -13,14 +13,12 @@ def create_google_search_tool(google_api_key: str, google_cse_id: str | None) ->
 
     def safe_google_search(query: str) -> str:
         """Execute Google search safely and format the results."""
-        logging.info(f"【Tool】Executing safe_google_search with query: {query}")
         try:
             # If the query is about systems/benefits without a year, append 2025
             if not any(y in query for y in ["2025", "令和7", "R7"]) and any(
                 k in query for k in ["制度", "給付", "補助", "支援", "助成", "要件", "対象"]
             ):
                 query += " 2025"
-                logging.info(f"【Tool】Augmented google query with year -> {query}")
 
             results = search_api.results(query, num_results=5)
             if not results:
@@ -37,7 +35,6 @@ def create_google_search_tool(google_api_key: str, google_cse_id: str | None) ->
                 )
             return "\n---\n".join(formatted)
         except Exception as e:
-            logging.error(f"Google検索中に例外: {e}", exc_info=True)
             return f"Google検索でエラーが発生しました（再試行/別クエリを検討）: {e}"
 
     return Tool(

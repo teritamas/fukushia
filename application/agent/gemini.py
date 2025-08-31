@@ -3,16 +3,12 @@ import json
 import logging
 import asyncio
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import create_react_agent, AgentExecutor, Tool
+from langchain.agents import create_react_agent, AgentExecutor
 from langchain.tools.render import render_text_description
 from langchain.prompts import PromptTemplate
 
-from .prompts.planner import PLANNER_PROMPT
 from .prompts.conversational_agent import CONVERSATIONAL_AGENT_PROMPT
-from .tools.support_planner_tools import (
-    search_resource_detail,
-    suggest_resources,
-)
+from .tools.rag_search_social_support_tool import create_rag_search_social_support_tool
 from .tools.google_search_tool import create_google_search_tool
 
 # loggingの設定
@@ -35,30 +31,12 @@ class GeminiAgent:
             google_api_key=api_key,
         )
 
-        # --- Robust Google Search Tool (extracted) ---
+        # --- Tools ---
         google_search_tool = create_google_search_tool(api_key, google_cse_id)
+        search_rag_social_support_tool = create_rag_search_social_support_tool()
 
-        tools = [
-            # search_resource_detail, # FIXME: これがうまく動いていない
-            suggest_resources,
-            google_search_tool,
-        ]
+        tools = [google_search_tool, search_rag_social_support_tool]
 
-        # プランナー用プロンプト
-        planner_prompt = PromptTemplate.from_template(PLANNER_PROMPT).partial(
-            tools=render_text_description(tools),
-            tool_names=", ".join([t.name for t in tools]),
-        )
-        planner_agent_core = create_react_agent(self.llm, tools, planner_prompt)
-        self.planner_agent = AgentExecutor(
-            agent=planner_agent_core,
-            tools=tools,
-            verbose=True,
-            handle_parsing_errors=True,
-            max_iterations=10,  # 無限ループを防ぐ
-        )
-
-        # 会話用プロンプト
         conversational_prompt = PromptTemplate.from_template(CONVERSATIONAL_AGENT_PROMPT).partial(
             tools=render_text_description(tools),
             tool_names=", ".join([t.name for t in tools]),
