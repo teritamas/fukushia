@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Request
-from typing import List, Tuple
 
 from ...common import resource_collection, logger
 from ..service import resource_doc_to_model

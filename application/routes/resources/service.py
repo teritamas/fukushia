@@ -1,8 +1,4 @@
-import json
-import math
-from typing import List
 from models.pydantic_models import Resource
-from .utils import embed_texts
 
 
 def resource_to_corpus(r: Resource) -> str:
