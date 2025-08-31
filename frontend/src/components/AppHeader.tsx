@@ -41,7 +41,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
       try {
         const ref = collection(
           db,
-          `artifacts/${APP_ID}/users/${USER_ID}/clients`,
+          `artifacts/${APP_ID}/users/${USER_ID}/clients`
         );
         const q = query(ref, orderBy("createdAt", "asc"));
         const snap = await getDocs(q);
@@ -79,7 +79,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
     try {
       const ref = collection(
         db,
-        `artifacts/${APP_ID}/users/${USER_ID}/clients`,
+        `artifacts/${APP_ID}/users/${USER_ID}/clients`
       );
       const docRef = await addDoc(ref, {
         name: newName.trim(),
@@ -114,7 +114,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
           }}
           title="ダッシュボードに戻る"
         >
-          福祉支援ダッシュボード
+          フクシア
         </button>
         <div className="ml-auto flex items-center gap-3">
           <nav className="flex flex-wrap items-center gap-2">
@@ -257,7 +257,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 </div>
               </div>
             </div>,
-            document.body,
+            document.body
           )}
       </div>
     </header>
