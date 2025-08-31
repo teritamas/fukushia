@@ -1,6 +1,4 @@
-from venv import logger
 import google.generativeai as genai
-from agent.natural_language_processor import NaturalLanguageProcessor
 import json
 import logging
 import asyncio
@@ -30,19 +28,7 @@ class GeminiAgent:
     ):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)
-        self.nlp_processor = NaturalLanguageProcessor()
         self.google_cse_id = google_cse_id
-
-        # --- エージェントの定義 ---
-        # NOTE: convert_system_message_to_human parameter removed in newer langchain-google-genai versions
-        # Remove to avoid: 'ChatGoogleGenerativeAI' object has no attribute 'convert_system_message_to_human'
-        # ライブラリのバージョン不整合対策: _prepare_request が convert_system_message_to_human を参照するが
-        # モデル定義からフィールドが削除されている場合があるため、クラスに擬似フィールドを追加して解消
-        if not hasattr(ChatGoogleGenerativeAI, "convert_system_message_to_human"):
-            logging.warning(
-                "Monkeypatch: Adding missing attribute 'convert_system_message_to_human' to ChatGoogleGenerativeAI class (False)."
-            )
-            ChatGoogleGenerativeAI.convert_system_message_to_human = False  # class attribute
 
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash",

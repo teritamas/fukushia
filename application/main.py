@@ -18,14 +18,11 @@ GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logging.getLogger(__name__).info("アプリケーションを起動します...")
     if not GEMINI_API_KEY or not GOOGLE_CSE_ID:
         raise ValueError("APIキーまたはCSE IDが設定されていません。")
 
     app.state.gemini_agent = GeminiAgent(api_key=GEMINI_API_KEY, google_cse_id=GOOGLE_CSE_ID)
-    logging.getLogger(__name__).info("GeminiAgentの初期化が完了しました。")
     yield
-    logging.getLogger(__name__).info("アプリケーションをシャットダウンします...")
 
 
 app = FastAPI(lifespan=lifespan)
