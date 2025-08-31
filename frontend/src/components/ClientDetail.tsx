@@ -1,5 +1,7 @@
+"use client";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useClientContext } from "./ClientContext";
 import { db } from "../firebase";
 import {
   collection,
@@ -80,6 +82,12 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const [aiChatOpen, setAiChatOpen] = useState(true);
   const toggleAiChatOpen = () => setAiChatOpen((prev) => !prev);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const { assessmentRefreshSignal } = useClientContext();
+  // Avoid SSR hydration mismatch by rendering portal only after mount
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // メモ / TODO 入力用 draft state
   type TodoDraft = { id: string; text: string; dueDate: string };
@@ -395,7 +403,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
 
     fetchNotes();
     fetchLatestAssessment();
-  }, [selectedClient]);
+  }, [selectedClient, assessmentRefreshSignal]);
 
   // ESCでポップオーバーを閉じる
   useEffect(() => {
@@ -676,8 +684,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           </Button>
         </div>
         {aiChatOpen &&
-          typeof window !== "undefined" &&
-          typeof document !== "undefined" &&
+          mounted &&
           document.body &&
           createPortal(
             <div

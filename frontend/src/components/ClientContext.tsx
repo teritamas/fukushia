@@ -19,6 +19,8 @@ export interface ClientContextValue {
   }) => void;
   homeNavSignal: number; // increments when user clicks Dashboard title to go home (basic info)
   requestGoToBasicInfo: () => void;
+  assessmentRefreshSignal: number; // increments when assessment data changed/saved
+  notifyAssessmentUpdated: () => void;
 }
 
 export const ClientContext = createContext<ClientContextValue | undefined>(
@@ -36,6 +38,8 @@ export function useClientContext(): ClientContextValue {
       requestAssessmentEdit: () => {},
       homeNavSignal: 0,
       requestGoToBasicInfo: () => {},
+      assessmentRefreshSignal: 0,
+      notifyAssessmentUpdated: () => {},
     };
   }
   return ctx;

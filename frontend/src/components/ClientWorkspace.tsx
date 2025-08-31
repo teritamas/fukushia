@@ -17,7 +17,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 export default function ClientWorkspace() {
   const [activeTab, setActiveTab] = useState("detail");
-  const { currentClient, setCurrentClient, homeNavSignal } = useClientContext();
+  const {
+    currentClient,
+    setCurrentClient,
+    homeNavSignal,
+    assessmentRefreshSignal,
+  } = useClientContext();
   // 個別基本情報はアセスメントの本人情報を参照
   const [personalInfo, setPersonalInfo] = useState<Record<string, string>>({});
   const [prevPersonalInfo, setPrevPersonalInfo] = useState<Record<
@@ -187,7 +192,7 @@ export default function ClientWorkspace() {
       }
     };
     loadPersonal();
-  }, [currentClient, APP_ID, USER_ID]);
+  }, [currentClient, APP_ID, USER_ID, assessmentRefreshSignal]);
 
   return (
     <div className="g:col-span-9">

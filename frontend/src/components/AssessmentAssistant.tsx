@@ -25,8 +25,12 @@ export default function AssessmentAssistant() {
   const [assessmentResult] = useState("");
   const [assessmentLoading] = useState(false);
   const [assessmentError] = useState<string | null>(null);
-  const { currentClient, assessmentEditSignal, assessmentEditTarget } =
-    useClientContext();
+  const {
+    currentClient,
+    assessmentEditSignal,
+    assessmentEditTarget,
+    notifyAssessmentUpdated,
+  } = useClientContext();
   type MappedResult = Record<
     string,
     Record<string, string | Record<string, string>>
@@ -182,6 +186,11 @@ export default function AssessmentAssistant() {
       setExistingVersion(1);
       setMappedResult(null);
       alert(`アセスメント結果が保存されました。 (ID: ${docRef.id})`);
+      // Signal other views (e.g., ClientDetail, Personal Info) to refetch latest assessment
+      notifyAssessmentUpdated();
+      // Ensure creation mode closes and latest data is fetched from Firestore
+      setShowCreation(false);
+      await fetchExistingAssessment();
     } catch (error) {
       console.error("Error saving assessment: ", error);
       setMappingError("アセスメント結果の保存に失敗しました。");
@@ -189,60 +198,58 @@ export default function AssessmentAssistant() {
   };
 
   // 既存アセスメント読込 (store docId)
-  useEffect(() => {
-    const loadExisting = async () => {
-      if (!currentClient) {
+  const fetchExistingAssessment = async () => {
+    if (!currentClient) {
+      setExistingAssessment(null);
+      setExistingDocId(null);
+      return;
+    }
+    setExistingLoading(true);
+    setExistingError(null);
+    try {
+      const APP_ID =
+        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
+      const USER_ID =
+        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
+      const ref = collection(
+        db,
+        `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
+      );
+      const qAssess = query(ref, where("clientName", "==", currentClient.name));
+      const snap = await getDocs(qAssess);
+      if (snap.empty) {
         setExistingAssessment(null);
         setExistingDocId(null);
-        return;
-      }
-      setExistingLoading(true);
-      setExistingError(null);
-      try {
-        const APP_ID =
-          process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-        const USER_ID =
-          process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-        const ref = collection(
-          db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
-        );
-        const qAssess = query(
-          ref,
-          where("clientName", "==", currentClient.name),
-        );
-        const snap = await getDocs(qAssess);
-        if (snap.empty) {
-          setExistingAssessment(null);
-          setExistingDocId(null);
-        } else {
-          interface RawDoc {
-            id: string;
-            createdAt?: { seconds?: number } | null;
-            assessment?: MappedResult | null;
-            version?: number | null;
-          }
-          const docs = snap.docs.map(
-            (d: QueryDocumentSnapshot<DocumentData>) => ({
-              id: d.id,
-              ...(d.data() as DocumentData),
-            }),
-          ) as RawDoc[];
-          docs.sort(
-            (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0),
-          );
-          setExistingAssessment(docs[0]?.assessment ?? null);
-          setExistingDocId(docs[0]?.id || null);
-          setExistingVersion(docs[0]?.version || 1);
+      } else {
+        interface RawDoc {
+          id: string;
+          createdAt?: { seconds?: number } | null;
+          assessment?: MappedResult | null;
+          version?: number | null;
         }
-      } catch (e) {
-        console.error(e);
-        setExistingError("既存アセスメントの取得に失敗しました");
-      } finally {
-        setExistingLoading(false);
+        const docs = snap.docs.map(
+          (d: QueryDocumentSnapshot<DocumentData>) => ({
+            id: d.id,
+            ...(d.data() as DocumentData),
+          }),
+        ) as RawDoc[];
+        docs.sort(
+          (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0),
+        );
+        setExistingAssessment(docs[0]?.assessment ?? null);
+        setExistingDocId(docs[0]?.id || null);
+        setExistingVersion(docs[0]?.version || 1);
       }
-    };
-    loadExisting();
+    } catch (e) {
+      console.error(e);
+      setExistingError("既存アセスメントの取得に失敗しました");
+    } finally {
+      setExistingLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchExistingAssessment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentClient]);
 
   // 履歴読み込み
