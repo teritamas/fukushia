@@ -27,8 +27,5 @@ GOOGLE_APPLICATION_CREDENTIALS: str | None = os.getenv("GOOGLE_APPLICATION_CREDE
 
 # Project detection (optional; ADC may provide project implicitly)
 FIREBASE_PROJECT_ID: str | None = (
-    os.getenv("FIREBASE_PROJECT_ID")
-    or os.getenv("GCP_PROJECT")
-    or os.getenv("GOOGLE_CLOUD_PROJECT")
+    os.getenv("FIREBASE_PROJECT_ID") or os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
 )
-

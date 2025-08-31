@@ -68,6 +68,7 @@ def search_resource_detail(resource_name: str) -> str:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
     from config import TARGET_FIREBASE_APP_ID as app_id, TARGET_FIREBASE_USER_ID as user_id
+
     resources_ref = (
         db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
     )
@@ -109,6 +110,7 @@ def suggest_resources(situation: str) -> str:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
     from config import TARGET_FIREBASE_APP_ID as app_id, TARGET_FIREBASE_USER_ID as user_id
+
     resources_ref = (
         db.collection("artifacts").document(app_id).collection("users").document(user_id).collection("resources")
     )

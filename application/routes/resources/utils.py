@@ -23,6 +23,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
         import google.generativeai as genai  # type: ignore
 
         from config import GEMINI_API_KEY as api_key
+
         if api_key:
             try:
                 genai.configure(api_key=api_key)
