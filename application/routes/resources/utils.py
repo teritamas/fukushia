@@ -1,9 +1,8 @@
 import logging
-import os
 
 
 logger = logging.getLogger(__name__)
-EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "models/text-embedding-004")
+from config import EMBED_MODEL as EMBED_MODEL_NAME
 
 
 def cosine(a: list[float], b: list[float]) -> float:
@@ -23,7 +22,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     try:
         import google.generativeai as genai  # type: ignore
 
-        api_key = os.getenv("GEMINI_API_KEY")
+        from config import GEMINI_API_KEY as api_key
         if api_key:
             try:
                 genai.configure(api_key=api_key)

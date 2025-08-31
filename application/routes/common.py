@@ -1,22 +1,15 @@
-import os
 import logging
-from typing import Generator
 
 from google.cloud import firestore
 from google.api_core.exceptions import NotFound as FirestoreNotFound
 
 from infra.firestore import get_firestore_client
+import config
 
 
 # logging
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
+logging.basicConfig(level=getattr(logging, config.LOG_LEVEL, logging.INFO))
 logger = logging.getLogger(__name__)
-
-
-# Target Firestore paths (env overridable)
-TARGET_APP_ID = os.getenv("TARGET_FIREBASE_APP_ID", "1:667712908416:web:ad84cae4853ac6de444a65")
-TARGET_USER_ID = os.getenv("TARGET_FIREBASE_USER_ID", "firebase-adminsdk-fbsvc@tritama-e20cf.iam.gserviceaccount.com")
 
 
 def _init_firestore():
@@ -26,9 +19,7 @@ def _init_firestore():
     except Exception as e:
         logger.warning(f"Firebase Admin init failed, fallback to google.cloud.firestore.Client: {e}")
         try:
-            project_id = (
-                os.getenv("FIREBASE_PROJECT_ID") or os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
-            )
+            project_id = config.FIREBASE_PROJECT_ID
             if project_id:
                 client = firestore.Client(project=project_id)
             else:
@@ -46,9 +37,9 @@ db = _init_firestore()
 def resource_collection():
     return (
         db.collection("artifacts")
-        .document(TARGET_APP_ID)
+        .document(config.TARGET_FIREBASE_APP_ID)
         .collection("users")
-        .document(TARGET_USER_ID)
+        .document(config.TARGET_FIREBASE_USER_ID)
         .collection("resources")
     )
 
@@ -56,9 +47,9 @@ def resource_collection():
 def resource_memo_collection():
     return (
         db.collection("artifacts")
-        .document(TARGET_APP_ID)
+        .document(config.TARGET_FIREBASE_APP_ID)
         .collection("users")
-        .document(TARGET_USER_ID)
+        .document(config.TARGET_FIREBASE_USER_ID)
         .collection("resource_memos")
     )
 
