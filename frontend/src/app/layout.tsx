@@ -21,8 +21,8 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "支援アシスタント",
-  description: "シンプルで洗練された支援業務ダッシュボード",
+  title: "Fukushia",
+  description: " 社会福祉士のための業務支援AIアシスタント",
 };
 
 export default function RootLayout({
