@@ -6,6 +6,9 @@ from models.pydantic_models import ActivityReportRequest
 router = APIRouter(prefix="/reports/activity", tags=["reports"])
 
 
+# TODO: generate_activity_report メソッドが存在しないため、一時的にコメントアウト
+# 適切なエージェントクラスを作成するか、このルートを削除する必要があります
+"""
 @router.post("/")
 async def generate_activity_report(req: ActivityReportRequest, request: Request):
     def call_gemini():
@@ -17,3 +20,4 @@ async def generate_activity_report(req: ActivityReportRequest, request: Request)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
     return {"report": report}
+"""
