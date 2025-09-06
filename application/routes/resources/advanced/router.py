@@ -28,11 +28,15 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
     used_summary = False
     if logger.isEnabledFor(10):  # DEBUG
         logger.debug(f"[suggest_debug] raw_text_len={len(base_text)} snippets={len(texts)}")
+    # TODO: summarize_for_resource_match メソッドが存在しないため、一時的にコメントアウト
+    # 適切なエージェントクラスを作成するか、このロジックを見直す必要があります
     if req.use_llm_summary and base_text:
         try:
-            gemini_agent = request.app.state.gemini_agent
-            summary_text = gemini_agent.summarize_for_resource_match(base_text)
-            used_summary = True
+            # gemini_agent = request.app.state.gemini_agent
+            # summary_text = gemini_agent.summarize_for_resource_match(base_text)
+            # used_summary = True
+            logger.warning("LLM summary feature temporarily disabled - method not available")
+            summary_text = base_text  # フォールバックとして元のテキストを使用
             if logger.isEnabledFor(10):
                 logger.debug(
                     f"[suggest_debug] summarization used_summary={used_summary} summary_len={len(summary_text)}"

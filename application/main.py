@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from agent.gemini import GeminiAgent
+from agents.assessment_mapping_agent import AssessmentMappingAgent
+from agents.interactive_support_plan_agent import InteractiveSupportPlanAgent
 from routes import register_routes
 import config
 
@@ -14,7 +15,13 @@ async def lifespan(app: FastAPI):
     if not config.GEMINI_API_KEY or not config.GOOGLE_CSE_ID:
         raise ValueError("APIキーまたはCSE IDが設定されていません。")
 
-    app.state.gemini_agent = GeminiAgent(api_key=config.GEMINI_API_KEY, google_cse_id=config.GOOGLE_CSE_ID)
+    app.state.assessment_agent = AssessmentMappingAgent(
+        api_key=config.GEMINI_API_KEY
+    )
+    app.state.support_plan_agent = InteractiveSupportPlanAgent(
+        api_key=config.GEMINI_API_KEY, 
+        google_cse_id=config.GOOGLE_CSE_ID
+    )
     yield
 
 
