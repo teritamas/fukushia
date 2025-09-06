@@ -84,7 +84,7 @@ docker run --rm -p 8000:8000 fukushia_api
 
 ## AI Coding
 
-Cline、Github Copilot を利用して開発することを想定しており、Agent が E2E で修正をしやすいように、本リポジトリはモノレポ構成になっています。
+Cline、Github Copilot、Codex を利用して開発することを想定しており、Agent が E2E で修正をしやすいように、本リポジトリはモノレポ構成になっています。
 
 インストラクションは[AGENTS.md](https://agents.md/)を用いて管理しており、`.clinerules`は各フォルダの`AGENTS.md`へのシンボリックリンクとなっています。
 
