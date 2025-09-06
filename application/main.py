@@ -15,12 +15,9 @@ async def lifespan(app: FastAPI):
     if not config.GEMINI_API_KEY or not config.GOOGLE_CSE_ID:
         raise ValueError("APIキーまたはCSE IDが設定されていません。")
 
-    app.state.assessment_agent = AssessmentMappingAgent(
-        api_key=config.GEMINI_API_KEY
-    )
+    app.state.assessment_agent = AssessmentMappingAgent(api_key=config.GEMINI_API_KEY)
     app.state.support_plan_agent = InteractiveSupportPlanAgent(
-        api_key=config.GEMINI_API_KEY, 
-        google_cse_id=config.GOOGLE_CSE_ID
+        api_key=config.GEMINI_API_KEY, google_cse_id=config.GOOGLE_CSE_ID
     )
     yield
 

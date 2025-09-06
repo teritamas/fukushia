@@ -1,8 +1,8 @@
 [project]
-name = "assessment_assistant"
+name = "fukushia-application"
 version = "0.1.0"
 description = "Memo & task management and assessment support app for social workers."
-readme = "README.md"
+readme = "../README.md"
 requires-python = ">=3.11"
 dependencies = [
   "firebase-admin>=6.2.0",
