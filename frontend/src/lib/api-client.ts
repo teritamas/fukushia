@@ -237,8 +237,10 @@ export const assessmentsApi = {
   },
 };
 
-export default {
+const apiClient = {
   clients: clientApi,
   notes: notesApi,
   assessments: assessmentsApi,
 };
+
+export default apiClient;

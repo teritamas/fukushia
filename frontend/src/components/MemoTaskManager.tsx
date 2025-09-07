@@ -6,9 +6,6 @@ import MemoList, {
 import {
   clientApi,
   notesApi,
-  type Client,
-  type Note as ApiNote,
-  type TodoItem as ApiTodoItem,
   type NoteCreateRequest,
   type NoteUpdateRequest,
 } from "../lib/api-client";
@@ -120,15 +117,6 @@ export default function MemoTaskManager() {
   const handleSaveMemo = async () => {
     if (!canSave) return;
     try {
-      const todoItems = tasks
-        .filter((t) => t.text.trim())
-        .map((t) => ({
-          id: t.id,
-          text: t.text.trim(),
-          due_date: t.dueDate ? String(t.dueDate) : null,
-          is_completed: false,
-        }));
-
       const createRequest: NoteCreateRequest = {
         clientName: selectedClient,
         speaker: speaker.trim(),

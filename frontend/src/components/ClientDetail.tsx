@@ -5,11 +5,8 @@ import { useClientContext } from "./ClientContext";
 import {
   notesApi,
   assessmentsApi,
-  type Note as ApiNote,
-  type Assessment,
   type NoteCreateRequest,
   type NoteUpdateRequest,
-  type TodoItemAPI,
 } from "../lib/api-client";
 import ClientResources, { AssessmentDataShape } from "./ClientResources";
 import MemoList, { Note as SharedNote } from "./MemoList";
@@ -151,14 +148,6 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const handleSaveClientNote = async () => {
     if (!selectedClient) return;
     if (!memoContent.trim() && todos.every((t) => !t.text.trim())) return;
-    const todoItems: TodoItemAPI[] = todos
-      .filter((t) => t.text.trim())
-      .map((t) => ({
-        id: t.id,
-        text: t.text.trim(),
-        due_date: t.dueDate || null,
-        is_completed: false,
-      }));
     const newNote: NoteCreateRequest = {
       clientName: selectedClient,
       speaker: speaker.trim(),
