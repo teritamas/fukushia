@@ -2,12 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ClientDetail from "./ClientDetail";
 import AssessmentAssistant from "./AssessmentAssistant";
-import {
-  clientApi,
-  assessmentsApi,
-  type Client,
-  type Assessment,
-} from "../lib/api-client";
+import { clientApi, assessmentsApi, type Assessment } from "../lib/api-client";
 import { useClientContext } from "./ClientContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
@@ -37,8 +32,6 @@ export default function ClientWorkspace() {
   void hasAssessment;
   void personalLoading;
   void personalError;
-  const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-  const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
 
   useEffect(() => {
     const fetchClients = async () => {

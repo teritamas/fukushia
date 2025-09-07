@@ -24,8 +24,6 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
   const [newName, setNewName] = useState("");
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [adding, setAdding] = useState(false);
-  const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-  const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
 
   useEffect(() => {
     const fetchClients = async () => {
