@@ -2,18 +2,15 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useClientContext } from "./ClientContext";
-import { db } from "../firebase";
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  updateDoc,
-  addDoc,
-  Timestamp,
-  deleteDoc,
-} from "firebase/firestore";
+  notesApi,
+  assessmentsApi,
+  type Note as ApiNote,
+  type Assessment,
+  type NoteCreateRequest,
+  type NoteUpdateRequest,
+  type TodoItemAPI,
+} from "../lib/api-client";
 import ClientResources, { AssessmentDataShape } from "./ClientResources";
 import MemoList, { Note as SharedNote } from "./MemoList";
 import SupportAgentChatUI from "./SupportAgentChatUI";
@@ -27,7 +24,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   type TodoItem = {
     id?: string;
     text: string;
-    dueDate?: { seconds: number } | string | Timestamp | null;
+    dueDate?: { seconds: number } | string | null;
     isCompleted?: boolean;
   };
   type LocalNote = {
@@ -105,33 +102,34 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   // AIチャットからタスク追加（即保存＆一覧反映）
   const addTaskFromChat = async (task: string) => {
     if (!selectedClient || !task.trim()) return;
-    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-    const USER_ID =
-      process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-    const newNote = {
+    const newNote: NoteCreateRequest = {
       clientName: selectedClient,
       speaker: "AI",
       content: `AIチャットで「${task}」という確認事項が発生しました。背景：制度やリソースの有無が不明、追加確認が必要なため。`,
-      todoItems: [
-        {
-          id: Date.now().toString(),
-          text: task,
-          dueDate: null,
-          isCompleted: false,
-        },
-      ],
-      timestamp: Timestamp.now(),
     };
     try {
-      const docRef = await addDoc(
-        collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`),
-        newNote,
-      );
+      const createdNote = await notesApi.create(newNote);
       setNotes((prev) => [
         {
-          id: docRef.id,
-          ...newNote,
-          timestamp: { seconds: Math.floor(Date.now() / 1000) },
+          id: createdNote.id,
+          clientName: selectedClient,
+          speaker: createdNote.speaker,
+          content: createdNote.content,
+          timestamp: {
+            seconds: Math.floor(
+              new Date(createdNote.timestamp).getTime() / 1000,
+            ),
+          },
+          todoItems: createdNote.todoItems.map((item) => ({
+            id: item.id,
+            text: item.text,
+            dueDate: item.due_date
+              ? {
+                  seconds: Math.floor(new Date(item.due_date).getTime() / 1000),
+                }
+              : null,
+            isCompleted: item.is_completed,
+          })),
         },
         ...prev,
       ]);
@@ -153,49 +151,41 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const handleSaveClientNote = async () => {
     if (!selectedClient) return;
     if (!memoContent.trim() && todos.every((t) => !t.text.trim())) return;
-    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-    const USER_ID =
-      process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-    const todoItems = todos
+    const todoItems: TodoItemAPI[] = todos
       .filter((t) => t.text.trim())
       .map((t) => ({
         id: t.id,
         text: t.text.trim(),
-        dueDate: t.dueDate ? Timestamp.fromDate(new Date(t.dueDate)) : null,
-        isCompleted: false,
+        due_date: t.dueDate || null,
+        is_completed: false,
       }));
+    const newNote: NoteCreateRequest = {
+      clientName: selectedClient,
+      speaker: speaker.trim(),
+      content: memoContent.trim(),
+    };
     try {
-      const docRef = await addDoc(
-        collection(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`),
-        {
-          clientName: selectedClient,
-          speaker: speaker.trim(),
-          content: memoContent.trim(),
-          todoItems,
-          timestamp: Timestamp.now(),
-        },
-      );
-      // 再取得でも良いが即時反映
-      // Note 型へ合わせる (dueDate は文字列 or {seconds})
-      const noteTodoItems = todoItems.map((t) => ({
-        text: t.text,
-        dueDate: t.dueDate
-          ? {
-              seconds: Math.floor(
-                (t.dueDate as Timestamp).seconds ?? Date.now() / 1000,
-              ),
-            }
-          : undefined,
-        isCompleted: t.isCompleted,
-      }));
+      const createdNote = await notesApi.create(newNote);
+      // 即時反映
       setNotes((prev) => [
         {
-          id: docRef.id,
+          id: createdNote.id,
           clientName: selectedClient,
-          speaker: speaker.trim(),
-          content: memoContent.trim(),
-          todoItems: noteTodoItems,
-          timestamp: { seconds: Math.floor(Date.now() / 1000) },
+          speaker: createdNote.speaker,
+          content: createdNote.content,
+          todoItems: createdNote.todoItems.map((t) => ({
+            id: t.id,
+            text: t.text,
+            dueDate: t.due_date
+              ? { seconds: Math.floor(new Date(t.due_date).getTime() / 1000) }
+              : undefined,
+            isCompleted: t.is_completed,
+          })),
+          timestamp: {
+            seconds: Math.floor(
+              new Date(createdNote.timestamp).getTime() / 1000,
+            ),
+          },
         },
         ...prev,
       ]);
@@ -216,13 +206,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           ? true
           : window.confirm("このメモを削除してもよろしいですか？");
       if (!ok) return;
-      const APP_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-      const USER_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-      await deleteDoc(
-        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
-      );
+      await notesApi.delete(noteId);
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
     } catch (e) {
       console.error(e);
@@ -242,14 +226,26 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       const updated = (note.todoItems || []).map((t) =>
         t?.id === taskId ? { ...t, isCompleted } : t,
       );
-      const APP_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-      const USER_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-      await updateDoc(
-        doc(db, `artifacts/${APP_ID}/users/${USER_ID}/notes`, noteId),
-        { todoItems: updated },
-      );
+
+      const updateRequest: NoteUpdateRequest = {
+        speaker: note.speaker,
+        content: note.content,
+        todoItems: updated.map((t) => ({
+          id: t?.id || "",
+          text: t?.text || "",
+          due_date:
+            typeof t?.dueDate === "object" &&
+            t?.dueDate &&
+            "seconds" in t.dueDate
+              ? new Date(t.dueDate.seconds * 1000).toISOString()
+              : typeof t?.dueDate === "string"
+                ? t.dueDate
+                : null,
+          is_completed: t?.isCompleted || false,
+        })),
+      };
+
+      await notesApi.update(noteId, updateRequest);
       setNotes((prev) =>
         prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n)),
       );
@@ -345,24 +341,35 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     setAssessmentsLoading(true);
     setAssessmentsError(null);
 
-    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-    const USER_ID =
-      process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-
     const fetchNotes = async () => {
-      const notesRef = collection(
-        db,
-        `artifacts/${APP_ID}/users/${USER_ID}/notes`,
-      );
-      const q = query(notesRef, where("clientName", "==", selectedClient));
-      const snap = await getDocs(q);
-      setNotes(
-        snap.docs.map((doc) => ({
-          id: doc.id,
-          clientName: selectedClient,
-          ...(doc.data() as LocalNote),
-        })),
-      );
+      try {
+        const apiNotes = await notesApi.getAll(selectedClient);
+        setNotes(
+          apiNotes.map((note) => ({
+            id: note.id,
+            clientName: selectedClient,
+            speaker: note.speaker,
+            content: note.content,
+            timestamp: {
+              seconds: Math.floor(new Date(note.timestamp).getTime() / 1000),
+            },
+            todoItems: note.todoItems.map((item) => ({
+              id: item.id,
+              text: item.text,
+              dueDate: item.due_date
+                ? {
+                    seconds: Math.floor(
+                      new Date(item.due_date).getTime() / 1000,
+                    ),
+                  }
+                : null,
+              isCompleted: item.is_completed,
+            })),
+          })),
+        );
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+      }
       setLoading(false);
     };
 
@@ -370,28 +377,34 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       setAssessmentPlan(null);
       setEditableSupportPlan("");
       try {
-        const assessmentsRef = collection(
-          db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
-        );
-        const q = query(
-          assessmentsRef,
-          where("clientName", "==", selectedClient),
-        );
-        const snap = await getDocs(q);
-        const assessments = snap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as AssessmentPlan[];
+        const assessments = await assessmentsApi.getAll(selectedClient);
 
         if (assessments.length > 0) {
           // 日付でソートして最新のものを取得
           assessments.sort(
-            (a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0),
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime(),
           );
           const latestAssessment = assessments[0];
-          setAssessmentPlan(latestAssessment);
-          setEditableSupportPlan(latestAssessment.supportPlan || "");
+
+          // AssessmentPlan形式に変換
+          const convertedAssessment: AssessmentPlan = {
+            id: latestAssessment.id,
+            createdAt: {
+              seconds: Math.floor(
+                new Date(latestAssessment.created_at).getTime() / 1000,
+              ),
+            },
+            assessment: latestAssessment.assessment as {
+              [form: string]: AssessmentForm;
+            },
+            supportPlan: latestAssessment.support_plan || "",
+            clientName: latestAssessment.client_name,
+          };
+
+          setAssessmentPlan(convertedAssessment);
+          setEditableSupportPlan(convertedAssessment.supportPlan || "");
         }
       } catch (error) {
         console.error("Error fetching assessments: ", error);
@@ -625,21 +638,35 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                       className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-[var(--brand-700)] text-white hover-scale"
                       onClick={async () => {
                         try {
-                          const APP_ID =
-                            process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
-                            "default-app-id";
-                          const USER_ID =
-                            process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL ||
-                            "test-user";
                           const { id, speaker, content } = editing;
-                          await updateDoc(
-                            doc(
-                              db,
-                              `artifacts/${APP_ID}/users/${USER_ID}/notes`,
-                              id,
-                            ),
-                            { speaker, content },
+
+                          // 現在のメモを取得してtodo_itemsを保持
+                          const currentNote = notes.find((n) => n.id === id);
+                          const todo_items = (currentNote?.todoItems || []).map(
+                            (t) => ({
+                              id: t?.id || "",
+                              text: t?.text || "",
+                              due_date:
+                                typeof t?.dueDate === "object" &&
+                                t?.dueDate &&
+                                "seconds" in t.dueDate
+                                  ? new Date(
+                                      t.dueDate.seconds * 1000,
+                                    ).toISOString()
+                                  : typeof t?.dueDate === "string"
+                                    ? t.dueDate
+                                    : null,
+                              is_completed: t?.isCompleted || false,
+                            }),
                           );
+
+                          const updateRequest: NoteUpdateRequest = {
+                            speaker,
+                            content,
+                            todoItems: todo_items,
+                          };
+
+                          await notesApi.update(id, updateRequest);
                           setNotes((p) =>
                             p.map((n) =>
                               n.id === id ? { ...n, speaker, content } : n,

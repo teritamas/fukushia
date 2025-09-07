@@ -3,47 +3,33 @@ import MemoList, {
   Note as SharedNote,
   TodoItem as SharedTodo,
 } from "./MemoList";
-import { db } from "../firebase";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  Timestamp,
-  updateDoc,
-} from "firebase/firestore";
+  clientApi,
+  notesApi,
+  type Client,
+  type Note as ApiNote,
+  type TodoItem as ApiTodoItem,
+  type NoteCreateRequest,
+  type NoteUpdateRequest,
+} from "../lib/api-client";
 
-// Local shapes matching Firestore payloads we use here
+// Local shapes for UI state
 type DueDateObj = { toDate: () => Date };
-type TodoItem = {
+type LocalTodoItem = {
   id: string;
   text: string;
   dueDate: string | DueDateObj | null;
   isCompleted: boolean;
 };
 
-type Note = {
+type LocalNote = {
   id: string;
   clientName: string;
   speaker: string;
   content: string;
-  todoItems: TodoItem[];
+  todoItems: LocalTodoItem[];
   timestamp: DueDateObj;
 };
-
-const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-const USER_ID = process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-
-function getCollectionPath(
-  app_id: string,
-  user_id: string,
-  type: "clients" | "notes",
-) {
-  return `artifacts/${app_id}/users/${user_id}/${type}`;
-}
 
 export default function MemoTaskManager() {
   // filters
@@ -61,7 +47,7 @@ export default function MemoTaskManager() {
   >([{ id: "initial", text: "", dueDate: "", isCompleted: false }]);
 
   // list + edit state
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<LocalNote[]>([]);
   const [editing, setEditing] = useState<{
     id: string;
     speaker: string;
@@ -70,32 +56,44 @@ export default function MemoTaskManager() {
 
   // load clients
   useEffect(() => {
-    const run = async () => {
-      const ref = collection(db, getCollectionPath(APP_ID, USER_ID, "clients"));
-      const snap = await getDocs(ref);
-      setClients(snap.docs.map((d) => d.data().name).filter(Boolean));
+    const loadClients = async () => {
+      try {
+        const clientsData = await clientApi.getAll();
+        setClients(clientsData.map((client) => client.name).filter(Boolean));
+      } catch (error) {
+        console.error("Failed to load clients:", error);
+      }
     };
-    run();
+    loadClients();
   }, []);
 
   // load notes
   useEffect(() => {
-    const run = async () => {
-      const ref = collection(db, getCollectionPath(APP_ID, USER_ID, "notes"));
-      const q = query(ref, orderBy("timestamp", "desc"));
-      const snap = await getDocs(q);
-      setNotes(
-        snap.docs.map((doc) => ({
-          id: doc.id,
-          clientName: doc.data().clientName ?? "",
-          speaker: doc.data().speaker ?? "",
-          content: doc.data().content ?? "",
-          todoItems: (doc.data().todoItems ?? []) as TodoItem[],
-          timestamp: doc.data().timestamp ?? { toDate: () => new Date() },
-        })),
-      );
+    const loadNotes = async () => {
+      try {
+        const notesData = await notesApi.getAll();
+        setNotes(
+          notesData.map((note) => ({
+            id: note.id,
+            clientName: note.clientName ?? "",
+            speaker: note.speaker ?? "",
+            content: note.content ?? "",
+            todoItems: (note.todoItems ?? []).map((item) => ({
+              id: item.id,
+              text: item.text,
+              dueDate: item.due_date || null,
+              isCompleted: item.is_completed,
+            })),
+            timestamp: {
+              toDate: () => new Date(note.timestamp),
+            },
+          })),
+        );
+      } catch (error) {
+        console.error("Failed to load notes:", error);
+      }
     };
-    run();
+    loadNotes();
   }, []);
 
   // form helpers
@@ -121,38 +119,46 @@ export default function MemoTaskManager() {
 
   const handleSaveMemo = async () => {
     if (!canSave) return;
-    const todoItems: TodoItem[] = tasks
-      .filter((t) => t.text.trim())
-      .map((t) => ({
-        id: t.id,
-        text: t.text.trim(),
-        dueDate: t.dueDate ? Timestamp.fromDate(new Date(t.dueDate)) : null,
-        isCompleted: false,
-      }));
+    try {
+      const todoItems = tasks
+        .filter((t) => t.text.trim())
+        .map((t) => ({
+          id: t.id,
+          text: t.text.trim(),
+          due_date: t.dueDate ? String(t.dueDate) : null,
+          is_completed: false,
+        }));
 
-    const ref = collection(db, getCollectionPath(APP_ID, USER_ID, "notes"));
-    const docRef = await addDoc(ref, {
-      clientName: selectedClient,
-      speaker: speaker.trim(),
-      content: memoContent.trim(),
-      todoItems,
-      timestamp: Timestamp.now(),
-    });
-
-    setNotes((p) => [
-      {
-        id: docRef.id,
+      const createRequest: NoteCreateRequest = {
         clientName: selectedClient,
         speaker: speaker.trim(),
         content: memoContent.trim(),
-        todoItems,
-        timestamp: { toDate: () => new Date() },
-      },
-      ...p,
-    ]);
-    setMemoContent("");
-    setSpeaker("");
-    setTasks([{ id: "initial", text: "", dueDate: "", isCompleted: false }]);
+      };
+
+      const newNote = await notesApi.create(createRequest);
+
+      setNotes((p) => [
+        {
+          id: newNote.id,
+          clientName: newNote.clientName,
+          speaker: newNote.speaker ?? "",
+          content: newNote.content ?? "",
+          todoItems: newNote.todoItems.map((item) => ({
+            id: item.id,
+            text: item.text,
+            dueDate: item.due_date || null,
+            isCompleted: item.is_completed,
+          })),
+          timestamp: { toDate: () => new Date(newNote.timestamp) },
+        },
+        ...p,
+      ]);
+      setMemoContent("");
+      setSpeaker("");
+      setTasks([{ id: "initial", text: "", dueDate: "", isCompleted: false }]);
+    } catch (error) {
+      console.error("Failed to save memo:", error);
+    }
   };
 
   const handleDeleteNote = async (noteId: string) => {
@@ -161,10 +167,12 @@ export default function MemoTaskManager() {
         ? true
         : window.confirm("このメモを削除してもよろしいですか？");
     if (!ok) return;
-    await deleteDoc(
-      doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId),
-    );
-    setNotes((p) => p.filter((n) => n.id !== noteId));
+    try {
+      await notesApi.delete(noteId);
+      setNotes((p) => p.filter((n) => n.id !== noteId));
+    } catch (error) {
+      console.error("Failed to delete note:", error);
+    }
   };
 
   const handleToggleTask = async (
@@ -174,14 +182,27 @@ export default function MemoTaskManager() {
   ) => {
     const note = notes.find((n) => n.id === noteId);
     if (!note) return;
-    const todoItems = (note.todoItems || []).map((t) =>
-      t.id === taskId ? { ...t, isCompleted } : t,
-    );
-    await updateDoc(
-      doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), noteId),
-      { todoItems },
-    );
-    setNotes((p) => p.map((n) => (n.id === noteId ? { ...n, todoItems } : n)));
+    try {
+      const todoItems = (note.todoItems || []).map((t) =>
+        t.id === taskId ? { ...t, isCompleted } : t,
+      );
+
+      const updateRequest: NoteUpdateRequest = {
+        todoItems: todoItems.map((item) => ({
+          id: item.id,
+          text: item.text,
+          due_date: typeof item.dueDate === "string" ? item.dueDate : null,
+          is_completed: item.isCompleted,
+        })),
+      };
+
+      await notesApi.update(noteId, updateRequest);
+      setNotes((p) =>
+        p.map((n) => (n.id === noteId ? { ...n, todoItems } : n)),
+      );
+    } catch (error) {
+      console.error("Failed to toggle task:", error);
+    }
   };
 
   const filteredNotes = useMemo(() => {
@@ -428,16 +449,22 @@ export default function MemoTaskManager() {
                 className="px-3 py-1 rounded bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white"
                 onClick={async () => {
                   const { id, speaker, content } = editing;
-                  await updateDoc(
-                    doc(db, getCollectionPath(APP_ID, USER_ID, "notes"), id),
-                    { speaker, content },
-                  );
-                  setNotes((p) =>
-                    p.map((n) =>
-                      n.id === id ? { ...n, speaker, content } : n,
-                    ),
-                  );
-                  setEditing(null);
+                  try {
+                    const updateRequest: NoteUpdateRequest = {
+                      speaker,
+                      content,
+                    };
+
+                    await notesApi.update(id, updateRequest);
+                    setNotes((p) =>
+                      p.map((n) =>
+                        n.id === id ? { ...n, speaker, content } : n,
+                      ),
+                    );
+                    setEditing(null);
+                  } catch (error) {
+                    console.error("Failed to update note:", error);
+                  }
                 }}
               >
                 保存

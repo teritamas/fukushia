@@ -1,15 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { db } from "../firebase";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  Timestamp,
-  query,
-  orderBy,
-} from "firebase/firestore";
+import { clientApi } from "../lib/api-client";
 import { useClientContext, ClientData } from "./ClientContext";
 
 interface AppHeaderProps {
@@ -39,20 +31,17 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
     const fetchClients = async () => {
       setLoadingClients(true);
       try {
-        const ref = collection(
-          db,
-          `artifacts/${APP_ID}/users/${USER_ID}/clients`,
-        );
-        const q = query(ref, orderBy("createdAt", "asc"));
-        const snap = await getDocs(q);
-        const list: ClientData[] = snap.docs.map((d) => ({
-          id: d.id,
-          name: d.data().name,
-          photoUrl: d.data().photoUrl,
-          basicInfo: d.data().basicInfo,
+        const apiClients = await clientApi.getAll();
+        const list: ClientData[] = apiClients.map((client) => ({
+          id: client.id,
+          name: client.name,
+          photoUrl: undefined, // API doesn't have photoUrl yet
+          basicInfo: undefined, // API doesn't have basicInfo yet
         }));
         setClients(list);
         if (!currentClient && list.length > 0) setCurrentClient(list[0]);
+      } catch (error) {
+        console.error("Failed to fetch clients:", error);
       } finally {
         setLoadingClients(false);
       }
@@ -77,19 +66,13 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
     if (!newName.trim()) return;
     setAdding(true);
     try {
-      const ref = collection(
-        db,
-        `artifacts/${APP_ID}/users/${USER_ID}/clients`,
-      );
-      const docRef = await addDoc(ref, {
+      const newClient = await clientApi.create({
         name: newName.trim(),
-        photoUrl: newPhotoUrl.trim() || null,
-        createdAt: Timestamp.now(),
       });
       const data: ClientData = {
-        id: docRef.id,
-        name: newName.trim(),
-        photoUrl: newPhotoUrl.trim() || undefined,
+        id: newClient.id,
+        name: newClient.name,
+        photoUrl: newPhotoUrl.trim() || undefined, // Keep photoUrl in UI state for now
       };
       setClients((prev) => [...prev, data]);
       setCurrentClient(data);
@@ -98,6 +81,8 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
       setShowAdd(false);
       setNewName("");
       setNewPhotoUrl("");
+    } catch (error) {
+      console.error("Failed to add client:", error);
     } finally {
       setAdding(false);
     }
