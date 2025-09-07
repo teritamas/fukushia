@@ -4,7 +4,7 @@ const API_BASE_URL =
 // Common API utility functions
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -135,34 +135,34 @@ export const clientApi = {
   // Client Resources functions
   async getResources(clientName: string): Promise<ClientResource[]> {
     return apiRequest<ClientResource[]>(
-      `/clients/${encodeURIComponent(clientName)}/resources`
+      `/clients/${encodeURIComponent(clientName)}/resources`,
     );
   },
 
   async addResource(
     clientName: string,
-    resource: ClientResourceCreateRequest
+    resource: ClientResourceCreateRequest,
   ): Promise<ClientResource> {
     return apiRequest<ClientResource>(
       `/clients/${encodeURIComponent(clientName)}/resources`,
       {
         method: "POST",
         body: JSON.stringify(resource),
-      }
+      },
     );
   },
 
   async updateResource(
     clientName: string,
     usageId: string,
-    resource: ClientResourceUpdateRequest
+    resource: ClientResourceUpdateRequest,
   ): Promise<void> {
     await apiRequest<{ message: string }>(
       `/clients/${encodeURIComponent(clientName)}/resources/${usageId}`,
       {
         method: "PATCH",
         body: JSON.stringify(resource),
-      }
+      },
     );
   },
 
@@ -171,7 +171,7 @@ export const clientApi = {
       `/clients/${encodeURIComponent(clientName)}/resources/${usageId}`,
       {
         method: "DELETE",
-      }
+      },
     );
   },
 };
@@ -228,7 +228,7 @@ export const assessmentsApi = {
 
   async update(
     id: string,
-    assessment: AssessmentUpdateRequest
+    assessment: AssessmentUpdateRequest,
   ): Promise<Assessment> {
     return apiRequest<Assessment>(`/assessments/${id}`, {
       method: "PUT",
