@@ -122,11 +122,11 @@ export interface ClientResourceUpdateRequest {
 // Client API functions
 export const clientApi = {
   async getAll(): Promise<Client[]> {
-    return apiRequest<Client[]>("/clients");
+    return apiRequest<Client[]>("/clients/");
   },
 
   async create(client: ClientCreateRequest): Promise<Client> {
-    return apiRequest<Client>("/clients", {
+    return apiRequest<Client>("/clients/", {
       method: "POST",
       body: JSON.stringify(client),
     });
@@ -182,11 +182,11 @@ export const notesApi = {
     const params = clientName
       ? `?client_name=${encodeURIComponent(clientName)}`
       : "";
-    return apiRequest<Note[]>(`/notes${params}`);
+    return apiRequest<Note[]>(`/notes/${params}`);
   },
 
   async create(note: NoteCreateRequest): Promise<Note> {
-    return apiRequest<Note>("/notes", {
+    return apiRequest<Note>("/notes/", {
       method: "POST",
       body: JSON.stringify(note),
     });
@@ -220,7 +220,7 @@ export const assessmentsApi = {
   },
 
   async create(assessment: AssessmentCreateRequest): Promise<Assessment> {
-    return apiRequest<Assessment>("/assessments", {
+    return apiRequest<Assessment>("/assessments/", {
       method: "POST",
       body: JSON.stringify(assessment),
     });
