@@ -212,7 +212,7 @@ export const assessmentsApi = {
     const params = clientName
       ? `?client_name=${encodeURIComponent(clientName)}`
       : "";
-    return apiRequest<Assessment[]>(`/assessments/${params}`);
+    return apiRequest<Assessment[]>(`/assessments${params}`);
   },
 
   async getById(id: string): Promise<Assessment> {
