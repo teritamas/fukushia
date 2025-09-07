@@ -2,16 +2,12 @@
 import React, { useEffect, useState } from "react";
 import ClientDetail from "./ClientDetail";
 import AssessmentAssistant from "./AssessmentAssistant";
-import { db } from "../firebase";
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  QueryDocumentSnapshot,
-  DocumentData,
-  orderBy,
-} from "firebase/firestore";
+  clientApi,
+  assessmentsApi,
+  type Client,
+  type Assessment,
+} from "../lib/api-client";
 import { useClientContext } from "./ClientContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
@@ -47,21 +43,16 @@ export default function ClientWorkspace() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const ref = collection(
-          db,
-          `artifacts/${APP_ID}/users/${USER_ID}/clients`,
-        );
-        const q = query(ref, orderBy("createdAt", "asc"));
-        const snap = await getDocs(q);
-        const list = snap.docs.map((d) => ({
-          id: d.id,
-          name: d.data().name,
-          photoUrl: d.data().photoUrl,
-          basicInfo: d.data().basicInfo,
+        const clients = await clientApi.getAll();
+        const list = clients.map((client) => ({
+          id: client.id,
+          name: client.name,
+          photoUrl: undefined,
+          basicInfo: undefined,
         }));
         if (!currentClient && list.length > 0) setCurrentClient(list[0]);
-      } finally {
-        // no-op
+      } catch (error) {
+        console.error("Failed to fetch clients:", error);
       }
     };
     fetchClients();
@@ -85,26 +76,7 @@ export default function ClientWorkspace() {
       setPersonalLoading(true);
       setPersonalError(null);
       try {
-        const assessmentsRef = collection(
-          db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
-        );
-        const qAssess = query(
-          assessmentsRef,
-          where("clientName", "==", currentClient.name),
-        );
-        const snap = await getDocs(qAssess);
-        type RawAssessment = {
-          id: string;
-          createdAt?: { seconds?: number };
-          assessment?: Record<string, unknown>;
-        };
-        const assessments: RawAssessment[] = snap.docs.map(
-          (d: QueryDocumentSnapshot<DocumentData>) => ({
-            id: d.id,
-            ...(d.data() as DocumentData),
-          }),
-        );
+        const assessments = await assessmentsApi.getAll(currentClient.name);
         setHasAssessment(assessments.length > 0);
         if (assessments.length === 0) {
           setPersonalInfo({});
@@ -112,12 +84,14 @@ export default function ClientWorkspace() {
           setChangedKeys(new Set());
           return;
         }
+        // Sort by creation date (most recent first)
         assessments.sort(
-          (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0),
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
         );
         const latest = assessments[0];
         const previous = assessments.length > 1 ? assessments[1] : null;
-        const extractPersonal = (assessmentDoc: RawAssessment | null) => {
+        const extractPersonal = (assessmentDoc: Assessment | null) => {
           if (!assessmentDoc) return null;
           const assessData = (assessmentDoc.assessment || {}) as Record<
             string,
@@ -185,14 +159,15 @@ export default function ClientWorkspace() {
         setPersonalInfo(latestInfo);
         setPrevPersonalInfo(previous ? prevInfo : null);
         setChangedKeys(diff);
-      } catch {
+      } catch (error) {
+        console.error("Failed to load personal info:", error);
         setPersonalError("本人情報の取得に失敗しました");
       } finally {
         setPersonalLoading(false);
       }
     };
     loadPersonal();
-  }, [currentClient, APP_ID, USER_ID, assessmentRefreshSignal]);
+  }, [currentClient, assessmentRefreshSignal]);
 
   return (
     <div className="g:col-span-9">

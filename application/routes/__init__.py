@@ -8,6 +8,9 @@ from .resources.memos.router import router as resource_memos_router
 from .resources.imports.router import router as resource_imports_router
 from .resources.advanced.router import router as resources_advanced_router
 from .interactive_support_plan.router import router as interactive_support_plan_router
+from .clients.router import router as clients_router
+from .notes.router import router as notes_router
+from .assessments.router import router as assessments_router
 
 
 def register_routes(app: FastAPI) -> None:
@@ -19,3 +22,6 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(resource_imports_router)
     app.include_router(resources_advanced_router)
     app.include_router(interactive_support_plan_router)
+    app.include_router(clients_router)
+    app.include_router(notes_router)
+    app.include_router(assessments_router)

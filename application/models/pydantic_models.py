@@ -143,3 +143,32 @@ class ResourceMemo(ResourceMemoBase):
     id: str
     created_at: float
     updated_at: float
+
+
+# --- Client Resource Usage Models ---
+class ClientResourceBase(BaseModel):
+    client_name: str
+    resource_id: str
+    service_name: str
+    status: str = "active"  # "active" or "ended"
+    notes: Optional[str] = None
+
+
+class ClientResourceCreate(BaseModel):
+    """client_nameはURL pathから取得するためリクエストボディには含まない"""
+
+    resource_id: str
+    service_name: str
+    status: str = "active"  # "active" or "ended"
+    notes: Optional[str] = None
+
+
+class ClientResourceUpdate(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ClientResource(ClientResourceBase):
+    id: str
+    added_at: float
+    added_by: str

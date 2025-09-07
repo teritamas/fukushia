@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { db } from "../firebase";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { clientApi } from "../lib/api-client";
 
 interface ClientListProps {
   selectedClient: string;
@@ -20,18 +19,14 @@ export default function ClientList({
   // 新規支援者追加
   const handleAddClient = async () => {
     if (!newClient.trim()) return;
-    const APP_ID = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-    const USER_ID =
-      process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-    await addDoc(
-      collection(db, `artifacts/${APP_ID}/users/${USER_ID}/clients`),
-      {
-        name: newClient.trim(),
-        createdAt: Timestamp.now(),
-      },
-    );
-    setClients([...clients, newClient.trim()]);
-    setNewClient("");
+    try {
+      await clientApi.create({ name: newClient.trim() });
+      setClients([...clients, newClient.trim()]);
+      setNewClient("");
+    } catch (error) {
+      console.error("Failed to create client:", error);
+      // エラーハンドリング - 必要に応じて追加実装
+    }
   };
 
   return (

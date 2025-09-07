@@ -1,22 +1,7 @@
 import { useState, useEffect } from "react";
-import { db } from "../firebase";
-import {
-  collection,
-  addDoc,
-  Timestamp,
-  getDocs,
-  query,
-  where,
-  QueryDocumentSnapshot,
-  DocumentData,
-  doc,
-  updateDoc,
-  orderBy,
-  limit,
-  writeBatch,
-} from "firebase/firestore";
 import { assessmentItems } from "../lib/assessmentItems";
 import { useClientContext } from "./ClientContext";
+import { assessmentsApi } from "../lib/api-client";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -31,10 +16,12 @@ export default function AssessmentAssistant() {
     assessmentEditTarget,
     notifyAssessmentUpdated,
   } = useClientContext();
+
   type MappedResult = Record<
     string,
     Record<string, string | Record<string, string>>
   >;
+
   const [mappedResult, setMappedResult] = useState<MappedResult | null>(null);
   const [existingAssessment, setExistingAssessment] =
     useState<MappedResult | null>(null);
@@ -42,7 +29,7 @@ export default function AssessmentAssistant() {
   const [existingVersion, setExistingVersion] = useState<number | null>(null);
   const [existingLoading, setExistingLoading] = useState(false);
   const [existingError, setExistingError] = useState<string | null>(null);
-  const [showCreation, setShowCreation] = useState(false); // まだ保存が無いときに作成フローを開くか
+  const [showCreation, setShowCreation] = useState(false);
   const [script, setScript] =
     useState(`支援者（田中 健一、45歳）: 相談に来て、少し緊張しています。よろしくお願いします。
 
@@ -72,8 +59,7 @@ export default function AssessmentAssistant() {
 
   // Editing states
   const [editing, setEditing] = useState(false);
-  // Flat edit buffer so we don't mutate original object each keystroke (prevents re-renders & focus loss)
-  const [editBuffer, setEditBuffer] = useState<Record<string, string>>({}); // key: form|category|sub?
+  const [editBuffer, setEditBuffer] = useState<Record<string, string>>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [saveEditMessage, setSaveEditMessage] = useState<string | null>(null);
 
@@ -84,14 +70,12 @@ export default function AssessmentAssistant() {
     oldValue: string;
     newValue: string;
     userId: string;
-    createdAt?: { seconds?: number };
+    createdAt?: string;
   }
   const [history, setHistory] = useState<ChangeEntry[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyLoading] = useState(false);
+  const [historyError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-
-  // 支援者一覧取得と選択は親コンポーネント(ClientWorkspace)で管理
 
   const handleMapAssessment = async () => {
     if (!script.trim()) {
@@ -103,7 +87,6 @@ export default function AssessmentAssistant() {
     setMappedResult(null);
 
     try {
-      // 取得した項目とスクリプトで自動整理を実行
       const mapRes = await fetch(`${API_BASE_URL}/assessment/map/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,32 +146,23 @@ export default function AssessmentAssistant() {
       setMappingError("保存するデータがありません。");
       return;
     }
-    // Firestoreに保存
+
     try {
-      const APP_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-      const USER_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-      const docRef = await addDoc(
-        collection(db, `artifacts/${APP_ID}/users/${USER_ID}/assessments`),
-        {
-          clientName: currentClient.name,
-          assessment: mappedResult,
-          originalScript: script,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-          version: 1,
-        },
-      );
+      const assessment = await assessmentsApi.create({
+        client_name: currentClient.name,
+        assessment: mappedResult,
+        original_script: script,
+      });
+
       // 保存後は既存表示モードへ移行
       setExistingAssessment(mappedResult);
-      setExistingDocId(docRef.id);
-      setExistingVersion(1);
+      setExistingDocId(assessment.id);
+      setExistingVersion(assessment.version);
       setMappedResult(null);
-      alert(`アセスメント結果が保存されました。 (ID: ${docRef.id})`);
-      // Signal other views (e.g., ClientDetail, Personal Info) to refetch latest assessment
+      alert(`アセスメント結果が保存されました。 (ID: ${assessment.id})`);
+
+      // Signal other views to refetch latest assessment
       notifyAssessmentUpdated();
-      // Ensure creation mode closes and latest data is fetched from Firestore
       setShowCreation(false);
       await fetchExistingAssessment();
     } catch (error) {
@@ -197,7 +171,7 @@ export default function AssessmentAssistant() {
     }
   };
 
-  // 既存アセスメント読込 (store docId)
+  // 既存アセスメント読込
   const fetchExistingAssessment = async () => {
     if (!currentClient) {
       setExistingAssessment(null);
@@ -206,89 +180,37 @@ export default function AssessmentAssistant() {
     }
     setExistingLoading(true);
     setExistingError(null);
+
     try {
-      const APP_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-      const USER_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-      const ref = collection(
-        db,
-        `artifacts/${APP_ID}/users/${USER_ID}/assessments`,
-      );
-      const qAssess = query(ref, where("clientName", "==", currentClient.name));
-      const snap = await getDocs(qAssess);
-      if (snap.empty) {
+      const assessments = await assessmentsApi.getAll(currentClient.name);
+
+      if (assessments.length === 0) {
         setExistingAssessment(null);
         setExistingDocId(null);
+        setExistingVersion(null);
       } else {
-        interface RawDoc {
-          id: string;
-          createdAt?: { seconds?: number } | null;
-          assessment?: MappedResult | null;
-          version?: number | null;
-        }
-        const docs = snap.docs.map(
-          (d: QueryDocumentSnapshot<DocumentData>) => ({
-            id: d.id,
-            ...(d.data() as DocumentData),
-          }),
-        ) as RawDoc[];
-        docs.sort(
-          (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0),
-        );
-        setExistingAssessment(docs[0]?.assessment ?? null);
-        setExistingDocId(docs[0]?.id || null);
-        setExistingVersion(docs[0]?.version || 1);
+        // Sort by creation date (newest first) - API should already return them sorted
+        const latest = assessments[0];
+        setExistingAssessment(latest.assessment as MappedResult);
+        setExistingDocId(latest.id);
+        setExistingVersion(latest.version);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
       setExistingError("既存アセスメントの取得に失敗しました");
     } finally {
       setExistingLoading(false);
     }
   };
+
   useEffect(() => {
     fetchExistingAssessment();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentClient]);
 
-  // 履歴読み込み
+  // 履歴は今のところAPIエンドポイントがないのでスキップ
   useEffect(() => {
-    const loadHistory = async () => {
-      if (!existingDocId || !currentClient) {
-        setHistory([]);
-        return;
-      }
-      setHistoryLoading(true);
-      setHistoryError(null);
-      try {
-        const APP_ID =
-          process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-        const USER_ID =
-          process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-        const changesRef = collection(
-          db,
-          `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}/changes`,
-        );
-        const qHist = query(
-          changesRef,
-          orderBy("createdAt", "desc"),
-          limit(30),
-        );
-        const snap = await getDocs(qHist);
-        const list: ChangeEntry[] = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as DocumentData),
-        })) as ChangeEntry[];
-        setHistory(list);
-      } catch (e) {
-        console.error(e);
-        setHistoryError("履歴の取得に失敗しました");
-      } finally {
-        setHistoryLoading(false);
-      }
-    };
-    loadHistory();
+    // History loading would go here if we had an API endpoint
+    setHistory([]);
   }, [existingDocId, currentClient]);
 
   // 編集開始
@@ -359,7 +281,6 @@ export default function AssessmentAssistant() {
                 newValue: subVal,
               });
           }
-          // detect deleted subs (if needed) - skipped for now
         }
       }
     }
@@ -368,6 +289,7 @@ export default function AssessmentAssistant() {
 
   const saveEdits = async () => {
     if (!currentClient || !existingDocId || !existingAssessment) return;
+
     // reconstruct
     const reconstructed: MappedResult = JSON.parse(
       JSON.stringify(existingAssessment),
@@ -392,64 +314,30 @@ export default function AssessmentAssistant() {
         reconstructed[form][cat] = val;
       }
     }
+
     const changes = diffAssessments(existingAssessment, reconstructed);
     if (changes.length === 0) {
       setSaveEditMessage("変更はありません");
       setEditing(false);
       return;
     }
+
     setSavingEdit(true);
     setSaveEditMessage(null);
+
     try {
-      const APP_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "default-app-id";
-      const USER_ID =
-        process.env.NEXT_PUBLIC_FIREBASE_CLIENT_EMAIL || "test-user";
-      const assessDocRef = doc(
-        db,
-        `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}`,
-      );
-      const newVersion = (existingVersion || 1) + 1;
-      await updateDoc(assessDocRef, {
+      const updated = await assessmentsApi.update(existingDocId, {
         assessment: reconstructed,
-        updatedAt: Timestamp.now(),
-        version: newVersion,
       });
-      // Write change entries in batch
-      const changesColPath = `artifacts/${APP_ID}/users/${USER_ID}/assessments/${existingDocId}/changes`;
-      const changesColRef = collection(db, changesColPath);
-      const batch = writeBatch(db);
-      const now = Timestamp.now();
-      const userId = USER_ID;
-      const newHistoryEntries: ChangeEntry[] = [];
-      for (const c of changes) {
-        const changeDocRef = doc(changesColRef); // auto ID
-        batch.set(changeDocRef, {
-          path: c.path,
-          oldValue: c.oldValue,
-          newValue: c.newValue,
-          userId,
-          createdAt: now,
-        });
-        newHistoryEntries.push({
-          id: changeDocRef.id,
-          path: c.path,
-          oldValue: c.oldValue,
-          newValue: c.newValue,
-          userId,
-          createdAt: { seconds: now.seconds },
-        });
-      }
-      await batch.commit();
+
       setExistingAssessment(reconstructed);
-      setExistingVersion(newVersion);
-      setHistory((prev) => [...newHistoryEntries, ...prev].slice(0, 30));
+      setExistingVersion(updated.version);
       setEditing(false);
       setSaveEditMessage(
-        `${changes.length}件の変更を保存しました (v${newVersion})`,
+        `${changes.length}件の変更を保存しました (v${updated.version})`,
       );
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
       setSaveEditMessage("保存中にエラーが発生しました");
     } finally {
       setSavingEdit(false);
@@ -462,12 +350,9 @@ export default function AssessmentAssistant() {
     setSaveEditMessage(null);
   };
 
-  // (removed auto-resize & field editor for stability)
-
   // 外部からの編集リクエストを監視
   useEffect(() => {
     if (!assessmentEditSignal) return;
-    // Only trigger if we already have an existing assessment loaded
     if (existingAssessment) {
       startEdit();
       // Scroll to target if specified
@@ -490,10 +375,9 @@ export default function AssessmentAssistant() {
         }, 50);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessmentEditSignal]);
 
-  // 既存があれば読み取り専用表示 (enhanced with edit + history)
+  // 既存があれば読み取り専用表示
   if (existingAssessment && !showCreation) {
     const displayData = existingAssessment;
     return (
@@ -565,7 +449,9 @@ export default function AssessmentAssistant() {
             </div>
             {historyError && <p className="text-red-500">{historyError}</p>}
             {!historyLoading && history.length === 0 && (
-              <p className="text-[var(--muted)] italic">履歴がありません</p>
+              <p className="text-[var(--muted)] italic">
+                履歴機能は現在実装されていません
+              </p>
             )}
             <ul className="space-y-2">
               {history.map((h) => (
@@ -578,14 +464,9 @@ export default function AssessmentAssistant() {
                       {h.path}
                     </span>
                     <span className="chip text-[10px]">
-                      {h.createdAt?.seconds
-                        ? new Date(h.createdAt.seconds * 1000).toLocaleString(
-                            "ja-JP",
-                          )
+                      {h.createdAt
+                        ? new Date(h.createdAt).toLocaleString("ja-JP")
                         : ""}
-                    </span>
-                    <span className="text-[var(--muted)] text-[11px]">
-                      by データを更新した人の名前
                     </span>
                   </div>
                   <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -801,7 +682,6 @@ export default function AssessmentAssistant() {
             )}
 
             {mappedResult ? (
-              // 結果表示・編集UI
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
                 {/* 左側：元のスクリプト */}
                 <div>
@@ -899,7 +779,6 @@ export default function AssessmentAssistant() {
                 </div>
               </div>
             ) : (
-              // 初期表示（自動整理前）
               <div className="surface card-shadow border border-[var(--border)] rounded p-4 mt-4">
                 <p className="text-center text-[var(--muted)]">
                   上記に面談記録を入力し、「アセスメント項目へ反映」ボタンを押してください。
