@@ -9,6 +9,8 @@ export interface ClientData {
 }
 
 export interface ClientContextValue {
+  clients: ClientData[];
+  refetchClients: () => Promise<void>;
   currentClient: ClientData | null;
   setCurrentClient: (client: ClientData | null) => void;
   assessmentEditSignal: number; // increments when an external edit request is fired
@@ -21,6 +23,8 @@ export interface ClientContextValue {
   requestGoToBasicInfo: () => void;
   assessmentRefreshSignal: number; // increments when assessment data changed/saved
   notifyAssessmentUpdated: () => void;
+  taskRefreshSignal: number; // increments when task data changed/saved
+  notifyTaskUpdated: () => void;
 }
 
 export const ClientContext = createContext<ClientContextValue | undefined>(
@@ -31,6 +35,8 @@ export function useClientContext(): ClientContextValue {
   const ctx = useContext(ClientContext);
   if (!ctx) {
     return {
+      clients: [],
+      refetchClients: async () => {},
       currentClient: null,
       setCurrentClient: () => {},
       assessmentEditSignal: 0,
@@ -40,6 +46,8 @@ export function useClientContext(): ClientContextValue {
       requestGoToBasicInfo: () => {},
       assessmentRefreshSignal: 0,
       notifyAssessmentUpdated: () => {},
+      taskRefreshSignal: 0,
+      notifyTaskUpdated: () => {},
     };
   }
   return ctx;

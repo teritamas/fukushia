@@ -33,24 +33,6 @@ export default function ClientWorkspace() {
   void personalLoading;
   void personalError;
 
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const clients = await clientApi.getAll();
-        const list = clients.map((client) => ({
-          id: client.id,
-          name: client.name,
-          photoUrl: undefined,
-          basicInfo: undefined,
-        }));
-        if (!currentClient && list.length > 0) setCurrentClient(list[0]);
-      } catch (error) {
-        console.error("Failed to fetch clients:", error);
-      }
-    };
-    fetchClients();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   // When the global header signals "go home", ensure we show the basic info tab
   useEffect(() => {
     setActiveTab("detail");
@@ -170,7 +152,7 @@ export default function ClientWorkspace() {
         className="space-y-6"
       >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="detail">メモ・TODO</TabsTrigger>
+          <TabsTrigger value="detail">支援記録</TabsTrigger>
           <TabsTrigger value="assessment">アセスメント</TabsTrigger>
         </TabsList>
 

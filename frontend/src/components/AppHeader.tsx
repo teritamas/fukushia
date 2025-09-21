@@ -10,43 +10,23 @@ interface AppHeaderProps {
 }
 
 const NAV_ITEMS: { key: string; label: string }[] = [
-  { key: "notes", label: "メモ・TODO" },
+  { key: "notes", label: "タスク一覧" },
   { key: "resources", label: "社会資源" },
 ];
 
 export default function AppHeader({ active, onChange }: AppHeaderProps) {
-  const { currentClient, setCurrentClient, requestGoToBasicInfo } =
-    useClientContext();
-  const [clients, setClients] = useState<ClientData[]>([]);
-  const [loadingClients, setLoadingClients] = useState(false);
+  const {
+    clients,
+    refetchClients,
+    currentClient,
+    setCurrentClient,
+    requestGoToBasicInfo,
+  } = useClientContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPhotoUrl, setNewPhotoUrl] = useState("");
   const [adding, setAdding] = useState(false);
-
-  useEffect(() => {
-    const fetchClients = async () => {
-      setLoadingClients(true);
-      try {
-        const apiClients = await clientApi.getAll();
-        const list: ClientData[] = apiClients.map((client) => ({
-          id: client.id,
-          name: client.name,
-          photoUrl: undefined, // API doesn't have photoUrl yet
-          basicInfo: undefined, // API doesn't have basicInfo yet
-        }));
-        setClients(list);
-        if (!currentClient && list.length > 0) setCurrentClient(list[0]);
-      } catch (error) {
-        console.error("Failed to fetch clients:", error);
-      } finally {
-        setLoadingClients(false);
-      }
-    };
-    fetchClients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const onSelect = (id: string) => {
     if (id === "__add__") {
@@ -67,15 +47,10 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
       const newClient = await clientApi.create({
         name: newName.trim(),
       });
-      const data: ClientData = {
-        id: newClient.id,
-        name: newClient.name,
-        photoUrl: newPhotoUrl.trim() || undefined, // Keep photoUrl in UI state for now
-      };
-      setClients((prev) => [...prev, data]);
-      setCurrentClient(data);
-      // After creating/selecting a new client, switch to ClientWorkspace
-      onChange("clients");
+    await refetchClients();
+    // The new client will be set as current by the logic in page.tsx after refetch
+    // After creating/selecting a new client, switch to ClientWorkspace
+    onChange("clients");
       setShowAdd(false);
       setNewName("");
       setNewPhotoUrl("");
@@ -126,8 +101,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-[var(--brand-600)] text-white border-transparent" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)]"}`}
               >
                 <span className="truncate max-w-[170px]">
-                  {currentClient?.name ||
-                    (loadingClients ? "読み込み中..." : "支援対象者を選択")}
+                  {currentClient?.name || "支援対象者を選択"}
                 </span>
                 <span className="text-xs opacity-80">▾</span>
               </button>
@@ -138,7 +112,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                   onMouseLeave={() => setMenuOpen(false)}
                 >
                   <div className="max-h-[60vh] overflow-auto py-1">
-                    {clients.length === 0 && !loadingClients && (
+                    {clients.length === 0 && (
                       <div className="px-3 py-2 text-xs text-[var(--muted)]">
                         支援対象者がいません
                       </div>

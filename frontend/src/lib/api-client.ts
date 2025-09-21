@@ -60,6 +60,14 @@ export interface Note {
   timestamp: string;
 }
 
+export interface InterviewRecord {
+  id: string;
+  clientName: string;
+  speaker: string;
+  content: string;
+  timestamp: string;
+}
+
 export interface NoteCreateRequest {
   clientName: string;
   speaker?: string;
@@ -185,6 +193,10 @@ export const notesApi = {
     return apiRequest<Note[]>(`/notes/${params}`);
   },
 
+  async get(id: string): Promise<Note> {
+    return apiRequest<Note>(`/notes/${id}`);
+  },
+
   async create(note: NoteCreateRequest): Promise<Note> {
     return apiRequest<Note>("/notes/", {
       method: "POST",
@@ -194,7 +206,7 @@ export const notesApi = {
 
   async update(id: string, note: NoteUpdateRequest): Promise<Note> {
     return apiRequest<Note>(`/notes/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(note),
     });
   },
@@ -237,10 +249,19 @@ export const assessmentsApi = {
   },
 };
 
+// Interview Records API functions
+export const interviewRecordsApi = {
+  async getAll(clientName: string): Promise<InterviewRecord[]> {
+    const params = `?client_name=${encodeURIComponent(clientName)}`;
+    return apiRequest<InterviewRecord[]>(`/interview_records/${params}`);
+  },
+};
+
 const apiClient = {
   clients: clientApi,
   notes: notesApi,
   assessments: assessmentsApi,
+  interviewRecords: interviewRecordsApi,
 };
 
 export default apiClient;
