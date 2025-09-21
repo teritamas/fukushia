@@ -47,10 +47,10 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
       const newClient = await clientApi.create({
         name: newName.trim(),
       });
-    await refetchClients();
-    // The new client will be set as current by the logic in page.tsx after refetch
-    // After creating/selecting a new client, switch to ClientWorkspace
-    onChange("clients");
+      await refetchClients();
+      // The new client will be set as current by the logic in page.tsx after refetch
+      // After creating/selecting a new client, switch to ClientWorkspace
+      onChange("clients");
       setShowAdd(false);
       setNewName("");
       setNewPhotoUrl("");

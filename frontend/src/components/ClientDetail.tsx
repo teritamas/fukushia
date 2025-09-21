@@ -250,9 +250,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       await notesApi.update(noteId, updateRequest);
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === taskId && t.noteId === noteId
-            ? { ...t, isCompleted }
-            : t,
+          t.id === taskId && t.noteId === noteId ? { ...t, isCompleted } : t,
         ),
       );
     } catch (error) {
@@ -405,7 +403,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
               タスク追加
             </button>
           </div>
-          <Modal isOpen={isTaskFormVisible} onClose={() => setIsTaskFormVisible(false)}>
+          <Modal
+            isOpen={isTaskFormVisible}
+            onClose={() => setIsTaskFormVisible(false)}
+          >
             <TaskForm
               defaultClientName={selectedClient}
               onSave={handleSaveTask}
@@ -432,7 +433,10 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
               支援記録追加
             </button>
           </div>
-          <Modal isOpen={isMemoFormVisible} onClose={() => setIsMemoFormVisible(false)}>
+          <Modal
+            isOpen={isMemoFormVisible}
+            onClose={() => setIsMemoFormVisible(false)}
+          >
             <MemoForm
               defaultClientName={selectedClient}
               onSave={handleSaveMemo}

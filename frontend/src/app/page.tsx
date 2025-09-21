@@ -48,15 +48,16 @@ export default function Page() {
         name: client.name,
       }));
       setClients(list);
-      
+
       // If there is no current client or the current client is no longer in the list, set a new one.
-      const currentClientStillExists = list.some(c => c.id === currentClient?.id);
+      const currentClientStillExists = list.some(
+        (c) => c.id === currentClient?.id,
+      );
       if ((!currentClient || !currentClientStillExists) && list.length > 0) {
         setCurrentClient(list[0]);
       } else if (list.length === 0) {
         setCurrentClient(null);
       }
-
     } catch (error) {
       console.error("Failed to fetch clients:", error);
       setClients([]); // Clear clients on error
@@ -67,7 +68,6 @@ export default function Page() {
     fetchClients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
 
   return (
     <ClientContext.Provider

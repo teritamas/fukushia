@@ -135,7 +135,9 @@ const MemoList: React.FC<MemoListProps> = ({
               </div>
             </div>
 
-            {note.content && <div className="mt-1 mb-1 text-sm">{note.content}</div>}
+            {note.content && (
+              <div className="mt-1 mb-1 text-sm">{note.content}</div>
+            )}
           </div>
         );
       })}

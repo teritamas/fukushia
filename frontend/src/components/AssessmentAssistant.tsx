@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { assessmentItems } from "../lib/assessmentItems";
 import { useClientContext } from "./ClientContext";
-import {
-  assessmentsApi,
-  interviewRecordsApi,
-} from "../lib/api-client";
+import { assessmentsApi, interviewRecordsApi } from "../lib/api-client";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -387,44 +384,44 @@ export default function AssessmentAssistant() {
     }
   }, [assessmentEditSignal]);
 
-const SkeletonAssessment = () => (
-  <div className="space-y-6 animate-pulse">
-    <div className="surface card-shadow border border-gray-100 rounded-lg p-4">
-      <div className="h-6 bg-[var(--chip-bg)] rounded w-1/3 mb-4"></div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
-          <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+  const SkeletonAssessment = () => (
+    <div className="space-y-6 animate-pulse">
+      <div className="surface card-shadow border border-gray-100 rounded-lg p-4">
+        <div className="h-6 bg-[var(--chip-bg)] rounded w-1/3 mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
         </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
-          <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
-        </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
-          <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
-        </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
-          <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+      </div>
+      <div className="surface card-shadow border border-gray-100 rounded-lg p-4">
+        <div className="h-6 bg-[var(--chip-bg)] rounded w-1/3 mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
         </div>
       </div>
     </div>
-    <div className="surface card-shadow border border-gray-100 rounded-lg p-4">
-      <div className="h-6 bg-[var(--chip-bg)] rounded w-1/3 mb-4"></div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
-          <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
-        </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
-          <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+  );
 
   // 既存があれば読み取り専用表示
   if (existingLoading) {

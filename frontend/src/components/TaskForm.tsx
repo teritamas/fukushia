@@ -3,11 +3,7 @@ import React, { useState } from "react";
 interface TaskFormProps {
   clients?: { id: string; name: string }[];
   defaultClientName?: string;
-  onSave: (task: {
-    clientName: string;
-    text: string;
-    dueDate: string;
-  }) => void;
+  onSave: (task: { clientName: string; text: string; dueDate: string }) => void;
   onCancel: () => void;
 }
 
