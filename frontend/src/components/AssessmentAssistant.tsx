@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { assessmentItems } from "../lib/assessmentItems";
 import { useClientContext } from "./ClientContext";
-import { assessmentsApi } from "../lib/api-client";
+import { assessmentsApi, interviewRecordsApi } from "../lib/api-client";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -30,32 +30,39 @@ export default function AssessmentAssistant() {
   const [existingLoading, setExistingLoading] = useState(false);
   const [existingError, setExistingError] = useState<string | null>(null);
   const [showCreation, setShowCreation] = useState(false);
-  const [script, setScript] =
-    useState(`支援者（田中 健一、45歳）: 相談に来て、少し緊張しています。よろしくお願いします。
-
-社会福祉士: 田中さん、本日はお越しいただきありがとうございます。どうぞ、楽にお話しください。本日はどのようなことでお困りでしょうか？
-
-田中: ええと...実は、数年前に会社をリストラされてから、ずっと仕事が見つからないんです。年齢のせいか、書類選考で落ちてしまうことが多くて。最初は頑張ろうと思っていたんですが、最近はもうどうしていいか分からなくなってしまって...。
-
-社会福祉士: そうですか、それは大変でしたね。これまで、どのようなお仕事をされていましたか？
-
-田中: 以前は、小さな町工場で旋盤工をしていました。勤続20年で、機械の扱いには自信があります。細かい作業も得意で、手先は器用な方だと思います。ただ、パソコンはほとんど使ったことがなくて...。
-
-社会福祉士: 旋盤工として20年も経験を積んでこられたのですね。それは素晴らしい強みです。仕事を探す上で、何か希望はありますか？
-
-田中: できれば、また製造業に関わる仕事に就きたいです。でも、今の状況だと、清掃や警備の仕事でも、とにかく安定した収入が欲しいと思っています。
-
-社会福祉士: 収入面での不安が大きいとのこと、承知いたしました。生活のことでお困りごとはありますか？
-
-田中: 家賃の支払いが厳しくなってきていて、貯金もほとんど底をつきました。食事もまともにとれていない日があって、体調もすぐれません。このままだと、家を追い出されてしまうんじゃないかと不安です...。
-
-社会福祉士: 生活の基盤が不安定な状況なのですね。お話しいただきありがとうございます。一つずつ、一緒に解決策を考えていきましょう。ご家族はいらっしゃいますか？
-
-田中: 離婚して、今は一人暮らしです。遠方に住んでいる母親がいますが、高齢なので心配はかけたくありません。
-
-社会福祉士: 承知いたしました。本日はたくさんお話しいいただきありがとうございました。本日お伺いした内容を元に、まずは生活を安定させるための支援と、田中さんの得意なことを活かせる就労支援について、一緒に計画を立てていきましょう。`);
+  const [script, setScript] = useState("");
   const [mappingLoading, setMappingLoading] = useState(false);
   const [mappingError, setMappingError] = useState<string | null>(null);
+
+  // Fetch initial script
+  useEffect(() => {
+    const fetchInitialScript = async () => {
+      if (showCreation && currentClient) {
+        // Reset script when client changes or creation view is shown
+        setScript("");
+        try {
+          const records = await interviewRecordsApi.getAll(currentClient.name);
+          if (records && records.length > 0) {
+            // The API returns records sorted by timestamp, so we find the initial one.
+            const initialRecord = records.find((record) =>
+              record.content?.startsWith("【初回面談記録】"),
+            );
+            if (initialRecord) {
+              setScript(initialRecord.content);
+            } else {
+              // Fallback to the most recent record if no specific initial record is found
+              setScript(records[0].content);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch initial script:", error);
+          // Optional: show a non-blocking error to the user
+        }
+      }
+    };
+
+    fetchInitialScript();
+  }, [showCreation, currentClient]);
 
   // Editing states
   const [editing, setEditing] = useState(false);
@@ -159,7 +166,7 @@ export default function AssessmentAssistant() {
       setExistingDocId(assessment.id);
       setExistingVersion(assessment.version);
       setMappedResult(null);
-      alert(`アセスメント結果が保存されました。 (ID: ${assessment.id})`);
+      alert(`アセスメント結果が保存されました。`);
 
       // Signal other views to refetch latest assessment
       notifyAssessmentUpdated();
@@ -377,7 +384,50 @@ export default function AssessmentAssistant() {
     }
   }, [assessmentEditSignal]);
 
+  const SkeletonAssessment = () => (
+    <div className="space-y-6 animate-pulse">
+      <div className="surface card-shadow border border-gray-100 rounded-lg p-4">
+        <div className="h-6 bg-[var(--chip-bg)] rounded w-1/3 mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+      <div className="surface card-shadow border border-gray-100 rounded-lg p-4">
+        <div className="h-6 bg-[var(--chip-bg)] rounded w-1/3 mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+            <div className="h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // 既存があれば読み取り専用表示
+  if (existingLoading) {
+    return <SkeletonAssessment />;
+  }
+
   if (existingAssessment && !showCreation) {
     const displayData = existingAssessment;
     return (
@@ -429,9 +479,6 @@ export default function AssessmentAssistant() {
             対象支援者:{" "}
             <span className="font-semibold">{currentClient.name}</span>
           </div>
-        )}
-        {existingLoading && (
-          <p className="text-xs text-[var(--muted)]">読み込み中...</p>
         )}
         {existingError && (
           <p className="text-xs text-red-500">{existingError}</p>
@@ -655,7 +702,7 @@ export default function AssessmentAssistant() {
           <div>
             <div className="mb-4">
               <label htmlFor="script-textarea" className="font-bold mb-2 block">
-                面談記録（スクリプト）
+                面談記録
               </label>
               <textarea
                 id="script-textarea"

@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { clientApi } from "../lib/api-client";
+import { clientApi, Client } from "../lib/api-client";
 
 interface ClientListProps {
   selectedClient: string;
   setSelectedClient: (name: string) => void;
-  clients: string[];
-  setClients: (clients: string[]) => void;
+  clients: Client[];
+  setClients: (clients: Client[]) => void;
 }
 
 export default function ClientList({
@@ -20,8 +20,8 @@ export default function ClientList({
   const handleAddClient = async () => {
     if (!newClient.trim()) return;
     try {
-      await clientApi.create({ name: newClient.trim() });
-      setClients([...clients, newClient.trim()]);
+      const createdClient = await clientApi.create({ name: newClient.trim() });
+      setClients([...clients, createdClient]);
       setNewClient("");
     } catch (error) {
       console.error("Failed to create client:", error);
@@ -49,15 +49,15 @@ export default function ClientList({
       <div className="flex flex-wrap gap-2 mb-4">
         {clients.map((c) => (
           <button
-            key={c}
+            key={c.id}
             className={`px-3 py-1 rounded border ${
-              selectedClient === c
+              selectedClient === c.name
                 ? "bg-[var(--brand-600)] text-white border-transparent"
                 : "bg-[var(--chip-bg)] text-[var(--foreground)] border-[var(--border)]"
             }`}
-            onClick={() => setSelectedClient(c)}
+            onClick={() => setSelectedClient(c.name)}
           >
-            {c}
+            {c.name}
           </button>
         ))}
       </div>

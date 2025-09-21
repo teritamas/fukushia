@@ -6,6 +6,7 @@ export type TodoItem = {
   text: string;
   dueDate?: { seconds: number } | string | null;
   isCompleted?: boolean;
+  noteId?: string;
 };
 
 export type Note = {
@@ -37,46 +38,75 @@ function getDueDateLabel(
 
 interface MemoListProps {
   notes: Note[];
+  showClientName?: boolean;
+  isLoading?: boolean;
   // オプショナルなハンドラ
-  onToggleTask?: (noteId: string, taskId: string, isCompleted: boolean) => void;
   onEditNote?: (note: Note) => void;
   onDeleteNote?: (noteId: string) => void;
 }
 
+const SkeletonMemo = () => (
+  <div className="bg-[var(--surface)] border border-[var(--border)] rounded p-3 mb-2 animate-pulse">
+    <div className="flex items-center justify-between">
+      <div className="h-4 bg-[var(--chip-bg)] rounded w-1/4"></div>
+      <div className="h-4 bg-[var(--chip-bg)] rounded w-1/6"></div>
+    </div>
+    <div className="mt-2 h-4 bg-[var(--chip-bg)] rounded w-1/2"></div>
+    <div className="mt-2 h-10 bg-[var(--chip-bg)] rounded w-full"></div>
+  </div>
+);
+
 const MemoList: React.FC<MemoListProps> = ({
   notes,
-  onToggleTask,
+  showClientName = true,
+  isLoading = false,
   onEditNote,
   onDeleteNote,
 }) => {
+  if (isLoading) {
+    return (
+      <div className="grid gap-4">
+        <SkeletonMemo />
+        <SkeletonMemo />
+        <SkeletonMemo />
+      </div>
+    );
+  }
+
   if (notes.length === 0) {
-    return <p>メモがありません。</p>;
+    return (
+      <p className="text-center text-[var(--muted)]">メモがありません。</p>
+    );
   }
 
   return (
     <div className="grid gap-4">
       {notes.map((note) => {
         const dateStr = note.timestamp?.seconds
-          ? new Date(note.timestamp.seconds * 1000).toLocaleString()
+          ? new Date(note.timestamp.seconds * 1000).toLocaleDateString()
           : "";
-
-        const incompleteTasks = (note.todoItems || []).filter(
-          (t) => !t.isCompleted,
-        );
-        const completedTasks = (note.todoItems || []).filter(
-          (t) => t.isCompleted,
-        );
 
         return (
           <div
             key={note.id}
             className="bg-[var(--surface)] border border-[var(--border)] rounded p-3 mb-2"
           >
-            <div className="flex items-center justify-between">
-              <div className="font-bold flex items-center gap-2">
-                <span>{note.clientName}</span>
-              </div>
+            <div
+              className={`flex items-center ${
+                showClientName ? "justify-between" : "justify-end"
+              }`}
+            >
+              {showClientName && (
+                <div className="font-bold flex items-center gap-2">
+                  <span>{note.clientName}</span>
+                </div>
+              )}
               <div className="flex items-center gap-3">
+                {note.speaker && (
+                  <span className="text-xs text-[var(--muted)]">
+                    👤 {note.speaker}
+                  </span>
+                )}
                 <span className="text-xs text-[var(--muted)]">
                   {dateStr || "-"}
                 </span>
@@ -105,74 +135,8 @@ const MemoList: React.FC<MemoListProps> = ({
               </div>
             </div>
 
-            {note.speaker && (
-              <div className="mt-1">
-                <span className="chip">👤 発言者: {note.speaker}</span>
-              </div>
-            )}
-
-            {note.content && <div className="mt-1 mb-1">📝 {note.content}</div>}
-
-            {incompleteTasks.length > 0 && (
-              <div className="mt-2">
-                <span className="text-sm text-[var(--muted)] flex items-center gap-1">
-                  ⏳ 未完了タスク:
-                </span>
-                {incompleteTasks.map((item, i) => (
-                  <div
-                    key={item.id || `in-${i}`}
-                    className="flex items-center gap-2 bg-[var(--chip-bg)] py-1 px-2 rounded mb-1"
-                  >
-                    {onToggleTask && item.id && (
-                      <input
-                        type="checkbox"
-                        checked={!!item.isCompleted}
-                        onChange={(e) =>
-                          onToggleTask(note.id, item.id!, e.target.checked)
-                        }
-                      />
-                    )}
-                    <span>{item.text}</span>
-                    {item.dueDate && (
-                      <span className="text-xs text-[var(--muted)]">
-                        (期限: {getDueDateLabel(item.dueDate)})
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {completedTasks.length > 0 && (
-              <div className="mt-1.5">
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  ✔︎ 完了タスク
-                </span>
-                {completedTasks.map((item, i) => (
-                  <div
-                    key={item.id || `co-${i}`}
-                    className="flex items-center gap-2 bg-[var(--chip-bg)] py-[2px] px-2 rounded mb-1"
-                  >
-                    {onToggleTask && item.id && (
-                      <input
-                        type="checkbox"
-                        checked={!!item.isCompleted}
-                        onChange={(e) =>
-                          onToggleTask(note.id, item.id!, e.target.checked)
-                        }
-                      />
-                    )}
-                    <span className="line-through text-[var(--muted)] text-xs">
-                      {item.text}
-                    </span>
-                    {item.dueDate && (
-                      <span className="text-[10px] text-[var(--muted)]">
-                        期限: {getDueDateLabel(item.dueDate)}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+            {note.content && (
+              <div className="mt-1 mb-1 text-sm">{note.content}</div>
             )}
           </div>
         );

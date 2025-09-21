@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useClientContext } from "./ClientContext";
 import {
+  clientApi,
   notesApi,
   assessmentsApi,
   type NoteCreateRequest,
@@ -10,37 +11,25 @@ import {
 } from "../lib/api-client";
 import ClientResources, { AssessmentDataShape } from "./ClientResources";
 import MemoList, { Note as SharedNote } from "./MemoList";
+import TaskList, { TaskListItem } from "./TaskList";
+import TaskForm from "./TaskForm";
+import MemoForm from "./MemoForm";
 import SupportAgentChatUI from "./SupportAgentChatUI";
 import { Button } from "./ui/button";
-import { Bot, X } from "lucide-react";
+import { Bot, X, ListTodo, ClipboardList } from "lucide-react";
+import Modal from "./ui/Modal";
 
 interface ClientDetailProps {
   selectedClient: string;
 }
 export default function ClientDetail({ selectedClient }: ClientDetailProps) {
-  type TodoItem = {
-    id?: string;
-    text: string;
-    dueDate?: { seconds: number } | string | null;
-    isCompleted?: boolean;
-  };
-  type LocalNote = {
-    id?: string;
-    clientName?: string;
-    speaker?: string;
-    content?: string;
-    timestamp?: { seconds: number };
-    todoItems?: TodoItem[];
-  };
-  const [notes, setNotes] = useState<LocalNote[]>([]);
+  const [notes, setNotes] = useState<SharedNote[]>([]);
+  const [tasks, setTasks] = useState<TaskListItem[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState<{
-    id: string;
-    speaker: string;
-    content: string;
-  } | null>(null);
+  const [isTaskFormVisible, setIsTaskFormVisible] = useState(false);
+  const [isMemoFormVisible, setIsMemoFormVisible] = useState(false);
 
-  // アセスメントと支援計画の状態
   type AssessmentItemDetail = {
     summary: string;
     sentiment: string;
@@ -73,176 +62,202 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const [, setDragOffset] = useState({ x: 0, y: 0 });
 
   // AIチャット用ポップオーバー状態
-  const [aiChatOpen, setAiChatOpen] = useState(true);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
   const toggleAiChatOpen = () => setAiChatOpen((prev) => !prev);
   const popoverRef = useRef<HTMLDivElement | null>(null);
-  const { assessmentRefreshSignal } = useClientContext();
+  const { assessmentRefreshSignal, notifyTaskUpdated } = useClientContext();
   // Avoid SSR hydration mismatch by rendering portal only after mount
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // メモ / TODO 入力用 draft state
-  type TodoDraft = { id: string; text: string; dueDate: string };
-  const [speaker, setSpeaker] = useState("");
-  const [memoContent, setMemoContent] = useState("");
-  const [todos, setTodos] = useState<TodoDraft[]>([
-    { id: "initial", text: "", dueDate: "" },
-  ]);
-  const addTodoField = () =>
-    setTodos((prev) => [
-      ...prev,
-      { id: Date.now().toString(), text: "", dueDate: "" },
-    ]);
-  // AIチャットからタスク追加
-  // AIチャットからタスク追加（即保存＆一覧反映）
-  const addTaskFromChat = async (task: string) => {
-    if (!selectedClient || !task.trim()) return;
-    const newNote: NoteCreateRequest = {
-      clientName: selectedClient,
-      speaker: "AI",
-      content: `AIチャットで「${task}」という確認事項が発生しました。背景：制度やリソースの有無が不明、追加確認が必要なため。`,
-    };
-    try {
-      const createdNote = await notesApi.create(newNote);
-      setNotes((prev) => [
-        {
-          id: createdNote.id,
-          clientName: selectedClient,
-          speaker: createdNote.speaker,
-          content: createdNote.content,
-          timestamp: {
-            seconds: Math.floor(
-              new Date(createdNote.timestamp).getTime() / 1000,
-            ),
-          },
-          todoItems: createdNote.todoItems.map((item) => ({
-            id: item.id,
-            text: item.text,
-            dueDate: item.due_date
-              ? {
-                  seconds: Math.floor(new Date(item.due_date).getTime() / 1000),
-                }
-              : null,
-            isCompleted: item.is_completed,
-          })),
-        },
-        ...prev,
-      ]);
-    } catch (e) {
-      console.error(e);
-      alert("AIタスクの保存に失敗しました");
+  useEffect(() => {
+    if (!selectedClient) {
+      setNotes([]);
+      setTasks([]);
+      return;
     }
-  };
-  const removeTodoField = (id: string) =>
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-  const updateTodoField = (
-    id: string,
-    key: "text" | "dueDate",
-    value: string,
-  ) =>
-    setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [key]: value } : t)),
-    );
-  const handleSaveClientNote = async () => {
+    setLoading(true);
+    const fetchData = async () => {
+      try {
+        const clientData = await clientApi.getAll();
+        setClients(
+          clientData.map((c) => ({ id: c.id || "", name: c.name || "" })),
+        );
+        const notesData = await notesApi.getAll(selectedClient);
+        const allNotes: SharedNote[] = [];
+        const allTasks: TaskListItem[] = [];
+        notesData.forEach((note) => {
+          allNotes.push({
+            id: note.id,
+            clientName: note.clientName,
+            speaker: note.speaker,
+            content: note.content,
+            timestamp: {
+              seconds: Math.floor(new Date(note.timestamp).getTime() / 1000),
+            },
+          });
+          if (note.todoItems) {
+            note.todoItems.forEach((item) => {
+              allTasks.push({
+                id: item.id,
+                text: item.text,
+                dueDate: item.due_date || null,
+                isCompleted: item.is_completed,
+                noteId: note.id,
+                clientName: selectedClient,
+                details: (note.content || "").replace(item.text, "").trim(),
+              });
+            });
+          }
+        });
+        setNotes(allNotes);
+        setTasks(allTasks);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [selectedClient]);
+
+  const handleSaveTask = async (task: {
+    clientName: string;
+    text: string;
+    dueDate: string;
+  }) => {
     if (!selectedClient) return;
-    if (!memoContent.trim() && todos.every((t) => !t.text.trim())) return;
-    const newNote: NoteCreateRequest = {
-      clientName: selectedClient,
-      speaker: speaker.trim(),
-      content: memoContent.trim(),
-    };
     try {
-      const createdNote = await notesApi.create(newNote);
-      // 即時反映
-      setNotes((prev) => [
+      const createRequest: NoteCreateRequest = {
+        clientName: selectedClient,
+        content: task.text,
+      };
+      let newNote = await notesApi.create(createRequest);
+      const updateRequest: NoteUpdateRequest = {
+        todoItems: [
+          {
+            id: "",
+            text: task.text,
+            due_date: task.dueDate || null,
+            is_completed: false,
+          },
+        ],
+      };
+      newNote = await notesApi.update(newNote.id, updateRequest);
+      const newTodoItem = newNote.todoItems[0];
+      setTasks((prev) => [
+        ...prev,
         {
-          id: createdNote.id,
+          id: newTodoItem.id,
+          text: newTodoItem.text,
+          dueDate: newTodoItem.due_date || null,
+          isCompleted: newTodoItem.is_completed,
+          noteId: newNote.id,
           clientName: selectedClient,
-          speaker: createdNote.speaker,
-          content: createdNote.content,
-          todoItems: createdNote.todoItems.map((t) => ({
-            id: t.id,
-            text: t.text,
-            dueDate: t.due_date
-              ? { seconds: Math.floor(new Date(t.due_date).getTime() / 1000) }
-              : undefined,
-            isCompleted: t.is_completed,
-          })),
+          details: (newNote.content || "").replace(newTodoItem.text, "").trim(),
+        },
+      ]);
+      setIsTaskFormVisible(false);
+    } catch (error) {
+      console.error("Failed to save task:", error);
+    }
+  };
+
+  const handleSaveMemo = async (memo: {
+    clientName: string;
+    speaker: string;
+    content: string;
+  }) => {
+    if (!selectedClient) return;
+    try {
+      const createRequest: NoteCreateRequest = {
+        clientName: selectedClient,
+        speaker: memo.speaker,
+        content: memo.content,
+      };
+      const newNote = await notesApi.create(createRequest);
+      setNotes((prev) => [
+        ...prev,
+        {
+          id: newNote.id,
+          clientName: newNote.clientName,
+          speaker: newNote.speaker,
+          content: newNote.content,
           timestamp: {
-            seconds: Math.floor(
-              new Date(createdNote.timestamp).getTime() / 1000,
-            ),
+            seconds: Math.floor(new Date(newNote.timestamp).getTime() / 1000),
           },
         },
-        ...prev,
       ]);
-      setSpeaker("");
-      setMemoContent("");
-      setTodos([{ id: "initial", text: "", dueDate: "" }]);
-    } catch (e) {
-      console.error(e);
-      alert("メモ保存に失敗しました");
+      setIsMemoFormVisible(false);
+    } catch (error) {
+      console.error("Failed to save memo:", error);
     }
   };
 
-  // メモの削除
-  const handleDeleteNote = async (noteId: string) => {
+  const addTaskFromChat = async (taskText: string) => {
+    if (!selectedClient) return;
     try {
-      const ok =
-        typeof window === "undefined"
-          ? true
-          : window.confirm("このメモを削除してもよろしいですか？");
-      if (!ok) return;
-      await notesApi.delete(noteId);
-      setNotes((prev) => prev.filter((n) => n.id !== noteId));
-    } catch (e) {
-      console.error(e);
-      alert("メモの削除に失敗しました");
+      const createRequest: NoteCreateRequest = {
+        clientName: selectedClient,
+        content: taskText,
+      };
+      let newNote = await notesApi.create(createRequest);
+      const updateRequest: NoteUpdateRequest = {
+        todoItems: [
+          {
+            id: "",
+            text: taskText,
+            due_date: null,
+            is_completed: false,
+          },
+        ],
+      };
+      newNote = await notesApi.update(newNote.id, updateRequest);
+      const newTodoItem = newNote.todoItems[0];
+      setTasks((prev) => [
+        ...prev,
+        {
+          id: newTodoItem.id,
+          text: newTodoItem.text,
+          dueDate: newTodoItem.due_date || null,
+          isCompleted: newTodoItem.is_completed,
+          noteId: newNote.id,
+          clientName: selectedClient,
+          details: (newNote.content || "").replace(newTodoItem.text, "").trim(),
+        },
+      ]);
+      notifyTaskUpdated();
+    } catch (error) {
+      console.error("Failed to add task from chat:", error);
     }
   };
 
-  // タスクの完了切替
   const handleToggleTask = async (
     noteId: string,
     taskId: string,
     isCompleted: boolean,
   ) => {
     try {
-      const note = notes.find((n) => n.id === noteId);
+      const note = await notesApi.get(noteId);
       if (!note) return;
-      const updated = (note.todoItems || []).map((t) =>
-        t?.id === taskId ? { ...t, isCompleted } : t,
+      const todoItems = (note.todoItems || []).map((t) =>
+        t.id === taskId ? { ...t, is_completed: isCompleted } : t,
       );
-
       const updateRequest: NoteUpdateRequest = {
-        speaker: note.speaker,
-        content: note.content,
-        todoItems: updated.map((t) => ({
-          id: t?.id || "",
-          text: t?.text || "",
-          due_date:
-            typeof t?.dueDate === "object" &&
-            t?.dueDate &&
-            "seconds" in t.dueDate
-              ? new Date(t.dueDate.seconds * 1000).toISOString()
-              : typeof t?.dueDate === "string"
-                ? t.dueDate
-                : null,
-          is_completed: t?.isCompleted || false,
-        })),
+        todoItems: todoItems,
       };
-
       await notesApi.update(noteId, updateRequest);
-      setNotes((prev) =>
-        prev.map((n) => (n.id === noteId ? { ...n, todoItems: updated } : n)),
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId && t.noteId === noteId ? { ...t, isCompleted } : t,
+        ),
       );
-    } catch (e) {
-      console.error(e);
-      alert("タスクの更新に失敗しました");
+    } catch (error) {
+      console.error("Failed to toggle task:", error);
     }
   };
+
   const simplifiedAssessment: AssessmentDataShape | null = useMemo(() => {
     if (!assessmentPlan || !assessmentPlan.assessment) return null;
     type SimplifiedCategory = Record<string, string | Record<string, string>>;
@@ -318,58 +333,15 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
     });
   };
 
-  // 支援者選択時にその人のメモと最新のアセスメントを取得
   useEffect(() => {
-    if (!selectedClient) {
-      setNotes([]);
-      setAssessmentPlan(null);
-      setEditableSupportPlan("");
-      return;
-    }
-    setLoading(true);
-    setAssessmentsLoading(true);
-    setAssessmentsError(null);
-
-    const fetchNotes = async () => {
-      try {
-        const apiNotes = await notesApi.getAll(selectedClient);
-        setNotes(
-          apiNotes.map((note) => ({
-            id: note.id,
-            clientName: selectedClient,
-            speaker: note.speaker,
-            content: note.content,
-            timestamp: {
-              seconds: Math.floor(new Date(note.timestamp).getTime() / 1000),
-            },
-            todoItems: note.todoItems.map((item) => ({
-              id: item.id,
-              text: item.text,
-              dueDate: item.due_date
-                ? {
-                    seconds: Math.floor(
-                      new Date(item.due_date).getTime() / 1000,
-                    ),
-                  }
-                : null,
-              isCompleted: item.is_completed,
-            })),
-          })),
-        );
-      } catch (error) {
-        console.error("Error fetching notes:", error);
-      }
-      setLoading(false);
-    };
-
     const fetchLatestAssessment = async () => {
+      if (!selectedClient) return;
       setAssessmentPlan(null);
       setEditableSupportPlan("");
       try {
         const assessments = await assessmentsApi.getAll(selectedClient);
 
         if (assessments.length > 0) {
-          // 日付でソートして最新のものを取得
           assessments.sort(
             (a, b) =>
               new Date(b.created_at).getTime() -
@@ -377,7 +349,6 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
           );
           const latestAssessment = assessments[0];
 
-          // AssessmentPlan形式に変換
           const convertedAssessment: AssessmentPlan = {
             id: latestAssessment.id,
             createdAt: {
@@ -403,11 +374,9 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
       }
     };
 
-    fetchNotes();
     fetchLatestAssessment();
   }, [selectedClient, assessmentRefreshSignal]);
 
-  // ESCでポップオーバーを閉じる
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -419,277 +388,73 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   }, []);
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 w-full p-4">
-      {/* 左カラム: メモ入力・一覧 */}
-      <div className="flex-1 bg-[var(--surface)] rounded-xl card-shadow border border-[var(--border)] p-6 min-w-[65%]">
-        <h2 className="text-2xl font-semibold mb-4 text-[var(--foreground)]">
-          メモ・TODOを入力
-        </h2>
-        {/* メモ / TODO 入力フォーム */}
-        <div className="mb-6 p-4 border border-[var(--ginput-border)] rounded-lg bg-[var(--surface)]">
-          <div className="mb-2">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-[var(--muted)] w-16">発言者</label>
-              <input
-                value={speaker}
-                onChange={(e) => setSpeaker(e.target.value)}
-                placeholder="例: 本人 / 家族 / その他関係者"
-                className="flex-1 border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
-              />
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setSpeaker("本人")}
-                  className="text-xs px-2 py-1 bg-[var(--gbtn-hover-bg)] rounded-lg hover-scale text-[var(--foreground)]"
-                >
-                  本人
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSpeaker("家族")}
-                  className="text-xs px-2 py-1 bg-[var(--gbtn-hover-bg)] rounded-lg hover-scale text-[var(--foreground)]"
-                >
-                  家族
-                </button>
-              </div>
-            </div>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">
-              誰の発言かを明記してください（例: 本人 / 家族 / その他関係者）。
-            </p>
+    <div className="flex flex-col md:flex-row gap-6 w-full">
+      <div className="flex-1 grid grid-cols-3 gap-4">
+        <div className="col-span-1  shadow p-4 border border-gray-100 rounded-xl">
+          <div className="flex items-center justify-between mb-3 ">
+            <h2 className="text-base font-semibold text-[var(--foreground)] flex items-center gap-2">
+              <ListTodo className="w-6 h-6 text-blue-500" />
+              タスク ({tasks.length})
+            </h2>
+            <button
+              onClick={() => setIsTaskFormVisible(true)}
+              className="gbtn tonal text-sm"
+            >
+              タスク追加
+            </button>
           </div>
-          <div className="mb-2">
-            <label className="text-sm font-medium text-gray-800 block mb-1">
-              メモ内容
-            </label>
-            <textarea
-              value={memoContent}
-              onChange={(e) => setMemoContent(e.target.value)}
-              rows={3}
-              className="w-full border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--gbtn-hover-bg)] bg-[var(--surface)] text-[var(--foreground)]"
-              placeholder="活動や気づき、課題など"
-            />
-          </div>
-          <div className="mb-3">
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-sm font-medium text-gray-800">
-                TODO（タスク化）
-              </label>
-              <button
-                type="button"
-                onClick={addTodoField}
-                className="text-xs text-[var(--brand-600)] hover:underline hover-scale"
-              >
-                ＋追加
-              </button>
-            </div>
-            <div className="space-y-2">
-              {todos.map((t, i) => (
-                <div key={t.id} className="flex gap-2 items-center">
-                  <input
-                    value={t.text}
-                    onChange={(e) =>
-                      updateTodoField(t.id, "text", e.target.value)
-                    }
-                    placeholder={`タスク${i + 1}`}
-                    className="flex-1 border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--ring)] bg-[var(--surface)] text-[var(--foreground)]"
-                  />
-                  <input
-                    type="date"
-                    value={t.dueDate}
-                    onChange={(e) =>
-                      updateTodoField(t.id, "dueDate", e.target.value)
-                    }
-                    className="border border-[var(--ginput-border)] rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--ring)] bg-[var(--surface)] text-[var(--foreground)]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeTodoField(t.id)}
-                    disabled={todos.length === 1}
-                    className="text-[10px] text-red-500 disabled:opacity-30 hover-scale"
-                  >
-                    削除
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-          <button
-            disabled={
-              !selectedClient ||
-              (!memoContent.trim() && todos.every((t) => !t.text.trim()))
-            }
-            onClick={handleSaveClientNote}
-            className="w-full bg-blue-600 hover:bg-[var(--brand-700)] disabled:bg-blue-300 text-white text-sm py-2 rounded-lg hover-scale"
+          <Modal
+            isOpen={isTaskFormVisible}
+            onClose={() => setIsTaskFormVisible(false)}
           >
-            保存
-          </button>
-        </div>
-        {loading && <p>読み込み中...</p>}
-        {selectedClient && !loading && (
-          <div>
-            <h3 className="text-xl font-semibold mb-3">
-              {selectedClient} さんのメモ・TODO一覧
-            </h3>
-            <MemoList
-              notes={
-                (notes as LocalNote[]).map((n, i) => ({
-                  id: String(n.id ?? i),
-                  clientName: selectedClient,
-                  speaker: n.speaker,
-                  content: n.content,
-                  timestamp: n.timestamp,
-                  todoItems: (n.todoItems || []).map((t) => ({
-                    id: t?.id,
-                    text: t?.text,
-                    dueDate:
-                      typeof t?.dueDate === "string"
-                        ? t.dueDate
-                        : typeof t?.dueDate === "object" &&
-                            t?.dueDate &&
-                            "seconds" in t.dueDate
-                          ? {
-                              seconds: (t.dueDate as { seconds: number })
-                                .seconds,
-                            }
-                          : null,
-                    isCompleted: t?.isCompleted,
-                  })),
-                })) as SharedNote[]
-              }
-              onToggleTask={handleToggleTask}
-              onEditNote={(note) =>
-                setEditing({
-                  id: note.id,
-                  speaker: note.speaker || "",
-                  content: note.content || "",
-                })
-              }
-              onDeleteNote={(noteId) => handleDeleteNote(noteId)}
+            <TaskForm
+              defaultClientName={selectedClient}
+              onSave={handleSaveTask}
+              onCancel={() => setIsTaskFormVisible(false)}
             />
-
-            {editing && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center">
-                <div
-                  className="absolute inset-0 bg-black/30"
-                  onClick={() => setEditing(null)}
-                />
-                <div className="relative bg-[var(--surface)] rounded-lg card-shadow p-4 w-[480px] max-w-[90vw] border border-[var(--border)]">
-                  <h3 className="font-semibold mb-3">メモを編集</h3>
-                  <div className="mb-2">
-                    <label className="text-sm text-gray-800">発言者</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                        value={editing.speaker}
-                        onChange={(e) =>
-                          setEditing({ ...editing, speaker: e.target.value })
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-[var(--gbtn-hover-bg)] hover-scale"
-                        onClick={() =>
-                          setEditing({ ...editing, speaker: "本人" })
-                        }
-                      >
-                        本人
-                      </button>
-                      <button
-                        type="button"
-                        className="bg-gray-200 text-xs px-2 py-1 rounded-lg hover:bg-gray-300 hover-scale"
-                        onClick={() =>
-                          setEditing({ ...editing, speaker: "家族" })
-                        }
-                      >
-                        家族
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <label className="text-sm text-gray-800">メモ内容</label>
-                    <textarea
-                      className="border border-gray-300 rounded-lg px-3 py-2 w-full mt-1 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                      rows={4}
-                      value={editing.content}
-                      onChange={(e) =>
-                        setEditing({ ...editing, content: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 hover-scale"
-                      onClick={() => setEditing(null)}
-                    >
-                      キャンセル
-                    </button>
-                    <button
-                      className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-[var(--brand-700)] text-white hover-scale"
-                      onClick={async () => {
-                        try {
-                          const { id, speaker, content } = editing;
-
-                          // 現在のメモを取得してtodo_itemsを保持
-                          const currentNote = notes.find((n) => n.id === id);
-                          const todo_items = (currentNote?.todoItems || []).map(
-                            (t) => ({
-                              id: t?.id || "",
-                              text: t?.text || "",
-                              due_date:
-                                typeof t?.dueDate === "object" &&
-                                t?.dueDate &&
-                                "seconds" in t.dueDate
-                                  ? new Date(
-                                      t.dueDate.seconds * 1000,
-                                    ).toISOString()
-                                  : typeof t?.dueDate === "string"
-                                    ? t.dueDate
-                                    : null,
-                              is_completed: t?.isCompleted || false,
-                            }),
-                          );
-
-                          const updateRequest: NoteUpdateRequest = {
-                            speaker,
-                            content,
-                            todoItems: todo_items,
-                          };
-
-                          await notesApi.update(id, updateRequest);
-                          setNotes((p) =>
-                            p.map((n) =>
-                              n.id === id ? { ...n, speaker, content } : n,
-                            ),
-                          );
-                          setEditing(null);
-                        } catch (e) {
-                          console.error(e);
-                          alert("メモの更新に失敗しました");
-                        }
-                      }}
-                    >
-                      保存
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      {/* 右カラム: 情報・生成セクション（順序変更） */}
-      <div className="flex-1 flex flex-col gap-4 min-w-[320px]">
-        {/* ClientResources: pass simplified assessment for suggestions (may be null if no data) */}
-        <div className="bg-[var(--surface)] rounded-xl shadow p-0">
-          <ClientResources
-            clientName={selectedClient || null}
-            hasAssessmentPlan={!!assessmentPlan}
-            assessmentData={simplifiedAssessment}
+          </Modal>
+          <TaskList
+            tasks={tasks}
+            onToggleTask={handleToggleTask}
+            isLoading={loading}
+            showClientName={false}
           />
         </div>
+        <div className="col-span-1 bg-[var(--surface)] shadow p-4 flex flex-col border border-gray-100 rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-[var(--foreground)] flex items-center gap-2">
+              <ClipboardList className="w-6 h-6 text-green-500" />
+              支援記録 ({notes.length})
+            </h2>
+            <button
+              onClick={() => setIsMemoFormVisible(true)}
+              className="gbtn tonal text-sm"
+            >
+              支援記録追加
+            </button>
+          </div>
+          <Modal
+            isOpen={isMemoFormVisible}
+            onClose={() => setIsMemoFormVisible(false)}
+          >
+            <MemoForm
+              defaultClientName={selectedClient}
+              onSave={handleSaveMemo}
+              onCancel={() => setIsMemoFormVisible(false)}
+            />
+          </Modal>
+          <MemoList notes={notes} showClientName={false} isLoading={loading} />
+        </div>
+        <div className="flex-1 flex flex-col gap-4 min-w-[320px] col-span-1">
+          <div className="bg-[var(--surface)] rounded-xl shadow p-0">
+            <ClientResources
+              clientName={selectedClient || null}
+              hasAssessmentPlan={!!assessmentPlan}
+              assessmentData={simplifiedAssessment}
+            />
+          </div>
+        </div>
       </div>
-
-      {/* AIチャット: タスク化連携 */}
       <div className="relative">
         <div className="fixed md:bottom-6 md:right-6 bottom-3 right-3 z-50">
           <Button

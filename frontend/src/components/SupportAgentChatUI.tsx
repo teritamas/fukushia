@@ -41,6 +41,20 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     number | null
   >(null);
 
+  useEffect(() => {
+    // clientName が変更されたら、メッセージをリセットし、最初の挨拶を追加する
+    if (clientName) {
+      setMessages([
+        {
+          role: "assistant",
+          content: "こんにちは。どのようなご相談でしょうか？",
+        },
+      ]);
+    } else {
+      setMessages([]);
+    }
+  }, [clientName]);
+
   // popover state (button open / hover / pin)
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -437,7 +451,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                     className={`text-md p-2 rounded ${m.role === "user" ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--gbtn-hover-bg)] text-[var(--brand-700)]"}`}
                   >
                     <span className="font-bold mr-1">
-                      {m.role === "user" ? "あなた" : "AI"}
+                      {m.role === "user" ? "本人" : "AI"}
                     </span>
                     {m.role === "assistant" && m.thought && (
                       <>
@@ -553,7 +567,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
             className={`text-md p-2 rounded ${m.role === "user" ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--gbtn-hover-bg)] text-[var(--brand-700)]"}`}
           >
             <span className="font-bold mr-1">
-              {m.role === "user" ? "あなた" : "AI"}
+              {m.role === "user" ? "本人" : "AI"}
             </span>
             {m.role === "assistant" && m.thought && (
               <>
