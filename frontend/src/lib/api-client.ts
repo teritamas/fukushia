@@ -103,6 +103,15 @@ export interface AssessmentUpdateRequest {
   support_plan?: string;
 }
 
+export interface SuggestionRequest {
+  assessment_data: Record<string, unknown>;
+}
+
+export interface SuggestionResponse {
+  suggested_tasks: string[];
+  suggested_memo: string;
+}
+
 // Client Resource types
 export interface ClientResource {
   id: string;
@@ -125,6 +134,11 @@ export interface ClientResourceCreateRequest {
 export interface ClientResourceUpdateRequest {
   status?: "active" | "ended";
   notes?: string;
+}
+
+export interface Suggestion {
+  suggested_tasks: string[];
+  suggested_memo: string;
 }
 
 // Client API functions
@@ -180,6 +194,12 @@ export const clientApi = {
       {
         method: "DELETE",
       },
+    );
+  },
+
+  async getSuggestion(clientName: string): Promise<Suggestion | null> {
+    return apiRequest<Suggestion | null>(
+      `/clients/${encodeURIComponent(clientName)}/suggestion`,
     );
   },
 };
@@ -257,11 +277,48 @@ export const interviewRecordsApi = {
   },
 };
 
+// Suggestions API functions
+export const suggestionsApi = {
+  async getFromAssessment(
+    request: SuggestionRequest,
+  ): Promise<SuggestionResponse> {
+    return apiRequest<SuggestionResponse>("/suggestions/from_assessment", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  },
+};
+
 const apiClient = {
   clients: clientApi,
   notes: notesApi,
   assessments: assessmentsApi,
   interviewRecords: interviewRecordsApi,
+  suggestions: suggestionsApi,
+
+  async get<T>(endpoint: string): Promise<T> {
+    return apiRequest<T>(endpoint);
+  },
+
+  async post<T>(endpoint: string, body: unknown): Promise<T> {
+    return apiRequest<T>(endpoint, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  async patch<T>(endpoint: string, body: unknown): Promise<T> {
+    return apiRequest<T>(endpoint, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  },
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return apiRequest<T>(endpoint, {
+      method: "DELETE",
+    });
+  },
 };
 
 export default apiClient;

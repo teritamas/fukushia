@@ -3,6 +3,7 @@ import React, { useState } from "react";
 interface TaskFormProps {
   clients?: { id: string; name: string }[];
   defaultClientName?: string;
+  initialTaskText?: string;
   onSave: (task: { clientName: string; text: string; dueDate: string }) => void;
   onCancel: () => void;
 }
@@ -10,13 +11,14 @@ interface TaskFormProps {
 const TaskForm: React.FC<TaskFormProps> = ({
   clients,
   defaultClientName,
+  initialTaskText = "",
   onSave,
   onCancel,
 }) => {
   const [clientName, setClientName] = useState(
     defaultClientName || clients?.[0]?.name || "",
   );
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialTaskText);
   const [dueDate, setDueDate] = useState("");
 
   const handleSave = () => {

@@ -21,7 +21,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "Fukushia",
+  title: "フクシア",
   description: " 社会福祉士のための業務支援AIアシスタント",
 };
 

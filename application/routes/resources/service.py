@@ -31,7 +31,7 @@ def resource_doc_to_model(doc) -> Resource:
 
     service_name_val = _coerce(data.get("service_name"))
     if not service_name_val:
-        raise ValueError("missing service_name")
+        service_name_val = ""
     return Resource(
         id=doc.id,
         service_name=service_name_val,

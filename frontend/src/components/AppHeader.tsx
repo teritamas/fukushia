@@ -21,6 +21,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
     currentClient,
     setCurrentClient,
     requestGoToBasicInfo,
+    notifyNewClient,
   } = useClientContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -48,7 +49,8 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
         name: newName.trim(),
       });
       await refetchClients();
-      // The new client will be set as current by the logic in page.tsx after refetch
+      setCurrentClient(newClient); // 作成したクライアントを即座に設定
+      notifyNewClient(); // 新規クライアント作成を通知
       // After creating/selecting a new client, switch to ClientWorkspace
       onChange("clients");
       setShowAdd(false);
@@ -101,7 +103,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-[var(--brand-600)] text-white border-transparent" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)]"}`}
               >
                 <span className="truncate max-w-[170px]">
-                  {currentClient?.name || "支援対象者を選択"}
+                  {currentClient?.name || "利用者を選択"}
                 </span>
                 <span className="text-xs opacity-80">▾</span>
               </button>
@@ -114,7 +116,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                   <div className="max-h-[60vh] overflow-auto py-1">
                     {clients.length === 0 && (
                       <div className="px-3 py-2 text-xs text-[var(--muted)]">
-                        支援対象者がいません
+                        利用者がいません
                       </div>
                     )}
                     {clients.map((c) => {
@@ -140,7 +142,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                       onClick={() => onSelect("__add__")}
                       className="w-full text-left px-3 py-2 text-sm text-[var(--brand-600)] hover:bg-[var(--gbtn-hover-bg)] hover-scale"
                     >
-                      新しい支援対象者を追加
+                      新しい利用者を追加
                     </button>
                   </div>
                 </div>
@@ -177,7 +179,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 onClick={(e) => e.stopPropagation()}
               >
                 <h3 className="text-base font-semibold mb-3 section-title">
-                  新しい支援対象者を追加
+                  新しい利用者を追加
                 </h3>
                 <div className="space-y-3">
                   <input

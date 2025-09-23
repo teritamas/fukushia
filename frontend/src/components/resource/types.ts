@@ -21,4 +21,6 @@ export interface SuggestionMeta {
   matched?: string[];
   score?: number;
   alreadyUsed?: boolean;
+  reason?: string;
+  taskSuggestion?: string;
 }

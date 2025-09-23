@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class SupporterInfo(BaseModel):
-    """支援対象者の基本情報"""
+    """利用者の基本情報"""
 
     name: Optional[str] = Field(description="氏名")
     age: Optional[int] = Field(description="年齢")

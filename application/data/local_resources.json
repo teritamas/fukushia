@@ -408,7 +408,7 @@
   {
     "service_name": "相談支援事業所「はないろ」",
     "category": "障がい福祉, 相談支援",
-    "target_users": "障がい者 (強度行動障害支援者研修修了者、精神障害特性及び支援技法研修修了者配置)",
+    "target_users": "障がい者 (強度行動障害利用者研修修了者、精神障害特性及び支援技法研修修了者配置)",
     "eligibility": "障がい者で、かつ専門支援体制が整っている方。",
     "application_process": "直接事業所へ連絡のうえ相談・申込み。",
     "cost": "相談支援費は介護福祉制度の対象外である可能性あり。要確認。",
@@ -773,7 +773,7 @@
   {
     "service_name": "南陽市生活支援を考える会",
     "category": "移動支援",
-    "target_users": "要支援者やチェックリストに該当する方",
+    "target_users": "要利用者やチェックリストに該当する方",
     "description": "通いの場への移動を支援。",
     "contact_info": {
       "phone": null,
@@ -814,7 +814,7 @@
     "contact_info": { "phone": null, "fax": null, "email": null, "url": null },
     "provider": "たすけあいの会（生協）",
     "location": "山形県南陽市",
-    "eligibility": "南陽市在住の高齢者や要支援者",
+    "eligibility": "南陽市在住の高齢者や要利用者",
     "application_process": "電話または窓口で申し込み。詳細は生協までお問い合わせください。",
     "cost": "サービスごとに異なる。詳細はお問い合わせください。",
     "keywords": ["生活支援", "家事援助", "高齢者支援", "南陽市"]
@@ -827,7 +827,7 @@
     "contact_info": { "phone": null, "fax": null, "email": null, "url": null },
     "provider": "山形コアラ",
     "location": "山形県南陽市",
-    "eligibility": "高齢者や要支援者、障がい者の方",
+    "eligibility": "高齢者や要利用者、障がい者の方",
     "application_process": "電話または窓口で申し込み。詳細は山形コアラまでお問い合わせください。",
     "cost": "サービス内容に応じて有料。詳細はお問い合わせください。",
     "keywords": ["生活支援", "家事援助", "買い物支援", "南陽市"]
@@ -866,7 +866,7 @@
     "contact_info": { "phone": null, "fax": null, "email": null, "url": null },
     "provider": "フク菊丸応援隊",
     "location": "山形県南陽市",
-    "eligibility": "高齢者や要支援者、地域住民",
+    "eligibility": "高齢者や要利用者、地域住民",
     "application_process": "電話または窓口で申し込み。詳細はフク菊丸応援隊までお問い合わせください。",
     "cost": "作業内容による料金。詳細はお問い合わせください。",
     "keywords": ["生活支援", "ゴミ出し", "除雪", "南陽市"]

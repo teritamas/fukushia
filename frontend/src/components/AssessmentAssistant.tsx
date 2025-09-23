@@ -146,7 +146,7 @@ export default function AssessmentAssistant() {
 
   const handleSaveAssessment = async () => {
     if (!currentClient) {
-      setMappingError("結果を保存する支援者を選択してください。");
+      setMappingError("結果を保存する利用者を選択してください。");
       return;
     }
     if (!mappedResult) {
@@ -476,7 +476,7 @@ export default function AssessmentAssistant() {
         )}
         {currentClient && (
           <div className="text-sm text-[var(--foreground)] mb-3">
-            対象支援者:{" "}
+            対象利用者:{" "}
             <span className="font-semibold">{currentClient.name}</span>
           </div>
         )}
@@ -668,7 +668,7 @@ export default function AssessmentAssistant() {
             >
               {currentClient
                 ? "AIでアセスメントを作成"
-                : "支援者を選択してください"}
+                : "利用者を選択してください"}
             </button>
           </div>
         </div>
@@ -681,12 +681,12 @@ export default function AssessmentAssistant() {
       <div className="mb-4">
         {currentClient ? (
           <div className="text-sm text-gray-700">
-            対象支援者:{" "}
+            対象利用者:{" "}
             <span className="font-semibold">{currentClient.name}</span>
           </div>
         ) : (
           <div className="text-sm text-red-600">
-            支援者が選択されていません。上部で支援者を選択してください。
+            利用者が選択されていません。上部で利用者を選択してください。
           </div>
         )}
       </div>
@@ -722,7 +722,7 @@ export default function AssessmentAssistant() {
                 ? "反映中..."
                 : currentClient
                   ? "アセスメント項目へ反映"
-                  : "支援者を選択してください"}
+                  : "利用者を選択してください"}
             </button>
             {mappingError && (
               <p className="text-red-500 mb-4">{mappingError}</p>
@@ -753,6 +753,9 @@ export default function AssessmentAssistant() {
                       この内容で保存
                     </button>
                   </div>
+
+                  {/* Suggestions UI removed from this component */}
+
                   <div className="space-y-6">
                     {Object.entries(mappedResult).map(([form, categories]) => (
                       <div

@@ -11,6 +11,7 @@
 
 - TypeScript-first: keep components, hooks, and utils under `src/**`; prefer named exports from index files per folder.
 - ESLint rules come from Next.js config; use Prettier for consistent formatting.
+- Comments: All comments should be in Japanese.
 - Avoid using secret runtime values on the client—only `NEXT_PUBLIC_*` variables are exposed.
 
 ## Testing Instructions

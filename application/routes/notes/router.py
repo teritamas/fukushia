@@ -3,6 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from google.cloud.firestore import SERVER_TIMESTAMP
+from google.cloud.firestore_v1.base_query import FieldFilter
 from ..common import db, logger, exponential_backoff
 import config
 
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/notes", tags=["notes"])
 class TodoItem(BaseModel):
     id: str
     text: str
+    due_date: Optional[str] = None
     is_completed: bool
 
 
@@ -56,7 +58,9 @@ async def get_notes(client_name: Optional[str] = None):
         def fetch_notes():
             ref = notes_collection()
             if client_name:
-                query = ref.where("clientName", "==", client_name).order_by("timestamp", direction="DESCENDING")
+                query = ref.where(filter=FieldFilter("clientName", "==", client_name)).order_by(
+                    "timestamp", direction="DESCENDING"
+                )
             else:
                 query = ref.order_by("timestamp", direction="DESCENDING")
             return query.stream()
@@ -76,6 +80,7 @@ async def get_notes(client_name: Optional[str] = None):
                         mapped_item = {
                             "id": item.get("id", ""),
                             "text": item.get("text", ""),
+                            "due_date": item.get("dueDate"),
                             "is_completed": item.get("isCompleted", False),
                         }
                         mapped_todo_items.append(mapped_item)
@@ -148,7 +153,54 @@ async def create_note(request: NoteCreateRequest):
         raise HTTPException(status_code=500, detail=f"ノート作成中にエラーが発生しました: {str(e)}")
 
 
-@router.put("/{note_id}", response_model=NoteResponse)
+@router.get("/{note_id}", response_model=NoteResponse)
+async def get_note(note_id: str):
+    """IDを指定してノートを1件取得"""
+    try:
+
+        def get_note_doc():
+            return notes_collection().document(note_id).get()
+
+        doc = exponential_backoff(get_note_doc)
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="ノートが見つかりません")
+
+        data = doc.to_dict()
+
+        # TodoItemsのフィールド名をFirestoreのisCompletedから
+        # is_completedにマップ
+        todo_items = data.get("todoItems", [])
+        mapped_todo_items = []
+        for item in todo_items:
+            if isinstance(item, dict):
+                mapped_item = {
+                    "id": item.get("id", ""),
+                    "text": item.get("text", ""),
+                    "due_date": item.get("dueDate"),
+                    "is_completed": item.get("isCompleted", False),
+                }
+                mapped_todo_items.append(mapped_item)
+
+        result = {
+            "id": doc.id,
+            "clientName": data["clientName"],
+            "content": data["content"],
+            "speaker": data.get("speaker"),
+            "timestamp": data.get("timestamp", datetime.now()),
+            "todoItems": mapped_todo_items,
+        }
+
+        logger.info(f"ノートを取得しました: ID {note_id}")
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"ノート取得エラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"ノート取得中にエラーが発生しました: {str(e)}")
+
+
+@router.patch("/{note_id}", response_model=NoteResponse)
 async def update_note(note_id: str, request: NoteUpdateRequest):
     """ノートを更新"""
     try:
@@ -175,6 +227,7 @@ async def update_note(note_id: str, request: NoteUpdateRequest):
                 firestore_item = {
                     "id": item_dict.get("id", ""),
                     "text": item_dict.get("text", ""),
+                    "dueDate": item_dict.get("due_date"),
                     "isCompleted": item_dict.get("is_completed", False),
                 }
                 mapped_todo_items.append(firestore_item)
@@ -199,6 +252,7 @@ async def update_note(note_id: str, request: NoteUpdateRequest):
                 mapped_item = {
                     "id": item.get("id", ""),
                     "text": item.get("text", ""),
+                    "due_date": item.get("dueDate"),
                     "is_completed": item.get("isCompleted", False),
                 }
                 mapped_todo_items.append(mapped_item)

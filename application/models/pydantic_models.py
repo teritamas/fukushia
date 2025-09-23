@@ -73,8 +73,10 @@ class ResourceBase(BaseModel):
     contact_fax: Optional[str] = None
     contact_email: Optional[str] = None
     contact_url: Optional[str] = None
+    source_url: Optional[str] = None
     keywords: Optional[List[str]] = []
     last_verified_at: Optional[float] = None
+    embedding: Optional[List[float]] = None
 
 
 class ResourceCreate(ResourceBase):
@@ -95,8 +97,10 @@ class ResourceUpdate(BaseModel):
     contact_fax: Optional[str] = None
     contact_email: Optional[str] = None
     contact_url: Optional[str] = None
+    source_url: Optional[str] = None
     keywords: Optional[List[str]] = None
     last_verified_at: Optional[float] = None
+    embedding: Optional[List[float]] = None
 
 
 class Resource(ResourceBase):
@@ -104,10 +108,16 @@ class Resource(ResourceBase):
 
 
 # --- Advanced suggestion models ---
+class Client(BaseModel):
+    id: str
+    name: str
+
+
 class ResourceSuggestRequest(BaseModel):
     assessment_data: Dict[str, Any]
+    client: Optional[Client] = None
     top_k: int = 8
-    use_llm_summary: bool = True
+    use_llm_summary: bool = False
 
 
 class SuggestedResource(BaseModel):
@@ -116,7 +126,8 @@ class SuggestedResource(BaseModel):
     score: float
     matched_keywords: List[str] = []
     excerpt: Optional[str] = None
-    reasons: Optional[List[str]] = []
+    reason: Optional[str] = None
+    task_suggestion: Optional[str] = None
 
 
 class ResourceSuggestResponse(BaseModel):
@@ -131,8 +142,8 @@ class ResourceMemoBase(BaseModel):
     content: str
 
 
-class ResourceMemoCreate(ResourceMemoBase):
-    pass
+class ResourceMemoCreate(BaseModel):
+    content: str
 
 
 class ResourceMemoUpdate(BaseModel):
@@ -172,3 +183,12 @@ class ClientResource(ClientResourceBase):
     id: str
     added_at: float
     added_by: str
+
+
+# --- Interview Record Models ---
+class InterviewRecord(BaseModel):
+    id: str
+    clientName: str
+    content: str
+    speaker: str
+    timestamp: datetime

@@ -2,14 +2,15 @@
 
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from google.cloud.firestore import SERVER_TIMESTAMP
 from ..common import db, logger, exponential_backoff
 import config
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 
-router = APIRouter(prefix="/assessments", tags=["assessments"])
+router = APIRouter(tags=["assessments"])
 
 
 class AssessmentCreateRequest(BaseModel):
@@ -49,6 +50,17 @@ def assessments_collection():
         .collection("users")
         .document(config.TARGET_FIREBASE_USER_ID)
         .collection("assessments")
+    )
+
+
+def clients_collection():
+    """クライアントコレクションへの参照を取得"""
+    return (
+        db.collection("artifacts")
+        .document(config.TARGET_FIREBASE_APP_ID)
+        .collection("users")
+        .document(config.TARGET_FIREBASE_USER_ID)
+        .collection("clients")
     )
 
 
@@ -102,19 +114,19 @@ async def get_assessments(
 
 
 @router.post("/", response_model=AssessmentResponse)
-async def create_assessment(request: AssessmentCreateRequest) -> AssessmentResponse:
+async def create_assessment(req: AssessmentCreateRequest, request: Request) -> AssessmentResponse:
     """Create a new assessment."""
     try:
-        if not request.client_name.strip():
+        if not req.client_name.strip():
             raise HTTPException(status_code=400, detail="クライアント名は必須です")
 
         def create_assessment_doc():
             ref = assessments_collection()
             doc_data = {
-                "clientName": request.client_name.strip(),
-                "assessment": request.assessment,
-                "originalScript": request.original_script,
-                "supportPlan": request.support_plan,
+                "clientName": req.client_name.strip(),
+                "assessment": req.assessment,
+                "originalScript": req.original_script,
+                "supportPlan": req.support_plan,
                 "createdAt": SERVER_TIMESTAMP,
                 "updatedAt": SERVER_TIMESTAMP,
                 "version": 1,
@@ -142,6 +154,23 @@ async def create_assessment(request: AssessmentCreateRequest) -> AssessmentRespo
             version=data.get("version", 1),
         )
 
+        # サジェストを生成して保存
+        try:
+            suggestion_agent = request.app.state.suggestion_agent
+            suggestions = suggestion_agent.generate_suggestions(req.assessment)
+            if "error" not in suggestions:
+                client_ref = (
+                    clients_collection().where(filter=FieldFilter("name", "==", req.client_name.strip())).limit(1)
+                )
+                client_docs = list(client_ref.stream())
+                if client_docs:
+                    client_doc_ref = client_docs[0].reference
+                    client_doc_ref.update({"suggestion": suggestions})
+                    logger.info(f"クライアント {req.client_name} にサジェストを保存しました。")
+        except Exception as e:
+            logger.error(f"サジェストの保存中にエラーが発生しました: {e}")
+            # ここではエラーを発生させず、処理を続行する
+
         logger.info(f"アセスメントを作成しました: {result.client_name} (ID: {result.id})")
         return result
 
@@ -153,7 +182,7 @@ async def create_assessment(request: AssessmentCreateRequest) -> AssessmentRespo
 
 
 @router.put("/{assessment_id}", response_model=AssessmentResponse)
-async def update_assessment(assessment_id: str, request: AssessmentUpdateRequest) -> AssessmentResponse:
+async def update_assessment(assessment_id: str, req: AssessmentUpdateRequest, request: Request) -> AssessmentResponse:
     """Update an existing assessment."""
     try:
 
@@ -170,11 +199,11 @@ async def update_assessment(assessment_id: str, request: AssessmentUpdateRequest
         # 更新データの準備
         update_data = {"updatedAt": SERVER_TIMESTAMP, "version": existing_data.get("version", 1) + 1}
 
-        if request.assessment is not None:
-            update_data["assessment"] = request.assessment
+        if req.assessment is not None:
+            update_data["assessment"] = req.assessment
 
-        if request.support_plan is not None:
-            update_data["supportPlan"] = request.support_plan
+        if req.support_plan is not None:
+            update_data["supportPlan"] = req.support_plan
 
         # ドキュメントを更新
         def update_doc():
@@ -201,6 +230,26 @@ async def update_assessment(assessment_id: str, request: AssessmentUpdateRequest
             updated_at=updated_data.get("updatedAt", datetime.now()),
             version=updated_data.get("version", 1),
         )
+
+        # サジェストを生成して保存
+        if req.assessment:
+            try:
+                suggestion_agent = request.app.state.suggestion_agent
+                suggestions = suggestion_agent.generate_suggestions(req.assessment)
+                if "error" not in suggestions:
+                    client_ref = (
+                        clients_collection()
+                        .where(filter=FieldFilter("name", "==", updated_data.get("clientName", "")))
+                        .limit(1)
+                    )
+                    client_docs = list(client_ref.stream())
+                    if client_docs:
+                        client_doc_ref = client_docs[0].reference
+                        client_doc_ref.update({"suggestion": suggestions})
+                        logger.info(f"クライアント {updated_data.get('clientName', '')} にサジェストを保存しました。")
+            except Exception as e:
+                logger.error(f"サジェストの保存中にエラーが発生しました: {e}")
+                # ここではエラーを発生させず、処理を続行する
 
         logger.info(f"アセスメントを更新しました: ID {assessment_id}")
         return result

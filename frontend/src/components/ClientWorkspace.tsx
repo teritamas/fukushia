@@ -13,6 +13,10 @@ export default function ClientWorkspace() {
     setCurrentClient,
     homeNavSignal,
     assessmentRefreshSignal,
+    chatMessage,
+    clearChatMessage,
+    chatOpenSignal,
+    newClientSignal,
   } = useClientContext();
   // 個別基本情報はアセスメントの本人情報を参照
   const [personalInfo, setPersonalInfo] = useState<Record<string, string>>({});
@@ -37,6 +41,13 @@ export default function ClientWorkspace() {
   useEffect(() => {
     setActiveTab("detail");
   }, [homeNavSignal]);
+
+  // When a new client is created, switch to the assessment tab
+  useEffect(() => {
+    if (newClientSignal > 0) {
+      setActiveTab("assessment");
+    }
+  }, [newClientSignal]);
 
   // 最新アセスメントから本人情報抽出
   useEffect(() => {
@@ -157,7 +168,12 @@ export default function ClientWorkspace() {
         </TabsList>
 
         <TabsContent value="detail" className="space-y-6">
-          <ClientDetail selectedClient={currentClient?.name || ""} />
+          <ClientDetail
+            selectedClient={currentClient?.name || ""}
+            chatMessage={chatMessage}
+            clearChatMessage={clearChatMessage}
+            chatOpenSignal={chatOpenSignal}
+          />
         </TabsContent>
 
         <TabsContent value="assessment" className="space-y-6">

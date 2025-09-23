@@ -21,8 +21,16 @@ import Modal from "./ui/Modal";
 
 interface ClientDetailProps {
   selectedClient: string;
+  chatMessage?: string;
+  clearChatMessage: () => void;
+  chatOpenSignal: number;
 }
-export default function ClientDetail({ selectedClient }: ClientDetailProps) {
+export default function ClientDetail({
+  selectedClient,
+  chatMessage,
+  clearChatMessage,
+  chatOpenSignal,
+}: ClientDetailProps) {
   const [notes, setNotes] = useState<SharedNote[]>([]);
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
@@ -66,6 +74,12 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
   const toggleAiChatOpen = () => setAiChatOpen((prev) => !prev);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const { assessmentRefreshSignal, notifyTaskUpdated } = useClientContext();
+
+  useEffect(() => {
+    if (chatOpenSignal > 0) {
+      setAiChatOpen(true);
+    }
+  }, [chatOpenSignal]);
   // Avoid SSR hydration mismatch by rendering portal only after mount
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -482,7 +496,7 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                 <div className="flex items-center gap-3">
                   <Bot className="h-5 w-5" />
                   <h3 className="font-semibold text-sm md:text-base">
-                    福祉支援提案アシスタント
+                    支援制度提案 Agent
                   </h3>
                 </div>
                 <Button
@@ -499,6 +513,8 @@ export default function ClientDetail({ selectedClient }: ClientDetailProps) {
                 assessmentData={simplifiedAssessment}
                 addTaskFromChat={addTaskFromChat}
                 embedded
+                chatMessage={chatMessage}
+                clearChatMessage={clearChatMessage}
               />
             </div>,
             document.body,
