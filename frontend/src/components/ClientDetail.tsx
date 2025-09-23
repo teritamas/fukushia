@@ -496,7 +496,7 @@ export default function ClientDetail({
                 <div className="flex items-center gap-3">
                   <Bot className="h-5 w-5" />
                   <h3 className="font-semibold text-sm md:text-base">
-                    福祉支援提案アシスタント
+                    支援制度提案 Agent
                   </h3>
                 </div>
                 <Button

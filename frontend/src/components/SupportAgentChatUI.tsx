@@ -300,7 +300,10 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
   const toOneLine = (s: string) => s.replace(/\s+/g, " ").trim();
 
   const stripTaskHeader = (s: string) =>
-    s.replace(/^\s*Task:.*?(?:\r?\n|$)/, "");
+    s
+      .split("\n")
+      .filter((line) => !line.trim().startsWith("Task:"))
+      .join("\n");
 
   const updateLastAssistantThought = (thought: string) => {
     setMessages((prev) => {

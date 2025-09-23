@@ -7,7 +7,7 @@ export default function ClientList() {
     useClientContext();
   const [newClient, setNewClient] = useState("");
 
-  // 新規支援者追加
+  // 新規利用者追加
   const handleAddClient = async () => {
     if (!newClient.trim()) return;
     try {
@@ -28,7 +28,7 @@ export default function ClientList() {
           type="text"
           value={newClient}
           onChange={(e) => setNewClient(e.target.value)}
-          placeholder="新しい支援者名"
+          placeholder="新しい利用者名"
           className="border border-[var(--ginput-border)] px-2 py-1 rounded bg-[var(--surface)] text-[var(--foreground)]"
         />
         <button
