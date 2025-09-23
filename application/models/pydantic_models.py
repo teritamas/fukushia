@@ -76,6 +76,7 @@ class ResourceBase(BaseModel):
     source_url: Optional[str] = None
     keywords: Optional[List[str]] = []
     last_verified_at: Optional[float] = None
+    embedding: Optional[List[float]] = None
 
 
 class ResourceCreate(ResourceBase):
@@ -99,6 +100,7 @@ class ResourceUpdate(BaseModel):
     source_url: Optional[str] = None
     keywords: Optional[List[str]] = None
     last_verified_at: Optional[float] = None
+    embedding: Optional[List[float]] = None
 
 
 class Resource(ResourceBase):
@@ -115,7 +117,7 @@ class ResourceSuggestRequest(BaseModel):
     assessment_data: Dict[str, Any]
     client: Optional[Client] = None
     top_k: int = 8
-    use_llm_summary: bool = True
+    use_llm_summary: bool = False
 
 
 class SuggestedResource(BaseModel):
@@ -124,7 +126,8 @@ class SuggestedResource(BaseModel):
     score: float
     matched_keywords: List[str] = []
     excerpt: Optional[str] = None
-    reasons: Optional[List[str]] = []
+    reason: Optional[str] = None
+    task_suggestion: Optional[str] = None
 
 
 class ResourceSuggestResponse(BaseModel):

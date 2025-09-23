@@ -53,6 +53,17 @@ export default function ResourceSuggestionCard({
           スコア:{meta.score}
         </div>
       )}
+      {meta?.reason && (
+        <div className="mt-1 p-2 bg-blue-50 border border-blue-200 rounded-md text-blue-800 text-[11px]">
+          <span className="font-semibold">提案理由:</span> {meta.reason}
+        </div>
+      )}
+      {meta?.taskSuggestion && (
+        <div className="mt-1 p-2 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-[11px]">
+          <span className="font-semibold">次のタスク案:</span>{" "}
+          {meta.taskSuggestion}
+        </div>
+      )}
     </li>
   );
 }

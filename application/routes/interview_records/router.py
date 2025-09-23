@@ -3,6 +3,7 @@ from typing import List
 from models.pydantic_models import InterviewRecord
 from infra.firestore import get_firestore_client
 import config
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 router = APIRouter()
 db = get_firestore_client()
@@ -24,7 +25,7 @@ def get_all_interview_records(client_name: str):
             .collection("users")
             .document(config.TARGET_FIREBASE_USER_ID)
             .collection("interview_records")
-            .where("clientName", "==", client_name)
+            .where(filter=FieldFilter("clientName", "==", client_name))
             .order_by("timestamp", direction="DESCENDING")
         )
         docs = records_ref.stream()

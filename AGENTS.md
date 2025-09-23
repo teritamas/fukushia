@@ -16,6 +16,7 @@ For human docs is `README.md`. use supplementary.
 
 - Backend/Python: Ruff formats code (`line-length = 120`), Flake8 max line length 120. Python `>=3.11`. Keep FastAPI routers under `application/routes/**` and shared helpers in `application/utils/**`.
 - Frontend/TypeScript: ESLint (flat config) + Prettier. Next.js 15, React 19. Use TypeScript and keep components under `frontend/src/**`.
+- Comments: All comments should be in Japanese.
 - Secrets: never commit `.env`, `.env.local`, or service account keys. Use the provided `*.example` files.
 
 ## Testing Instructions

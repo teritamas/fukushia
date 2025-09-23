@@ -12,6 +12,7 @@
 
 - Formatter/Lint: Ruff formats code; `line-length = 120` (Ruff + Flake8). Keep imports and files tidy; prefer module-level `__all__` only when needed.
 - Structure: FastAPI routers under `routes/**`, agents/tools under `agent/**`, helpers under `utils/**`, configuration in `config.py`.
+- Comments: All comments should be in Japanese.
 - Dependencies: managed via `uv` with `pyproject.toml` and `dependency-groups.dev` for tooling.
 
 ## Testing Instructions

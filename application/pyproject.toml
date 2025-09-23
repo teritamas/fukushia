@@ -40,4 +40,5 @@ dev = [
 ]
 
 [tool.hatch.scripts]
+start = "python -m uvicorn application.main:app --reload --port 8000"
 seed = "python application/scripts/seed.py"

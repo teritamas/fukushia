@@ -40,7 +40,7 @@ def create_rag_search_social_support_tool() -> Tool:
                 retrieval=types.Retrieval(
                     vertex_rag_store=types.VertexRagStore(
                         rag_resources=[types.VertexRagStoreRagResource(rag_corpus=RAG_CORPUS_RESOURCE)],
-                        similarity_top_k=20,
+                        similarity_top_k=30,
                     )
                 )
             )

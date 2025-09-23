@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from ...common import resource_collection, resource_memo_collection, logger
 from models.pydantic_models import ResourceMemo, ResourceMemoCreate, ResourceMemoUpdate
 from google.api_core.exceptions import FailedPrecondition
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 
 router = APIRouter(prefix="/resources", tags=["resources"])
@@ -35,12 +36,12 @@ async def create_resource_memo(resource_id: str, memo: ResourceMemoCreate):
 @router.get("/{resource_id}/memos", response_model=list[ResourceMemo])
 async def list_resource_memos(resource_id: str):
     try:
-        q = resource_memo_collection().where("resource_id", "==", resource_id).order_by("created_at")
+        q = resource_memo_collection().where(filter=FieldFilter("resource_id", "==", resource_id)).order_by("created_at")
         docs = q.stream()
         return [_resource_memo_doc_to_model(d) for d in docs]
     except FailedPrecondition as e:
         logger.warning(f"memo list: missing composite index, fallback to client sort ({e})")
-        docs = resource_memo_collection().where("resource_id", "==", resource_id).stream()
+        docs = resource_memo_collection().where(filter=FieldFilter("resource_id", "==", resource_id)).stream()
         memos = [_resource_memo_doc_to_model(d) for d in docs]
         memos.sort(key=lambda m: m.created_at)
         return memos

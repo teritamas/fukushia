@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { assessmentItems } from "../lib/assessmentItems";
 import { useClientContext } from "./ClientContext";
-import { assessmentsApi, interviewRecordsApi } from "../lib/api-client";
+import {
+  assessmentsApi,
+  interviewRecordsApi,
+} from "../lib/api-client";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -753,6 +756,9 @@ export default function AssessmentAssistant() {
                       この内容で保存
                     </button>
                   </div>
+
+                  {/* Suggestions UI removed from this component */}
+
                   <div className="space-y-6">
                     {Object.entries(mappedResult).map(([form, categories]) => (
                       <div

@@ -4,6 +4,8 @@ export interface AdvancedSuggestedResource {
   score: number;
   matched_keywords: string[];
   excerpt?: string;
+  reason?: string;
+  task_suggestion?: string;
 }
 export interface AdvancedSuggestResponse {
   query_tokens: string[];

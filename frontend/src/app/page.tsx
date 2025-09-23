@@ -19,6 +19,40 @@ export default function Page() {
   const [homeNavSignal, setHomeNavSignal] = useState(0);
   const [assessmentRefreshSignal, setAssessmentRefreshSignal] = useState(0);
   const [taskRefreshSignal, setTaskRefreshSignal] = useState(0);
+  const [chatMessage, setChatMessage] = useState<string>("");
+  const [chatOpenSignal, setChatOpenSignal] = useState(0);
+  const [newClientSignal, setNewClientSignal] = useState(0);
+  const [suggestionSignal, setSuggestionSignal] = useState(0);
+  const [suggestedTask, setSuggestedTask] = useState("");
+  const [suggestedMemo, setSuggestedMemo] = useState("");
+
+  const setSuggestion = (task: string, memo: string) => {
+    setSuggestedTask(task);
+    setSuggestedMemo(memo);
+    setSuggestionSignal((s) => s + 1);
+  };
+
+  const clearSuggestion = () => {
+    setSuggestedTask("");
+    setSuggestedMemo("");
+  };
+
+  const notifyNewClient = () => {
+    setNewClientSignal((s) => s + 1);
+  };
+
+  const requestChatOpen = () => {
+    setChatOpenSignal((s) => s + 1);
+  };
+
+  const sendChatMessage = (message: string) => {
+    setChatMessage(message);
+  };
+
+  const clearChatMessage = () => {
+    setChatMessage("");
+  };
+
   const requestAssessmentEdit = (target?: {
     category?: string;
     form?: string;
@@ -48,26 +82,28 @@ export default function Page() {
         name: client.name,
       }));
       setClients(list);
-
-      // If there is no current client or the current client is no longer in the list, set a new one.
-      const currentClientStillExists = list.some(
-        (c) => c.id === currentClient?.id,
-      );
-      if ((!currentClient || !currentClientStillExists) && list.length > 0) {
-        setCurrentClient(list[0]);
-      } else if (list.length === 0) {
-        setCurrentClient(null);
-      }
     } catch (error) {
       console.error("Failed to fetch clients:", error);
       setClients([]); // Clear clients on error
     }
-  }, [currentClient]);
+  }, []);
 
   useEffect(() => {
     fetchClients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchClients]);
+
+  useEffect(() => {
+    if (clients.length > 0) {
+      const currentClientStillExists = clients.some(
+        (c) => c.id === currentClient?.id,
+      );
+      if (!currentClient || !currentClientStillExists) {
+        setCurrentClient(clients[0]);
+      }
+    } else {
+      setCurrentClient(null);
+    }
+  }, [clients, currentClient]);
 
   return (
     <ClientContext.Provider
@@ -85,6 +121,18 @@ export default function Page() {
         notifyAssessmentUpdated,
         taskRefreshSignal,
         notifyTaskUpdated,
+        sendChatMessage,
+        chatMessage,
+        clearChatMessage: () => setChatMessage(""),
+        requestChatOpen: () => setChatOpenSignal((s) => s + 1),
+        chatOpenSignal,
+        newClientSignal,
+        notifyNewClient: () => setNewClientSignal((s) => s + 1),
+        suggestionSignal,
+        suggestedTask,
+        suggestedMemo,
+        setSuggestion,
+        clearSuggestion,
       }}
     >
       <div className="min-h-screen flex flex-col bg-[var(--background)]">

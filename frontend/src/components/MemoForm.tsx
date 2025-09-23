@@ -3,6 +3,7 @@ import React, { useState } from "react";
 interface MemoFormProps {
   clients?: { id: string; name: string }[];
   defaultClientName?: string;
+  initialContent?: string;
   onSave: (memo: {
     clientName: string;
     speaker: string;
@@ -14,6 +15,7 @@ interface MemoFormProps {
 const MemoForm: React.FC<MemoFormProps> = ({
   clients,
   defaultClientName,
+  initialContent = "",
   onSave,
   onCancel,
 }) => {
@@ -21,7 +23,7 @@ const MemoForm: React.FC<MemoFormProps> = ({
     defaultClientName || clients?.[0]?.name || "",
   );
   const [speaker, setSpeaker] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(initialContent);
 
   const handleSave = () => {
     if (!content.trim() || !clientName) return;

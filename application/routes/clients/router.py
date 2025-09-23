@@ -7,6 +7,7 @@ from ..common import db, logger, exponential_backoff
 from models.pydantic_models import ClientResource, ClientResourceCreate, ClientResourceUpdate
 import config
 import time
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 
 router = APIRouter(prefix="/clients", tags=["clients"])
@@ -20,6 +21,11 @@ class ClientResponse(BaseModel):
     id: str
     name: str
     createdAt: datetime
+
+
+class Suggestion(BaseModel):
+    suggested_tasks: List[str]
+    suggested_memo: str
 
 
 def clients_collection():
@@ -111,7 +117,7 @@ async def get_client_resources(client_name: str):
         def fetch_resources():
             ref = client_resources_collection()
             # 複合インデックスを避けるため、order_byを削除してフィルタのみ使用
-            query = ref.where("client_name", "==", client_name)
+            query = ref.where(filter=FieldFilter("client_name", "==", client_name))
             return query.stream()
 
         docs = exponential_backoff(fetch_resources)
@@ -234,3 +240,45 @@ async def delete_client_resource(client_name: str, usage_id: str):
     except Exception as e:
         logger.error(f"クライアントリソース削除エラー: {str(e)}")
         raise HTTPException(status_code=500, detail=f"クライアントリソース削除中にエラーが発生しました: {str(e)}")
+
+
+@router.get(
+    "/{client_name}/suggestion",
+    response_model=Suggestion,
+    summary="Get and clear the suggestion for a client",
+)
+async def get_and_clear_suggestion(client_name: str):
+    """
+    クライアントのサジェストを取得し、取得後にDBから削除します。
+    """
+    try:
+        client_ref = clients_collection().where(filter=FieldFilter("name", "==", client_name)).limit(1)
+        
+        def fetch_client_docs():
+            return list(client_ref.stream())
+            
+        client_docs = exponential_backoff(fetch_client_docs)
+
+        if not client_docs:
+            raise HTTPException(status_code=404, detail="Client not found")
+
+        client_doc = client_docs[0]
+        suggestion_data = client_doc.to_dict().get("suggestion")
+
+        if not suggestion_data:
+            # サジェストがない場合は空のリストと文字列を返す
+            return Suggestion(suggested_tasks=[], suggested_memo="")
+
+        # サジェストをDBから削除
+        def clear_suggestion_from_db():
+            client_doc.reference.update({"suggestion": None})
+        
+        exponential_backoff(clear_suggestion_from_db)
+
+        logger.info(f"クライアント {client_name} のサジェストを取得・削除しました。")
+        return Suggestion(**suggestion_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"サジェスト取得エラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"サジェストの取得中にエラーが発生しました: {str(e)}")

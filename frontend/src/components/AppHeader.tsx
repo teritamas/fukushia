@@ -21,6 +21,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
     currentClient,
     setCurrentClient,
     requestGoToBasicInfo,
+    notifyNewClient,
   } = useClientContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -48,7 +49,8 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
         name: newName.trim(),
       });
       await refetchClients();
-      // The new client will be set as current by the logic in page.tsx after refetch
+      setCurrentClient(newClient); // 作成したクライアントを即座に設定
+      notifyNewClient(); // 新規クライアント作成を通知
       // After creating/selecting a new client, switch to ClientWorkspace
       onChange("clients");
       setShowAdd(false);

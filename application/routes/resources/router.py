@@ -13,6 +13,7 @@ from agents.resource_extraction_agent import (
 from ..common import logger, resource_collection, resource_memo_collection
 from models.pydantic_models import Resource, ResourceCreate, ResourceUpdate
 from .service import resource_doc_to_model
+from .utils import embed_texts
 
 
 router = APIRouter(prefix="/resources", tags=["resources"])
@@ -22,7 +23,14 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 async def create_resource(resource: ResourceCreate):
     try:
         doc_ref = resource_collection().document()
-        data = resource.dict()
+        data = resource.dict(exclude_unset=True)
+
+        # Calculate embedding
+        text_to_embed = f"{data.get('service_name', '')} {data.get('description', '')} {' '.join(data.get('keywords', []))}"
+        embedding = embed_texts([text_to_embed])[0]
+        if embedding:
+            data["embedding"] = embedding
+
         for k in [
             "category",
             "target_users",
@@ -144,11 +152,24 @@ async def get_resource(resource_id: str):
 @router.patch("/{resource_id}", response_model=Resource)
 async def update_resource(resource_id: str, resource: ResourceUpdate):
     doc_ref = resource_collection().document(resource_id)
-    if not doc_ref.get().exists:
+    doc = doc_ref.get()
+    if not doc.exists:
         raise HTTPException(status_code=404, detail="社会資源が見つかりません")
-    update_data = {k: v for k, v in resource.dict(exclude_unset=True).items() if v is not None}
+
+    update_data = resource.dict(exclude_unset=True)
+
+    # If relevant fields are updated, recalculate embedding
+    if any(k in update_data for k in ["service_name", "description", "keywords"]):
+        existing_data = doc.to_dict()
+        merged_data = {**existing_data, **update_data}
+        text_to_embed = f"{merged_data.get('service_name', '')} {merged_data.get('description', '')} {' '.join(merged_data.get('keywords', []))}"
+        embedding = embed_texts([text_to_embed])[0]
+        if embedding:
+            update_data["embedding"] = embedding
+
     if update_data and "last_verified_at" not in update_data:
         update_data["last_verified_at"] = time.time()
+
     for k, v in list(update_data.items()):
         if k in {
             "category",

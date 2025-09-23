@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "./ui/button";
-import { Send } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -19,6 +19,8 @@ interface SupportAgentChatUIProps {
     resourceInfo: string | { name: string; exclude?: boolean; reason?: string },
   ) => void;
   embedded?: boolean;
+  chatMessage?: string;
+  clearChatMessage?: () => void;
 }
 
 const API_BASE_URL =
@@ -30,10 +32,13 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
   addTaskFromChat,
   onAddResource,
   embedded = false,
+  chatMessage,
+  clearChatMessage,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showInitialButton, setShowInitialButton] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<string[]>([]); // チャットから抽出したタスク
   const [deliberationLine, setDeliberationLine] = useState<string>("");
@@ -41,153 +46,26 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     number | null
   >(null);
 
-  useEffect(() => {
-    // clientName が変更されたら、メッセージをリセットし、最初の挨拶を追加する
-    if (clientName) {
-      setMessages([
-        {
-          role: "assistant",
-          content: "こんにちは。どのようなご相談でしょうか？",
-        },
-      ]);
-    } else {
-      setMessages([]);
-    }
-  }, [clientName]);
-
-  // popover state (button open / hover / pin)
-  const [open, setOpen] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const hoverTimeout = useRef<number | null>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const popoverMessagesRef = useRef<HTMLDivElement | null>(null);
-
-  const FINAL_TAG_RE = /Final Answer[:：]\s*/i;
-  const hasFinalRef = useRef(false);
-  const preludeEndIndexRef = useRef<number>(-1);
-
-  const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
-    // ポップオーバーのメッセージリストを最下部へ
-    if (popoverMessagesRef.current) {
-      const el = popoverMessagesRef.current;
-      el.scrollTo({ top: el.scrollHeight, behavior });
-    }
-    // コンテナ自体も最下部へ（入力欄まで含めて表示）
-    if (scrollContainerRef.current) {
-      const el = scrollContainerRef.current;
-      el.scrollTo({ top: el.scrollHeight, behavior });
-    } else if (bottomRef.current) {
-      // フォールバック（sentinel）
-      bottomRef.current.scrollIntoView({ behavior, block: "end" });
-    }
-  };
-
-  useEffect(() => {
-    // メッセージ/ローディング/検討表示の更新で常に最下部へ
-    scrollToBottom("smooth");
-  }, [messages, loading, deliberationLine]);
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeout.current) {
-        window.clearTimeout(hoverTimeout.current);
-      }
-    };
-  }, []);
-
-  const openTemporary = () => {
-    if (!pinned) {
-      setOpen(true);
-      if (hoverTimeout.current) window.clearTimeout(hoverTimeout.current);
-    }
-  };
-  const closeTemporary = () => {
-    if (!pinned) {
-      // small delay to avoid flicker
-      hoverTimeout.current = window.setTimeout(() => setOpen(false), 150);
-    }
-  };
-
-  const togglePin = () => {
-    setPinned((v) => !v);
-    if (!pinned) setOpen(true);
-  };
-
-  const updateLastAssistantContent = (newContent: string) => {
-    setMessages((prev) => {
-      const idx = prev.map((m) => m.role).lastIndexOf("assistant");
-      if (idx === -1) {
-        return [...prev, { role: "assistant", content: newContent }];
-      }
-      const copy = prev.slice();
-      copy[idx] = { ...copy[idx], content: newContent };
-      return copy;
-    });
-    // 次フレームでスクロール（連続ストリームでも追従）
-    requestAnimationFrame(() => scrollToBottom());
-  };
-
-  const toOneLine = (s: string) => s.replace(/\s+/g, " ").trim();
-
-  const stripTaskHeader = (s: string) =>
-    s.replace(/^\s*Task:.*?(?:\r?\n|$)/, "");
-
-  const updateLastAssistantThought = (thought: string) => {
-    setMessages((prev) => {
-      const idx = prev.map((m) => m.role).lastIndexOf("assistant");
-      if (idx === -1) return prev;
-      const copy = prev.slice();
-      copy[idx] = { ...copy[idx], thought };
-      return copy;
-    });
-    // 次フレームでスクロール
-    requestAnimationFrame(() => scrollToBottom());
-  };
-
-  const updateStreamingView = (raw: string) => {
-    if (!hasFinalRef.current) {
-      const m = raw.match(FINAL_TAG_RE);
-      if (m) {
-        const idx = raw.indexOf(m[0]);
-        const prelude = raw.slice(0, idx);
-        preludeEndIndexRef.current = idx + m[0].length;
-        hasFinalRef.current = true;
-        setDeliberationLine("");
-        updateLastAssistantThought(prelude);
-        const finalSeg = stripTaskHeader(raw.slice(preludeEndIndexRef.current));
-        updateLastAssistantContent(finalSeg);
-      } else {
-        setDeliberationLine(toOneLine(raw));
-        updateLastAssistantThought(raw);
-      }
-    } else {
-      const finalSeg = stripTaskHeader(raw.slice(preludeEndIndexRef.current));
-      updateLastAssistantContent(finalSeg);
-    }
-    // streaming chunk追加ごとにスクロール追従（embeddedモードでも確実に呼ぶ）
-    requestAnimationFrame(() => scrollToBottom());
-    if (embedded) {
-      requestAnimationFrame(() => scrollToBottom());
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!input.trim() || !clientName) return;
+  const sendMessage = async (messageContent?: string) => {
+    const message = messageContent || input;
+    if (!message.trim() || !clientName) return;
+    setShowInitialButton(false);
     setLoading(true);
     setError(null);
     // Streaming前に状態を初期化
     hasFinalRef.current = false;
     preludeEndIndexRef.current = -1;
     setDeliberationLine("");
-    const userMsg: ChatMessage = { role: "user", content: input };
+    const userMsg: ChatMessage = { role: "user", content: message };
     setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+    if (!messageContent) {
+      setInput("");
+    }
 
     const fullPayload = {
       client_name: clientName,
       assessment_data: assessmentData,
-      message: input,
+      message: message,
     };
 
     try {
@@ -323,6 +201,147 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (chatMessage) {
+      sendMessage(chatMessage);
+      if (clearChatMessage) {
+        clearChatMessage();
+      }
+    }
+  }, [chatMessage, clearChatMessage]);
+
+  useEffect(() => {
+    // clientName が変更されたら、メッセージをリセットし、最初の挨拶を追加する
+    if (clientName) {
+      setMessages([
+        {
+          role: "assistant",
+          content: "こんにちは。どのようなご相談でしょうか？",
+        },
+      ]);
+    } else {
+      setMessages([]);
+    }
+  }, [clientName]);
+
+  // popover state (button open / hover / pin)
+  const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const hoverTimeout = useRef<number | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const popoverMessagesRef = useRef<HTMLDivElement | null>(null);
+
+  const FINAL_TAG_RE = /Final Answer[:：]\s*/i;
+  const hasFinalRef = useRef(false);
+  const preludeEndIndexRef = useRef<number>(-1);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+    // ポップオーバーのメッセージリストを最下部へ
+    if (popoverMessagesRef.current) {
+      const el = popoverMessagesRef.current;
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    }
+    // コンテナ自体も最下部へ（入力欄まで含めて表示）
+    if (scrollContainerRef.current) {
+      const el = scrollContainerRef.current;
+      el.scrollTo({ top: el.scrollHeight, behavior });
+    } else if (bottomRef.current) {
+      // フォールバック（sentinel）
+      bottomRef.current.scrollIntoView({ behavior, block: "end" });
+    }
+  };
+
+  useEffect(() => {
+    // メッセージ/ローディング/検討表示の更新で常に最下部へ
+    scrollToBottom("smooth");
+  }, [messages, loading, deliberationLine]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout.current) {
+        window.clearTimeout(hoverTimeout.current);
+      }
+    };
+  }, []);
+
+  const openTemporary = () => {
+    if (!pinned) {
+      setOpen(true);
+      if (hoverTimeout.current) window.clearTimeout(hoverTimeout.current);
+    }
+  };
+  const closeTemporary = () => {
+    if (!pinned) {
+      // small delay to avoid flicker
+      hoverTimeout.current = window.setTimeout(() => setOpen(false), 150);
+    }
+  };
+
+  const togglePin = () => {
+    setPinned((v) => !v);
+    if (!pinned) setOpen(true);
+  };
+
+  const updateLastAssistantContent = (newContent: string) => {
+    setMessages((prev) => {
+      const idx = prev.map((m) => m.role).lastIndexOf("assistant");
+      if (idx === -1) {
+        return [...prev, { role: "assistant", content: newContent }];
+      }
+      const copy = prev.slice();
+      copy[idx] = { ...copy[idx], content: newContent };
+      return copy;
+    });
+    // 次フレームでスクロール（連続ストリームでも追従）
+    requestAnimationFrame(() => scrollToBottom());
+  };
+
+  const toOneLine = (s: string) => s.replace(/\s+/g, " ").trim();
+
+  const stripTaskHeader = (s: string) =>
+    s.replace(/^\s*Task:.*?(?:\r?\n|$)/, "");
+
+  const updateLastAssistantThought = (thought: string) => {
+    setMessages((prev) => {
+      const idx = prev.map((m) => m.role).lastIndexOf("assistant");
+      if (idx === -1) return prev;
+      const copy = prev.slice();
+      copy[idx] = { ...copy[idx], thought };
+      return copy;
+    });
+    // 次フレームでスクロール
+    requestAnimationFrame(() => scrollToBottom());
+  };
+
+  const updateStreamingView = (raw: string) => {
+    if (!hasFinalRef.current) {
+      const m = raw.match(FINAL_TAG_RE);
+      if (m) {
+        const idx = raw.indexOf(m[0]);
+        const prelude = raw.slice(0, idx);
+        preludeEndIndexRef.current = idx + m[0].length;
+        hasFinalRef.current = true;
+        setDeliberationLine("");
+        updateLastAssistantThought(prelude);
+        const finalSeg = stripTaskHeader(raw.slice(preludeEndIndexRef.current));
+        updateLastAssistantContent(finalSeg);
+      } else {
+        setDeliberationLine(toOneLine(raw));
+        updateLastAssistantThought(raw);
+      }
+    } else {
+      const finalSeg = stripTaskHeader(raw.slice(preludeEndIndexRef.current));
+      updateLastAssistantContent(finalSeg);
+    }
+    // streaming chunk追加ごとにスクロール追従（embeddedモードでも確実に呼ぶ）
+    requestAnimationFrame(() => scrollToBottom());
+    if (embedded) {
+      requestAnimationFrame(() => scrollToBottom());
+    }
+  };
+
+
   // AIのレスポンスからタスクを抽出し、リソースを追加する処理
   const processFinalReply = (reply: string) => {
     // Task extraction
@@ -337,7 +356,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     }
 
     // Resource extraction (multiple matches)
-    const resourceRegex = /制度[:：]\s*([\w----]+)(?:（対象外・(.+?)）)?/g;
+    const resourceRegex = /(?:制度|推奨制度候補)[:：]\s*([\w----]+)(?:（対象外・(.+?)）)?/g;
     let matchArr;
     let found = false;
     try {
@@ -451,7 +470,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                     className={`text-md p-2 rounded ${m.role === "user" ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--gbtn-hover-bg)] text-[var(--brand-700)]"}`}
                   >
                     <span className="font-bold mr-1">
-                      {m.role === "user" ? "本人" : "AI"}
+                      {m.role === "user" ? "あなた" : "AI"}
                     </span>
                     {m.role === "assistant" && m.thought && (
                       <>
@@ -477,7 +496,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                           {m.thought}
                         </div>
                       )}
-                    <div className="mt-1">
+                    <div className="mt-1 ai-reply-content">
                       <ReactMarkdown
                         components={{
                           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -523,9 +542,24 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                 <div ref={bottomRef} data-role="chat-bottom-sentinel" />
               </div>
 
-              <div className="flex gap-2">
-                <input
-                  type="text"
+              <div className="flex flex-col gap-2">
+                {showInitialButton && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
+                    onClick={() =>
+                      setInput("この人に適した制度を提案してください")
+                    }
+                    disabled={loading || !clientName}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    AIに最適な制度を提案してもらう
+                  </Button>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
                   value={input}
@@ -534,14 +568,15 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                     if (e.key === "Enter") sendMessage();
                   }}
                   disabled={loading || !clientName}
-                />
-                <Button
-                  size="sm"
+                  />
+                  <Button
+                    size="sm"
                   className="h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto touch-manipulation"
                   onClick={() => sendMessage()}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -567,7 +602,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
             className={`text-md p-2 rounded ${m.role === "user" ? "bg-[var(--surface)] text-[var(--foreground)]" : "bg-[var(--gbtn-hover-bg)] text-[var(--brand-700)]"}`}
           >
             <span className="font-bold mr-1">
-              {m.role === "user" ? "本人" : "AI"}
+              {m.role === "user" ? "あなた" : "AI"}
             </span>
             {m.role === "assistant" && m.thought && (
               <>
@@ -593,7 +628,7 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                   {m.thought}
                 </div>
               )}
-            <div className="mt-1">
+            <div className="mt-1 ai-reply-content">
               <ReactMarkdown
                 components={{
                   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -632,9 +667,22 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
         )}
         <div ref={bottomRef} data-role="chat-bottom-sentinel" />
       </div>
-      <div className="flex gap-2">
-        <input
-          type="text"
+      <div className="flex flex-col gap-2">
+        {showInitialButton && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
+            onClick={() => setInput("この人に適した制度を提案してください")}
+            disabled={loading || !clientName}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            AIに最適な制度を提案してもらう
+          </Button>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
           value={input}
@@ -643,14 +691,15 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
             if (e.key === "Enter") sendMessage();
           }}
           disabled={loading || !clientName}
-        />
-        <Button
-          size="sm"
+          />
+          <Button
+            size="sm"
           className="h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto touch-manipulation"
           onClick={() => sendMessage()}
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

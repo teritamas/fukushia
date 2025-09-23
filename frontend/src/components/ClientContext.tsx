@@ -21,10 +21,22 @@ export interface ClientContextValue {
   }) => void;
   homeNavSignal: number; // increments when user clicks Dashboard title to go home (basic info)
   requestGoToBasicInfo: () => void;
-  assessmentRefreshSignal: number; // increments when assessment data changed/saved
+  assessmentRefreshSignal: number;
   notifyAssessmentUpdated: () => void;
-  taskRefreshSignal: number; // increments when task data changed/saved
+  taskRefreshSignal: number;
   notifyTaskUpdated: () => void;
+  sendChatMessage: (message: string) => void;
+  chatMessage: string;
+  clearChatMessage: () => void;
+  requestChatOpen: () => void;
+  chatOpenSignal: number;
+  newClientSignal: number;
+  notifyNewClient: () => void;
+  suggestionSignal: number;
+  suggestedTask: string;
+  suggestedMemo: string;
+  setSuggestion: (task: string, memo: string) => void;
+  clearSuggestion: () => void;
 }
 
 export const ClientContext = createContext<ClientContextValue | undefined>(
@@ -48,6 +60,18 @@ export function useClientContext(): ClientContextValue {
       notifyAssessmentUpdated: () => {},
       taskRefreshSignal: 0,
       notifyTaskUpdated: () => {},
+      sendChatMessage: () => {},
+      chatMessage: "",
+      clearChatMessage: () => {},
+      requestChatOpen: () => {},
+      chatOpenSignal: 0,
+      newClientSignal: 0,
+      notifyNewClient: () => {},
+      suggestionSignal: 0,
+      suggestedTask: "",
+      suggestedMemo: "",
+      setSuggestion: () => {},
+      clearSuggestion: () => {},
     };
   }
   return ctx;

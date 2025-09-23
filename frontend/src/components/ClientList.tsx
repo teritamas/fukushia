@@ -1,19 +1,10 @@
 import { useState } from "react";
-import { clientApi, Client } from "../lib/api-client";
+import { clientApi } from "../lib/api-client";
+import { useClientContext } from "./ClientContext";
 
-interface ClientListProps {
-  selectedClient: string;
-  setSelectedClient: (name: string) => void;
-  clients: Client[];
-  setClients: (clients: Client[]) => void;
-}
-
-export default function ClientList({
-  selectedClient,
-  setSelectedClient,
-  clients,
-  setClients,
-}: ClientListProps) {
+export default function ClientList() {
+  const { clients, currentClient, setCurrentClient, refetchClients } =
+    useClientContext();
   const [newClient, setNewClient] = useState("");
 
   // 新規支援者追加
@@ -21,7 +12,8 @@ export default function ClientList({
     if (!newClient.trim()) return;
     try {
       const createdClient = await clientApi.create({ name: newClient.trim() });
-      setClients([...clients, createdClient]);
+      await refetchClients();
+      setCurrentClient(createdClient);
       setNewClient("");
     } catch (error) {
       console.error("Failed to create client:", error);
@@ -51,11 +43,11 @@ export default function ClientList({
           <button
             key={c.id}
             className={`px-3 py-1 rounded border ${
-              selectedClient === c.name
+              currentClient?.id === c.id
                 ? "bg-[var(--brand-600)] text-white border-transparent"
                 : "bg-[var(--chip-bg)] text-[var(--foreground)] border-[var(--border)]"
             }`}
-            onClick={() => setSelectedClient(c.name)}
+            onClick={() => setCurrentClient(c)}
           >
             {c.name}
           </button>

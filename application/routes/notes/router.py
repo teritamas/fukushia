@@ -3,6 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from google.cloud.firestore import SERVER_TIMESTAMP
+from google.cloud.firestore_v1.base_query import FieldFilter
 from ..common import db, logger, exponential_backoff
 import config
 
@@ -57,7 +58,7 @@ async def get_notes(client_name: Optional[str] = None):
         def fetch_notes():
             ref = notes_collection()
             if client_name:
-                query = ref.where("clientName", "==", client_name).order_by("timestamp", direction="DESCENDING")
+                query = ref.where(filter=FieldFilter("clientName", "==", client_name)).order_by("timestamp", direction="DESCENDING")
             else:
                 query = ref.order_by("timestamp", direction="DESCENDING")
             return query.stream()

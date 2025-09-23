@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import TaskList, { TaskListItem } from "./TaskList";
 import {
   clientApi,
@@ -6,7 +6,7 @@ import {
   type NoteUpdateRequest,
   type TodoItemAPI,
 } from "../lib/api-client";
-import { ListTodo, PlusCircle } from "lucide-react";
+import { ListTodo, PlusCircle, Lightbulb } from "lucide-react";
 import TaskForm from "./TaskForm";
 import MemoForm from "./MemoForm";
 import { useClientContext } from "./ClientContext";
@@ -16,7 +16,12 @@ export default function MemoTaskManager() {
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const { taskRefreshSignal } = useClientContext();
+  const [showMemoForm, setShowMemoForm] = useState(false);
+  const [suggestedTask, setSuggestedTask] = useState("");
+  const [suggestedMemo, setSuggestedMemo] = useState("");
+  const [hasFetchedSuggestions, setHasFetchedSuggestions] = useState(false);
+
+  const { taskRefreshSignal, currentClient } = useClientContext();
 
   const loadAllClients = async () => {
     try {
@@ -29,31 +34,29 @@ export default function MemoTaskManager() {
     }
   };
 
-  const loadAllTasks = async () => {
+  const loadAllTasks = useCallback(async () => {
+    if (!currentClient) return;
     setIsLoading(true);
     try {
-      const clients = await clientApi.getAll();
+      const notesData = await notesApi.getAll(currentClient.name);
       const fetchedTasks: TaskListItem[] = [];
+      const hasMemos = notesData.some(note => note.content && note.content.trim() !== "");
 
-      for (const client of clients) {
-        if (!client.name) continue;
-        const notesData = await notesApi.getAll(client.name);
-        notesData.forEach((note) => {
-          if (note.todoItems) {
-            note.todoItems.forEach((item) => {
-              fetchedTasks.push({
-                id: item.id,
-                text: item.text,
-                dueDate: item.due_date || null,
-                isCompleted: item.is_completed,
-                noteId: note.id,
-                clientName: client.name,
-                details: (note.content || "").replace(item.text, "").trim(),
-              });
+      notesData.forEach((note) => {
+        if (note.todoItems && note.todoItems.length > 0) {
+          note.todoItems.forEach((item) => {
+            fetchedTasks.push({
+              id: item.id,
+              text: item.text,
+              dueDate: item.due_date || null,
+              isCompleted: item.is_completed,
+              noteId: note.id,
+              clientName: currentClient.name,
+              details: (note.content || "").replace(item.text, "").trim(),
             });
-          }
-        });
-      }
+          });
+        }
+      });
 
       // 期限日でソート
       fetchedTasks.sort((a, b) => {
@@ -66,21 +69,47 @@ export default function MemoTaskManager() {
       });
 
       setAllTasks(fetchedTasks);
+
+      // タスクもメモも無い場合のみサジェストを取得
+      if (
+        fetchedTasks.length === 0 &&
+        !hasMemos &&
+        !hasFetchedSuggestions
+      ) {
+        setHasFetchedSuggestions(true);
+        try {
+          const suggestion = await clientApi.getSuggestion(currentClient.name);
+          if (suggestion) {
+            if (suggestion.suggested_tasks.length > 0) {
+              setSuggestedTask(suggestion.suggested_tasks.join("\n"));
+              setShowTaskModal(true);
+            }
+            if (suggestion.suggested_memo) {
+              setSuggestedMemo(suggestion.suggested_memo);
+              setShowMemoForm(true);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch suggestions", e);
+        }
+      }
     } catch (error) {
       console.error("Failed to load tasks:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentClient, hasFetchedSuggestions]);
 
   useEffect(() => {
-    loadAllTasks();
     loadAllClients();
   }, []);
 
   useEffect(() => {
-    loadAllTasks();
-  }, [taskRefreshSignal]);
+    if (currentClient) {
+      setHasFetchedSuggestions(false); // クライアントが変わったら再取得を許可
+      loadAllTasks();
+    }
+  }, [currentClient, taskRefreshSignal, loadAllTasks]);
 
   const handleToggleTask = async (
     noteId: string,
@@ -144,7 +173,10 @@ export default function MemoTaskManager() {
       {showTaskModal && (
         <div
           className="fixed inset-0 z-[1000] flex items-start sm:items-center justify-center bg-black/40 p-4"
-          onClick={() => setShowTaskModal(false)}
+          onClick={() => {
+            setShowTaskModal(false);
+            setSuggestedTask("");
+          }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -152,10 +184,18 @@ export default function MemoTaskManager() {
           >
             <div className="p-5 border-b">
               <h3 className="text-lg font-semibold">タスクの追加</h3>
+              {suggestedTask && (
+                <p className="text-sm text-yellow-700 bg-yellow-50 p-2 rounded-md mt-2 flex items-center gap-2">
+                  <Lightbulb size={16} />
+                  <span>AIからの提案です</span>
+                </p>
+              )}
             </div>
             <div className="p-5">
               <TaskForm
                 clients={clients}
+                defaultClientName={currentClient?.name}
+                initialTaskText={suggestedTask}
                 onSave={async (newTask: {
                   clientName: string;
                   text: string;
@@ -178,11 +218,65 @@ export default function MemoTaskManager() {
                     });
                     await loadAllTasks(); // タスクリストを再読み込み
                     setShowTaskModal(false);
+                    setSuggestedTask("");
                   } catch (error) {
                     console.error("Failed to create task:", error);
                   }
                 }}
-                onCancel={() => setShowTaskModal(false)}
+                onCancel={() => {
+                  setShowTaskModal(false);
+                  setSuggestedTask("");
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMemoForm && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-start sm:items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            setShowMemoForm(false);
+            setSuggestedMemo("");
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white rounded-lg shadow-xl w-full max-w-lg"
+          >
+            <div className="p-5 border-b">
+              <h3 className="text-lg font-semibold">支援記録の追加</h3>
+              {suggestedMemo && (
+                <p className="text-sm text-yellow-700 bg-yellow-50 p-2 rounded-md mt-2 flex items-center gap-2">
+                  <Lightbulb size={16} />
+                  <span>AIからの提案です</span>
+                </p>
+              )}
+            </div>
+            <div className="p-5">
+              <MemoForm
+                clients={clients}
+                defaultClientName={currentClient?.name}
+                initialContent={suggestedMemo}
+                onSave={async (newMemo) => {
+                  try {
+                    await notesApi.create({
+                      clientName: newMemo.clientName,
+                      speaker: newMemo.speaker,
+                      content: newMemo.content,
+                    });
+                    // Here you might want to refresh a list of memos if displayed
+                    setShowMemoForm(false);
+                    setSuggestedMemo("");
+                  } catch (error) {
+                    console.error("Failed to save memo:", error);
+                  }
+                }}
+                onCancel={() => {
+                  setShowMemoForm(false);
+                  setSuggestedMemo("");
+                }}
               />
             </div>
           </div>
