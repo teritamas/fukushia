@@ -48,7 +48,7 @@ class AssessmentMappingAgent:
                 parts = getattr(getattr(c0, "content", None), "parts", [])
                 if parts:
                     text = getattr(parts[0], "text", "").strip()
-            
+
             if not text:
                 return {"error": "Geminiからの応答がありませんでした。"}
 
