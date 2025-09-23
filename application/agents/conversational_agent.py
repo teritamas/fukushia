@@ -49,6 +49,7 @@ class ConversationalAgent:
         history_str = "\n".join([f"{msg['role']}: {msg['content']}" for msg in chat_history])
 
         try:
+
             async def stream_generator():
                 try:
                     async for chunk in self.chain.astream(

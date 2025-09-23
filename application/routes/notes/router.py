@@ -58,7 +58,9 @@ async def get_notes(client_name: Optional[str] = None):
         def fetch_notes():
             ref = notes_collection()
             if client_name:
-                query = ref.where(filter=FieldFilter("clientName", "==", client_name)).order_by("timestamp", direction="DESCENDING")
+                query = ref.where(filter=FieldFilter("clientName", "==", client_name)).order_by(
+                    "timestamp", direction="DESCENDING"
+                )
             else:
                 query = ref.order_by("timestamp", direction="DESCENDING")
             return query.stream()

@@ -68,7 +68,7 @@ class InteractiveSupportPlanAgent:
                         if event["event"] == "on_agent_finish":
                             final_answer = event["data"]["output"]
                             # 最終的な回答からTask行を除外
-                            lines = final_answer.split('\n')
+                            lines = final_answer.split("\n")
                             cleaned_lines = [line for line in lines if not line.strip().startswith("Task:")]
                             cleaned_answer = "\n".join(cleaned_lines)
                             # 整形された回答を送信
@@ -76,7 +76,7 @@ class InteractiveSupportPlanAgent:
                             yield data
                         elif event["event"] == "on_chat_model_stream":
                             chunk = event["data"]["chunk"]
-                            if hasattr(chunk, 'content'):
+                            if hasattr(chunk, "content"):
                                 # AIMessageChunkの場合
                                 content = chunk.content
                                 if content:

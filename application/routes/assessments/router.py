@@ -159,7 +159,9 @@ async def create_assessment(req: AssessmentCreateRequest, request: Request) -> A
             suggestion_agent = request.app.state.suggestion_agent
             suggestions = suggestion_agent.generate_suggestions(req.assessment)
             if "error" not in suggestions:
-                client_ref = clients_collection().where(filter=FieldFilter("name", "==", req.client_name.strip())).limit(1)
+                client_ref = (
+                    clients_collection().where(filter=FieldFilter("name", "==", req.client_name.strip())).limit(1)
+                )
                 client_docs = list(client_ref.stream())
                 if client_docs:
                     client_doc_ref = client_docs[0].reference
@@ -235,7 +237,11 @@ async def update_assessment(assessment_id: str, req: AssessmentUpdateRequest, re
                 suggestion_agent = request.app.state.suggestion_agent
                 suggestions = suggestion_agent.generate_suggestions(req.assessment)
                 if "error" not in suggestions:
-                    client_ref = clients_collection().where(filter=FieldFilter("name", "==", updated_data.get("clientName", ""))).limit(1)
+                    client_ref = (
+                        clients_collection()
+                        .where(filter=FieldFilter("name", "==", updated_data.get("clientName", "")))
+                        .limit(1)
+                    )
                     client_docs = list(client_ref.stream())
                     if client_docs:
                         client_doc_ref = client_docs[0].reference

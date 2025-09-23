@@ -40,7 +40,9 @@ export default function MemoTaskManager() {
     try {
       const notesData = await notesApi.getAll(currentClient.name);
       const fetchedTasks: TaskListItem[] = [];
-      const hasMemos = notesData.some(note => note.content && note.content.trim() !== "");
+      const hasMemos = notesData.some(
+        (note) => note.content && note.content.trim() !== "",
+      );
 
       notesData.forEach((note) => {
         if (note.todoItems && note.todoItems.length > 0) {
@@ -71,11 +73,7 @@ export default function MemoTaskManager() {
       setAllTasks(fetchedTasks);
 
       // タスクもメモも無い場合のみサジェストを取得
-      if (
-        fetchedTasks.length === 0 &&
-        !hasMemos &&
-        !hasFetchedSuggestions
-      ) {
+      if (fetchedTasks.length === 0 && !hasMemos && !hasFetchedSuggestions) {
         setHasFetchedSuggestions(true);
         try {
           const suggestion = await clientApi.getSuggestion(currentClient.name);

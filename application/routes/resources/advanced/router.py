@@ -34,7 +34,9 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
     import json
 
     # Tokenize the base text once for keyword matching
-    tokens = [t.lower() for t in re.split(r"[\s、。,.；;:\n\r\t/()『』「」【】\[\]{}]+", base_text) if len(t) > 1][:1000]
+    tokens = [t.lower() for t in re.split(r"[\s、。,.；;:\n\r\t/()『』「」【】\[\]{}]+", base_text) if len(t) > 1][
+        :1000
+    ]
     if logger.isEnabledFor(10):
         logger.debug(f"[suggest_debug] token_count={len(tokens)} first_tokens={tokens[:15]}")
     # Embed the base text for cosine similarity calculation

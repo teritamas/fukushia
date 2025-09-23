@@ -9,6 +9,7 @@ from agent.tools.google_search_tool import create_google_search_tool
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+
 class TaskExecutionAgent:
     def __init__(self, api_key: str, google_cse_id: str):
         self.llm = ChatGoogleGenerativeAI(

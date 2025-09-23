@@ -4,6 +4,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+
 class SuggestionAgent:
     def __init__(self, api_key: str, model_name: str = "gemini-1.5-flash"):
         genai.configure(api_key=api_key)
@@ -42,7 +43,7 @@ class SuggestionAgent:
                 parts = getattr(getattr(c0, "content", None), "parts", [])
                 if parts:
                     text = getattr(parts[0], "text", "").strip()
-            
+
             if not text:
                 return {"error": "Geminiからの応答がありませんでした。"}
 
