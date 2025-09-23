@@ -3,8 +3,14 @@
 [![Build](https://github.com/teritamas/fukushia/actions/workflows/ci.yml/badge.svg)](https://github.com/teritamas/fukushia/actions/workflows/ci.yml)
 [![Deploy Frontend](https://github.com/teritamas/fukushia/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/teritamas/fukushia/actions/workflows/firebase-hosting-merge.yml)
 
+[![Youtubeへのリンク](docs/thumbnail.png)](https://youtu.be/1GEt5MsVObQ)
+(クリックすると YouTube の紹介動画に飛びます)
+
+## 概要
+
 社会福祉士向けのメモ・タスク管理＆アセスメント支援アプリです。Streamlit で動作し、Firebase Firestore と Gemini API を利用します。
 
+- [社会福祉士をサポートし支援が必要な人の生活を豊かに！〜フクシア - Zenn](https://zenn.dev/teritama/articles/aa54b4fbed1231)
 - [デモサイト](https://tritama-e20cf.web.app/)
 - [API Docs](https://fukushia-assistant-backend-667712908416.europe-west1.run.app/docs)
 
