@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { clientApi } from "../lib/api-client";
-import MemoTaskManager from "../components/MemoTaskManager";
-import ResourceManager from "../components/ResourceManager";
-import AppHeader from "../components/AppHeader";
-import ClientWorkspace from "../components/ClientWorkspace";
-import { ClientContext, ClientData } from "../components/ClientContext";
+import { clientApi } from "@/lib/api-client";
+import MemoTaskManager from "@/components/MemoTaskManager";
+import AppHeader from "@/components/AppHeader";
+import ClientWorkspace from "@/components/ClientWorkspace";
+import { ClientContext, ClientData } from "@/components/ClientContext";
+import ResourceManagementPage from "@/components/ResourceManagementPage";
 
 export default function Page() {
   const [selectedTab, setSelectedTab] = useState("clients");
@@ -93,7 +93,7 @@ export default function Page() {
           <div className="surface card-shadow border border-[var(--border)] p-6">
             {selectedTab === "clients" && <ClientWorkspace />}
             {selectedTab === "notes" && <MemoTaskManager />}
-            {selectedTab === "resources" && <ResourceManager />}
+            {selectedTab === "resources" && <ResourceManagementPage />}
           </div>
         </main>
       </div>

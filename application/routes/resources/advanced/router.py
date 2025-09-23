@@ -28,15 +28,11 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
     used_summary = False
     if logger.isEnabledFor(10):  # DEBUG
         logger.debug(f"[suggest_debug] raw_text_len={len(base_text)} snippets={len(texts)}")
-    # TODO: summarize_for_resource_match メソッドが存在しないため、一時的にコメントアウト
-    # 適切なエージェントクラスを作成するか、このロジックを見直す必要があります
     if req.use_llm_summary and base_text:
         try:
-            # gemini_agent = request.app.state.gemini_agent
-            # summary_text = gemini_agent.summarize_for_resource_match(base_text)
-            # used_summary = True
-            logger.warning("LLM summary feature temporarily disabled - method not available")
-            summary_text = base_text  # フォールバックとして元のテキストを使用
+            support_plan_agent = request.app.state.support_plan_agent
+            summary_text = support_plan_agent.summarize_for_resource_match(base_text, client=req.client)
+            used_summary = True
             if logger.isEnabledFor(10):
                 logger.debug(
                     f"[suggest_debug] summarization used_summary={used_summary} summary_len={len(summary_text)}"
@@ -55,16 +51,28 @@ async def suggest_resources(req: ResourceSuggestRequest, request: Request):
     scored: list[tuple[str, float, list[str], object]] = []
     debug_components: list[dict] = []
     try:
-        docs = resource_collection().stream()
+        docs = list(resource_collection().stream())
+        resources = []
         for d in docs:
             try:
-                res = resource_doc_to_model(d)
+                resources.append(resource_doc_to_model(d))
             except ValueError:
                 continue
+
+        resource_texts = [
+            f"{res.service_name} {res.description or ''} {' '.join(res.keywords or [])}" for res in resources
+        ]
+
+        # Batch embedding to reduce API calls
+        resource_embeddings = embed_texts(resource_texts) if resource_texts else []
+
+        for i, res in enumerate(resources):
             overlap = list({kw.lower() for kw in (res.keywords or []) if kw.lower() in tokens})[:12]
             kw_score = len(overlap)
-            emb = []  # no cache; can be extended with precomputed embeddings
+
+            emb = resource_embeddings[i] if i < len(resource_embeddings) else []
             emb_score = cosine(q_vec, emb) if q_vec and emb else 0.0
+
             final = emb_score * 0.7 + kw_score * 0.3
             if final <= 0:
                 continue

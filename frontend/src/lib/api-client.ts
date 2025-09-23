@@ -262,6 +262,30 @@ const apiClient = {
   notes: notesApi,
   assessments: assessmentsApi,
   interviewRecords: interviewRecordsApi,
+
+  async get<T>(endpoint: string): Promise<T> {
+    return apiRequest<T>(endpoint);
+  },
+
+  async post<T>(endpoint: string, body: unknown): Promise<T> {
+    return apiRequest<T>(endpoint, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  async patch<T>(endpoint: string, body: unknown): Promise<T> {
+    return apiRequest<T>(endpoint, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  },
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return apiRequest<T>(endpoint, {
+      method: "DELETE",
+    });
+  },
 };
 
 export default apiClient;

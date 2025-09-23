@@ -5,6 +5,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_react_agent, AgentExecutor
 from langchain.tools.render import render_text_description
 from langchain.prompts import PromptTemplate
+from typing import Optional
+from models.pydantic_models import Client
 
 from agent.prompts.conversational_agent import CONVERSATIONAL_AGENT_PROMPT
 from agent.tools.rag_search_social_support_tool import create_rag_search_social_support_tool
@@ -82,3 +84,31 @@ class InteractiveSupportPlanAgent:
                 yield f"event: error\ndata: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
 
             return err_gen()
+
+    def summarize_for_resource_match(self, assessment_text: str, client: Optional[Client] = None) -> str:
+        """
+        与えられたアセスメントテキストを、社会資源のマッチングに適した短い要約に変換する
+        """
+        client_info = ""
+        if client and client.name:
+            client_info = f"クライアントは {client.name} さんです。"
+
+        prompt = f"""
+        以下のテキストは、あるクライアントに関するアセスメント情報です。
+        この情報から、利用可能な社会資源や制度を探すために最も重要となるキーワードや状況を抽出し、簡潔な要約を作成してください。
+        {client_info}
+
+        アセスメント情報:
+        ---
+        {assessment_text[:8000]}
+        ---
+
+        要約:
+        """
+        try:
+            response = self.llm.invoke(prompt.strip())
+            return response.content
+        except Exception as e:
+            logging.error(f"summarize_for_resource_match failed: {e}", exc_info=True)
+            # fallback to simple text extraction
+            return assessment_text[:2000]

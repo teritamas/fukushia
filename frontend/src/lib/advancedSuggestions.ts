@@ -11,8 +11,11 @@ export interface AdvancedSuggestResponse {
   used_summary: boolean;
 }
 
+import { Client } from "./client";
+
 export async function fetchAdvancedSuggestions(
   assessmentData: unknown,
+  client: Client | null,
   top_k = 8,
 ): Promise<AdvancedSuggestResponse | null> {
   try {
@@ -23,6 +26,7 @@ export async function fetchAdvancedSuggestions(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         assessment_data: assessmentData,
+        client: client,
         top_k,
         use_llm_summary: true,
       }),

@@ -73,6 +73,7 @@ class ResourceBase(BaseModel):
     contact_fax: Optional[str] = None
     contact_email: Optional[str] = None
     contact_url: Optional[str] = None
+    source_url: Optional[str] = None
     keywords: Optional[List[str]] = []
     last_verified_at: Optional[float] = None
 
@@ -95,6 +96,7 @@ class ResourceUpdate(BaseModel):
     contact_fax: Optional[str] = None
     contact_email: Optional[str] = None
     contact_url: Optional[str] = None
+    source_url: Optional[str] = None
     keywords: Optional[List[str]] = None
     last_verified_at: Optional[float] = None
 
@@ -104,8 +106,14 @@ class Resource(ResourceBase):
 
 
 # --- Advanced suggestion models ---
+class Client(BaseModel):
+    id: str
+    name: str
+
+
 class ResourceSuggestRequest(BaseModel):
     assessment_data: Dict[str, Any]
+    client: Optional[Client] = None
     top_k: int = 8
     use_llm_summary: bool = True
 
@@ -172,3 +180,12 @@ class ClientResource(ClientResourceBase):
     id: str
     added_at: float
     added_by: str
+
+
+# --- Interview Record Models ---
+class InterviewRecord(BaseModel):
+    id: str
+    clientName: str
+    content: str
+    speaker: str
+    timestamp: datetime

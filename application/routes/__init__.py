@@ -11,6 +11,7 @@ from .interactive_support_plan.router import router as interactive_support_plan_
 from .clients.router import router as clients_router
 from .notes.router import router as notes_router
 from .assessments.router import router as assessments_router
+from .interview_records.router import router as interview_records_router
 
 
 def register_routes(app: FastAPI) -> None:
@@ -25,3 +26,8 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(clients_router)
     app.include_router(notes_router)
     app.include_router(assessments_router)
+    app.include_router(
+        interview_records_router,
+        prefix="/interview_records",
+        tags=["Interview Records"],
+    )

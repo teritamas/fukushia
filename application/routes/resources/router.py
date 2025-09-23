@@ -4,7 +4,12 @@ import re
 from typing import List
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
+from agents.resource_extraction_agent import (
+    extract_resource_from_url,
+    SocialResource,
+)
 from ..common import logger, resource_collection, resource_memo_collection
 from models.pydantic_models import Resource, ResourceCreate, ResourceUpdate
 from .service import resource_doc_to_model
@@ -184,3 +189,17 @@ async def delete_resource(resource_id: str):
         return {"status": "deleted", "id": resource_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源削除失敗: {e}")
+
+
+class ExtractRequest(BaseModel):
+    url: str
+
+
+# Endpoint to extract social resource information from a URL
+@router.post("/extract-from-url", response_model=SocialResource)
+async def extract_from_url(request: ExtractRequest):
+    try:
+        resource = await extract_resource_from_url(request.url)
+        return resource
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"URLからの情報抽出失敗: {e}")
