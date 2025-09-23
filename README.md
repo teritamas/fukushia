@@ -4,6 +4,7 @@
 [![Deploy Frontend](https://github.com/teritamas/fukushia/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/teritamas/fukushia/actions/workflows/firebase-hosting-merge.yml)
 
 [![Youtubeへのリンク](docs/thumbnail.png)](https://youtu.be/1GEt5MsVObQ)
+(クリックすると YouTube の紹介動画に飛びます)
 
 ## 概要
 
