@@ -139,8 +139,8 @@ class ResourceMemoBase(BaseModel):
     content: str
 
 
-class ResourceMemoCreate(ResourceMemoBase):
-    pass
+class ResourceMemoCreate(BaseModel):
+    content: str
 
 
 class ResourceMemoUpdate(BaseModel):
