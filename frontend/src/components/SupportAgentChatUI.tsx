@@ -341,7 +341,6 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     }
   };
 
-
   // AIのレスポンスからタスクを抽出し、リソースを追加する処理
   const processFinalReply = (reply: string) => {
     // Task extraction
@@ -356,7 +355,8 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
     }
 
     // Resource extraction (multiple matches)
-    const resourceRegex = /(?:制度|推奨制度候補)[:：]\s*([\w----]+)(?:（対象外・(.+?)）)?/g;
+    const resourceRegex =
+      /(?:制度|推奨制度候補)[:：]\s*([\w----]+)(?:（対象外・(.+?)）)?/g;
     let matchArr;
     let found = false;
     try {
@@ -560,19 +560,19 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
                 <div className="flex gap-2">
                   <input
                     type="text"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") sendMessage();
-                  }}
-                  disabled={loading || !clientName}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") sendMessage();
+                    }}
+                    disabled={loading || !clientName}
                   />
                   <Button
                     size="sm"
-                  className="h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto touch-manipulation"
-                  onClick={() => sendMessage()}
+                    className="h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto touch-manipulation"
+                    onClick={() => sendMessage()}
                   >
                     <Send className="h-4 w-4" />
                   </Button>
@@ -683,19 +683,19 @@ const SupportAgentChatUI: React.FC<SupportAgentChatUIProps> = ({
         <div className="flex gap-2">
           <input
             type="text"
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") sendMessage();
-          }}
-          disabled={loading || !clientName}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="例: この人に適した制度を提案してください。〇〇制度ってなんですか？"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
+            disabled={loading || !clientName}
           />
           <Button
             size="sm"
-          className="h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto touch-manipulation"
-          onClick={() => sendMessage()}
+            className="h-10 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 min-h-[44px] min-w-[44px] md:min-h-auto md:min-w-auto touch-manipulation"
+            onClick={() => sendMessage()}
           >
             <Send className="h-4 w-4" />
           </Button>

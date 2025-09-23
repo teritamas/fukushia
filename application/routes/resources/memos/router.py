@@ -36,7 +36,11 @@ async def create_resource_memo(resource_id: str, memo: ResourceMemoCreate):
 @router.get("/{resource_id}/memos", response_model=list[ResourceMemo])
 async def list_resource_memos(resource_id: str):
     try:
-        q = resource_memo_collection().where(filter=FieldFilter("resource_id", "==", resource_id)).order_by("created_at")
+        q = (
+            resource_memo_collection()
+            .where(filter=FieldFilter("resource_id", "==", resource_id))
+            .order_by("created_at")
+        )
         docs = q.stream()
         return [_resource_memo_doc_to_model(d) for d in docs]
     except FailedPrecondition as e:

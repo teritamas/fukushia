@@ -253,10 +253,10 @@ async def get_and_clear_suggestion(client_name: str):
     """
     try:
         client_ref = clients_collection().where(filter=FieldFilter("name", "==", client_name)).limit(1)
-        
+
         def fetch_client_docs():
             return list(client_ref.stream())
-            
+
         client_docs = exponential_backoff(fetch_client_docs)
 
         if not client_docs:
@@ -272,7 +272,7 @@ async def get_and_clear_suggestion(client_name: str):
         # サジェストをDBから削除
         def clear_suggestion_from_db():
             client_doc.reference.update({"suggestion": None})
-        
+
         exponential_backoff(clear_suggestion_from_db)
 
         logger.info(f"クライアント {client_name} のサジェストを取得・削除しました。")

@@ -9,12 +9,14 @@ from typing import Literal
 # loggingの設定
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
+
 class AgentRoute(BaseModel):
     """ユーザーのメッセージに応じて、次に呼び出すべきエージェントを判断します。"""
+
     next_agent: Literal["support_plan", "conversational"] = Field(
-        ...,
-        description="ユーザーのメッセージ内容に基づいて、次に呼び出すべきエージェントを選択します。"
+        ..., description="ユーザーのメッセージ内容に基づいて、次に呼び出すべきエージェントを選択します。"
     )
+
 
 ROUTER_PROMPT = """
 あなたは、ユーザーからのメッセージを分析し、その意図に応じて最適なAIエージェントに処理を振り分けるルーターです。
@@ -54,7 +56,7 @@ class RouterAgent:
     async def route(self, message: str) -> AgentRoute:
         try:
             output = await self.chain.ainvoke({"input": message})
-            parsed_output = self.parser.parse(output['text'])
+            parsed_output = self.parser.parse(output["text"])
             return parsed_output
         except Exception as e:
             logging.error(f"ルーティングエラー: {e}", exc_info=True)

@@ -3,8 +3,10 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
+
 class TaskExecutionRequest(BaseModel):
     task: str
+
 
 @router.post("/execute")
 async def execute_task(request: Request, body: TaskExecutionRequest):

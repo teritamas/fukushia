@@ -26,7 +26,9 @@ async def create_resource(resource: ResourceCreate):
         data = resource.dict(exclude_unset=True)
 
         # Calculate embedding
-        text_to_embed = f"{data.get('service_name', '')} {data.get('description', '')} {' '.join(data.get('keywords', []))}"
+        text_to_embed = (
+            f"{data.get('service_name', '')} {data.get('description', '')} {' '.join(data.get('keywords', []))}"
+        )
         embedding = embed_texts([text_to_embed])[0]
         if embedding:
             data["embedding"] = embedding
