@@ -69,6 +69,15 @@ cd application/
 uv run uvicorn main:app --reload
 ```
 
+### ダミーデータの挿入
+
+DBデータをリセットしてダミーデータを挿入する場合は、以下のコマンドを実行してください。
+
+```sh
+cd application/
+uv run python scripts/seed.py
+```
+
 #### Docker で API サーバをビルド・実行する
 
 Cloud Run で実行する場合は Docker を利用します。ローカルで Docker イメージをビルドして実行するには以下のコマンドを使用します。
