@@ -10,7 +10,7 @@ import config
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 
-router = APIRouter(tags=["assessments"])
+router = APIRouter(prefix="/assessments", tags=["assessments"])
 
 
 class AssessmentCreateRequest(BaseModel):
