@@ -65,18 +65,23 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
 
   return (
     <header className="w-full sticky top-0 z-30 bg-gradient-to-r from-[var(--brand-600)] to-[var(--brand-700)] text-white header-shadow">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center gap-3">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex flex-row items-center justify-between gap-3">
         <button
-          className="text-left text-lg font-semibold tracking-wide hover:opacity-90"
+          className="text-left text-lg font-semibold tracking-wide hover:opacity-90 flex items-center py-2"
           onClick={() => {
             onChange("clients");
             requestGoToBasicInfo();
           }}
           title="ダッシュボードに戻る"
         >
-          フクシア
+          <img
+            src="/favicon.ico"
+            alt="フクシア"
+            className="block md:hidden h-6 w-6 flex-shrink-0 object-contain"
+          />
+          <span className="hidden md:block">フクシア</span>
         </button>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <nav className="flex flex-wrap items-center gap-2">
             {/* カスタムドロップダウン（hoverで展開、メニューは白） */}
             <div
