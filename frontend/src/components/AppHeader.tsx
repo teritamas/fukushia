@@ -105,7 +105,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                     setMenuOpen(false);
                   }
                 }}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-[var(--brand-600)] text-white border-transparent" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)]"}`}
+                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm min-w-0 md:min-w-[240px] justify-between shadow-md hover-scale ${active === "clients" ? "bg-[var(--brand-600)] text-white border-transparent" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)]"}`}
               >
                 <span className="truncate max-w-[170px]">
                   {currentClient?.name || "利用者を選択"}
