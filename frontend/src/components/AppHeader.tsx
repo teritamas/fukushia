@@ -109,7 +109,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
               </button>
               {menuOpen && (
                 <div
-                  className="absolute right-0 mt-0 w-[300px] rounded-md rounded-t-none border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-2xl ring-1 ring-[var(--ring)] z-50"
+                  className="absolute right-0 mt-0 w-[min(300px,90vw)] rounded-md rounded-t-none border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-2xl ring-1 ring-[var(--ring)] z-50"
                   onMouseEnter={() => setMenuOpen(true)}
                   onMouseLeave={() => setMenuOpen(false)}
                 >

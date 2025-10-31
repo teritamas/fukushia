@@ -52,6 +52,22 @@ body {
     "Apple Color Emoji",
     "Segoe UI Emoji";
   letter-spacing: 0.2px;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* タッチ操作の最適化 */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+/* スマホでのスクロール改善 */
+* {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Subtle card surface and elevation */

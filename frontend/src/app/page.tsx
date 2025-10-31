@@ -137,8 +137,8 @@ export default function Page() {
     >
       <div className="min-h-screen flex flex-col bg-[var(--background)]">
         <AppHeader active={selectedTab} onChange={setSelectedTab} />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-6 sm:px-6 py-6">
-          <div className="surface card-shadow border border-[var(--border)] p-6">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6">
+          <div className="surface card-shadow border border-[var(--border)] p-4 sm:p-6">
             {selectedTab === "clients" && <ClientWorkspace />}
             {selectedTab === "notes" && <MemoTaskManager />}
             {selectedTab === "resources" && <ResourceManagementPage />}

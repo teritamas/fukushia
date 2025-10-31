@@ -25,6 +25,12 @@ export const metadata: Metadata = {
   description: " 社会福祉士のための業務支援AIアシスタント",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
