@@ -85,7 +85,7 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
           <nav className="flex flex-wrap items-center gap-2">
             {/* カスタムドロップダウン（hoverで展開、メニューは白） */}
             <div
-              className="relative group"
+              className="relative group order-3 md:order-1"
               onMouseEnter={() => setMenuOpen(true)}
             >
               <button
@@ -153,12 +153,12 @@ export default function AppHeader({ active, onChange }: AppHeaderProps) {
                 </div>
               )}
             </div>
-            {NAV_ITEMS.map((item) => (
+            {NAV_ITEMS.map((item, index) => (
               <button
                 key={item.key}
                 onClick={() => onChange(item.key)}
                 aria-current={active === item.key ? "page" : undefined}
-                className={`px-3 py-2 rounded-full text-sm transition border shadow-sm hover-scale ${active === item.key ? "bg-[var(--brand-600)] text-white border-[var(--brand-600)]" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface)]"} `}
+                className={`px-3 py-2 rounded-full text-sm transition border shadow-sm hover-scale ${index === 0 ? "order-1 md:order-2" : "order-2 md:order-3"} ${active === item.key ? "bg-[var(--brand-600)] text-white border-[var(--brand-600)]" : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)] hover:bg-[var(--surface)]"} `}
               >
                 <span>{item.label}</span>
               </button>
