@@ -23,7 +23,7 @@ class InteractiveSupportPlanAgent:
         google_cse_id: str = None,
     ):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             google_api_key=api_key,
         )
 

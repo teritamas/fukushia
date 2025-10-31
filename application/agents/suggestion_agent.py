@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 
 
 class SuggestionAgent:
-    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash-lite"):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)
 

@@ -38,4 +38,4 @@ RAG_CORPUS_RESOURCE: str = _require("RAG_CORPUS_RESOURCE")  # projects/{project}
 
 # Optional
 RAG_LOCATION: str = os.getenv("RAG_LOCATION", "global")
-RAG_MODEL: str = os.getenv("RAG_MODEL", "gemini-2.5-flash-lite")
+RAG_MODEL: str = os.getenv("RAG_MODEL", "gemini-2.5-flash-lite-lite")

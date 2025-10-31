@@ -32,7 +32,7 @@ CONVERSATIONAL_PROMPT = """
 class ConversationalAgent:
     def __init__(self, api_key: str):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             google_api_key=api_key,
         )
         self.prompt = PromptTemplate.from_template(CONVERSATIONAL_PROMPT)
