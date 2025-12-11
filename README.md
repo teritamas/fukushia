@@ -1,4 +1,4 @@
-# Fukushia - 社会福祉士向けアセスメント支援アプリ
+# フクシア - 社会福祉士向けアセスメント支援アプリ
 
 [![Build](https://github.com/teritamas/fukushia/actions/workflows/ci.yml/badge.svg)](https://github.com/teritamas/fukushia/actions/workflows/ci.yml)
 [![Deploy Frontend](https://github.com/teritamas/fukushia/actions/workflows/firebase-hosting-merge.yml/badge.svg)](https://github.com/teritamas/fukushia/actions/workflows/firebase-hosting-merge.yml)
@@ -7,8 +7,6 @@
 (クリックすると YouTube の紹介動画に飛びます)
 
 ## 概要
-
-社会福祉士向けのメモ・タスク管理＆アセスメント支援アプリです。Streamlit で動作し、Firebase Firestore と Gemini API を利用します。
 
 - [社会福祉士をサポートし支援が必要な人の生活を豊かに！〜フクシア - Zenn](https://zenn.dev/teritama/articles/aa54b4fbed1231)
 - [デモサイト](https://tritama-e20cf.web.app/)
@@ -22,8 +20,7 @@
 
 ## 起動方法
 
-本アプリケーションの開発には Node.js (v20-24) と Python (>=3.11) が必要です。`nvm` や `pyenv` などのバージョン管理ツールを利用することをお勧めします。
-
+本アプリケーションの開発には Node.js (v20-24) と Python (>=3.11) が必要です。
 ### 環境変数の設定
 
 初回起動時、フロントエンドとバックエンドで環境変数を設定する必要があります。
