@@ -259,39 +259,3 @@ async def update_assessment(assessment_id: str, req: AssessmentUpdateRequest, re
     except Exception as e:
         logger.error(f"アセスメント更新エラー: {str(e)}")
         raise HTTPException(status_code=500, detail=f"アセスメント更新中にエラーが発生しました: {str(e)}")
-
-
-@router.get("/{assessment_id}", response_model=AssessmentResponse)
-async def get_assessment(assessment_id: str) -> AssessmentResponse:
-    """Get a specific assessment by ID."""
-    try:
-
-        def get_assessment_doc():
-            ref = assessments_collection().document(assessment_id)
-            return ref.get()
-
-        doc = exponential_backoff(get_assessment_doc)
-        if not doc.exists:
-            raise HTTPException(status_code=404, detail="アセスメントが見つかりません")
-
-        data = doc.to_dict()
-
-        result = AssessmentResponse(
-            id=assessment_id,
-            client_name=data.get("clientName", ""),
-            assessment=data.get("assessment", {}),
-            original_script=data.get("originalScript"),
-            support_plan=data.get("supportPlan"),
-            created_at=data.get("createdAt", datetime.now()),
-            updated_at=data.get("updatedAt", datetime.now()),
-            version=data.get("version", 1),
-        )
-
-        logger.info(f"アセスメントを取得しました: ID {assessment_id}")
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"アセスメント取得エラー: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"アセスメント取得中にエラーが発生しました: {str(e)}")
