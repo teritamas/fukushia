@@ -8,7 +8,6 @@ from agents.interactive_support_plan_agent import InteractiveSupportPlanAgent
 from agents.conversational_agent import ConversationalAgent
 from agents.router_agent import RouterAgent
 from agents.suggestion_agent import SuggestionAgent
-from agents.task_execution_agent import TaskExecutionAgent
 from routes import register_routes
 import config
 
@@ -26,9 +25,6 @@ async def lifespan(app: FastAPI):
     app.state.conversational_agent = ConversationalAgent(api_key=config.GEMINI_API_KEY)
     app.state.router_agent = RouterAgent(api_key=config.GEMINI_API_KEY)
     app.state.suggestion_agent = SuggestionAgent(api_key=config.GEMINI_API_KEY)
-    app.state.task_execution_agent = TaskExecutionAgent(
-        api_key=config.GEMINI_API_KEY, google_cse_id=config.GOOGLE_CSE_ID
-    )
     yield
 
 

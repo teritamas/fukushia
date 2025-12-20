@@ -1,6 +1,4 @@
-import json
 import time
-import re
 from typing import List
 
 from fastapi import APIRouter, HTTPException
@@ -10,7 +8,7 @@ from agents.resource_extraction_agent import (
     extract_resource_from_url,
     SocialResource,
 )
-from ..common import logger, resource_collection, resource_memo_collection
+from ..common import logger, resource_collection
 from models.pydantic_models import Resource, ResourceCreate, ResourceUpdate
 from .service import resource_doc_to_model
 from .utils import embed_texts
@@ -80,67 +78,6 @@ async def list_resources():
         return items
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"社会資源一覧取得失敗: {e}")
-
-
-@router.get("/search", response_model=List[Resource])
-async def search_resources(q: str, limit: int = 100):
-    tokens = [t.lower() for t in re.split(r"\s+", q.strip()) if t]
-    if not tokens:
-        return []
-    try:
-        memo_map: dict[str, str] = {}
-        try:
-            memo_docs = resource_memo_collection().stream()
-            for md in memo_docs:
-                data = md.to_dict() or {}
-                rid = data.get("resource_id")
-                if not rid:
-                    continue
-                content = data.get("content") or ""
-                if not isinstance(content, str):
-                    try:
-                        content = json.dumps(content, ensure_ascii=False)
-                    except Exception:
-                        content = str(content)
-                prev = memo_map.get(rid, "")
-                if prev:
-                    memo_map[rid] = prev + " \n" + content.lower()
-                else:
-                    memo_map[rid] = content.lower()
-        except Exception as me:
-            logger.warning(f"memo aggregation failed: {me}")
-
-        docs = resource_collection().stream()
-        results: list[Resource] = []
-        skipped_invalid = 0
-        for d in docs:
-            if len(results) >= limit:
-                break
-            try:
-                r = resource_doc_to_model(d)
-            except ValueError:
-                skipped_invalid += 1
-                continue
-            haystack_parts = [
-                r.service_name or "",
-                r.category or "",
-                r.description or "",
-                r.provider or "",
-                r.location or "",
-                r.target_users or "",
-                " ".join(r.keywords or []),
-                memo_map.get(r.id, ""),
-            ]
-            haystack = " \n".join(
-                [part.lower() if i < len(haystack_parts) - 1 else part for i, part in enumerate(haystack_parts)]
-            )
-            if all(tok in haystack for tok in tokens):
-                results.append(r)
-        if skipped_invalid:
-            logger.warning(f"resources search: skipped {skipped_invalid} invalid docs")
-        return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"社会資源検索失敗: {e}")
 
 
 @router.get("/{resource_id}", response_model=Resource)
